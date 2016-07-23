@@ -1,13 +1,13 @@
-============
-KUSANAGI SDK
-============
+==========
+Katana SDK
+==========
 
-KUSANAGI SDK for Python 3.
+KATANA SDK for Python 3.
 
-`KUSANAGI`_ is a framework for distributed, concurrent and high
+`KATANA`_ is a framework for distributed, concurrent and high
 performance APIs and Web applications.
 
-.. _KUSANAGI: http://kusanagi.io
+.. _KATANA: http://kusanagi.io
 
 Install
 -------
@@ -15,4 +15,3 @@ Install
 .. code:: bash
 
   $ pip install .
-  $ kusanagi-sdk --help

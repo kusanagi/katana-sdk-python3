@@ -1,7 +1,7 @@
-from kusanagi.sdk import Component
+from .component import Component
 
 
-class Action(Component):
+class Action(component.Component):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

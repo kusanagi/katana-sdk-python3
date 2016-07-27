@@ -9,17 +9,17 @@ from multiprocessing import Process
 
 import zmq.asyncio
 
-from katana.sdk import serialization
-from katana.sdk.component.request import Request
-from katana.sdk.component.response import Response
-from katana.sdk.component.transport import Transport
-from katana.sdk.payload import CommandPayload
-from katana.sdk.payload import ErrorPayload
-from katana.sdk.payload import Payload
-from katana.sdk.payload import ResponsePayload
-from katana.sdk.payload import ServiceCallPayload
-from katana.sdk.utils import install_uvevent_loop
-from katana.sdk.utils import MultiDict
+from .. import serialization
+from ..component.request import Request
+from ..component.response import Response
+from ..component.transport import Transport
+from ..payload import CommandPayload
+from ..payload import ErrorPayload
+from ..payload import Payload
+from ..payload import ResponsePayload
+from ..payload import ServiceCallPayload
+from ..utils import install_uvevent_loop
+from ..utils import MultiDict
 
 LOG = logging.getLogger(__name__)
 

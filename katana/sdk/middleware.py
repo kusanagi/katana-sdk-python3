@@ -1,6 +1,6 @@
 from .sdk import SDK
 
-from katana.sdk.middleware.server import MiddlewareServer
+from katana.middleware.server import MiddlewareServer
 
 
 class Middleware(SDK):

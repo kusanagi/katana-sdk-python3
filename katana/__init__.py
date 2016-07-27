@@ -1,3 +1,2 @@
-import pkg_resources
-
-pkg_resources.declare_namespace(__name__)
+# https://www.python.org/dev/peps/pep-0396/
+__version__ = '0.1.0'

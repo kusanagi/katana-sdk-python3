@@ -2,11 +2,11 @@
 from setuptools import find_packages
 from setuptools import setup
 
-from katana.sdk import __version__
+from katana import __version__
 
 
 setup(
-    name='katana.sdk',
+    name='katana',
     version=__version__,
     url='http://kusanagi.io/',
     license='MIT',  

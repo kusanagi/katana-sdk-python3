@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 
@@ -14,6 +15,9 @@ EXIT_ERROR = 1
 
 # Marker object for empty values
 EMPTY = object()
+
+# Make `utcnow` global so it can be imported
+utcnow = datetime.utcnow
 
 
 def print_error(text):
@@ -122,9 +126,18 @@ class LookupDict(dict):
     """
 
     def __init__(self, *args, **kwargs):
+        self.__mappings = {}
         super().__init__(*args, **kwargs)
-        # By default no mappings are assigned
-        self.set_mappings({})
+
+    def path_exists(self, path):
+        """Check if a path is available.
+
+        :rtype: bool.
+
+        """
+
+        default = object()
+        return self.get(path, default=default) != default
 
     def set_mappings(self, mappings):
         """Set key name mappings.
@@ -159,7 +172,11 @@ class LookupDict(dict):
         item = self
         try:
             for part in path.split('/'):
-                name = self.__mappings.get(part, part)
+                name = part
+                # When path name is not available get its mapping
+                if name not in item:
+                    name = self.__mappings.get(part, part)
+
                 item = item[name]
         except KeyError:
             if default != EMPTY:
@@ -211,6 +228,19 @@ class LookupDict(dict):
             else:
                 raise TypeError(part)
 
+    def set_many(self, values):
+        """Set set multiple values by key path.
+
+        :param values: A dictionary with paths and values.
+        :type values: dict.
+
+        :raises: TypeError.
+
+        """
+
+        for path, value in values.items():
+            self.set(path, value)
+
 
 class MultiDict(dict):
     """Dictionary where all values are list.
@@ -258,3 +288,17 @@ class MultiDict(dict):
             items.extend((name, str(value)) for value in values)
 
         return items
+
+
+def install_uvevent_loop():
+    """Install uvloop as default event loop when available.
+
+    See: http://magic.io/blog/uvloop-blazing-fast-python-networking/
+
+    """
+    try:
+        import uvloop
+    except ImportError:
+        pass
+    else:
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

@@ -1,9 +1,9 @@
-from datetime.datetime import utcnow
 from time import time
 
 from .errors import PayloadExpired
 from .utils import date_to_str
 from .utils import LookupDict
+from .utils import utcnow
 
 # Field name mappings for all payload fields
 FIELD_MAPPINGS = {
@@ -115,20 +115,35 @@ class Payload(LookupDict):
 
     """
 
+    name = ''
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Use global payload field name mappings
         self.set_mappings(FIELD_MAPPINGS)
 
+    def named(self, name=None):
+        name = name or self.name
+        if name:
+            payload = Payload()
+            payload.set(name, self)
+            return payload
+
+        return self
+
 
 class ErrorPayload(Payload):
     """Class definition for error payloads."""
 
-    def __init__(self, message, code=None, status=None):
-        super().__init__()
-        self.set('error/message', message)
-        self.set('error/code', code)
-        self.set('error/status', status or '500 Internal Server Error')
+    name = 'error'
+
+    @classmethod
+    def new(cls, message, code=None, status=None):
+        payload = cls()
+        payload.set('message', message)
+        payload.set('code', code)
+        payload.set('status', status or '500 Internal Server Error')
+        return payload
 
 
 class ShortLivedPayload(Payload):
@@ -196,6 +211,8 @@ class ShortLivedPayload(Payload):
 class MetaPayload(Payload):
     """Class definition for request/response meta payloads."""
 
+    name = 'meta'
+
     @classmethod
     def new(cls, version, request_id, date_time=None):
         payload = cls()
@@ -208,14 +225,16 @@ class MetaPayload(Payload):
 class RequestPayload(Payload):
     """Class definition for request payloads."""
 
+    name = 'request'
+
     @classmethod
     def new(cls, request, files=None):
         payload = cls()
         payload.set('version', request.version)
         payload.set('method', request.method)
         payload.set('url', request.url)
-        payload.set('query', request.query.multi_items())
-        payload.set('post_data', request.post_data.multi_items())
+        payload.set('query', list(request.query.multi_items()))
+        payload.set('post_data', list(request.post_data.multi_items()))
         payload.set('headers', request.headers)
         payload.set('body', request.body)
         payload.set('files', files or {})
@@ -225,25 +244,29 @@ class RequestPayload(Payload):
 class ServiceCallPayload(Payload):
     """Class definition for service call payloads."""
 
+    name = 'call'
+
     @classmethod
-    def new(cls):
+    def new(cls, service=None, version=None, action=None, params=None):
         payload = cls()
-        payload.set('service', '')
-        payload.set('version', '')
-        payload.set('action', '')
-        payload.set('params', '')
+        payload.set('service', service or '')
+        payload.set('version', version or '')
+        payload.set('action', action or '')
+        payload.set('params', params or '')
         return payload
 
 
 class ResponsePayload(Payload):
     """Class definition for response payloads."""
 
+    name = 'response'
+
     @classmethod
-    def new(cls, headers=None, **kwargs):
+    def new(cls, version=None, status=None, body=None, headers=None):
         payload = cls()
-        payload.set('version', kwargs.get('version') or '1.1')
-        payload.set('status', kwargs.get('status') or '200 OK')
-        payload.set('body', kwargs.get('body') or '')
+        payload.set('version', version or '1.1')
+        payload.set('status', status or '200 OK')
+        payload.set('body', body or '')
         if headers:
             payload.set('headers', headers)
 
@@ -253,13 +276,15 @@ class ResponsePayload(Payload):
 class TransportPayload(Payload):
     """Class definition for transport payloads."""
 
+    name = 'transport'
+
     @classmethod
-    def new(cls, version, request_id, origin, date_time=None):
+    def new(cls, version, request_id, origin=None, date_time=None):
         payload = cls()
         payload.set('meta/version', version)
         payload.set('meta/id', request_id)
         payload.set('meta/datetime', date_to_str(date_time or utcnow()))
-        payload.set('meta/origin', origin)
+        payload.set('meta/origin', origin or '')
         payload.set('meta/level', 1)
         payload.set('meta/userland', {})
         payload.set('body', {})
@@ -275,6 +300,8 @@ class TransportPayload(Payload):
 
 class CommandPayload(Payload):
     """Class definition for command payloads."""
+
+    name = 'command'
 
     @classmethod
     def new(cls, name, scope, args=None):

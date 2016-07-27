@@ -136,7 +136,7 @@ class MiddlewareServer(object):
 
         """
 
-        # Connect to kusanagi forwarder
+        # Connect to katana forwarder
         try:
             self.sock = self.context.socket(zmq.ROUTER)
             self.sock.connect(self.channel)

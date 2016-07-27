@@ -18,7 +18,7 @@ class SDKError(KatanaError):
 
 
 class SDK(object):
-    """Base Kusanagi SDK component class."""
+    """Base KATANA SDK component class."""
 
     def __init__(self):
         """Constructor.

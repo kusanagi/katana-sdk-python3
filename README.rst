@@ -1,5 +1,5 @@
 ==========
-Katana SDK
+KATANA SDK
 ==========
 
 KATANA SDK for Python 3.

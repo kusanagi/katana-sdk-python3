@@ -1,5 +1,5 @@
 class KatanaError(Exception):
-    """Base exception for Katana errors."""
+    """Base exception for KATANA errors."""
 
     message = None
 

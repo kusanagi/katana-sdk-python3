@@ -66,7 +66,7 @@ def ipc(*args):
     """
 
     args = [arg.replace('.', '-').replace(':', '-') for arg in args]
-    return "ipc://@kusanagi-{}".format('-'.join(args))
+    return "ipc://@katana-{}".format('-'.join(args))
 
 
 def guess_channel(local, remote):

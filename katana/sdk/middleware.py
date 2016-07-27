@@ -4,7 +4,7 @@ from katana.middleware.server import MiddlewareServer
 
 
 class Middleware(SDK):
-    """Kusanagi SDK middleware."""
+    """KATANA SDK middleware."""
 
     def get_server(self, callback):
         args = self.get_arguments()

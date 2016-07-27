@@ -22,7 +22,7 @@ class Component(object):
         return self.__debug
 
     def get_platform_version(self):
-        """Get Kusanagi platform version.
+        """Get KATANA platform version.
 
         :rtype: str.
 

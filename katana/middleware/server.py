@@ -29,23 +29,17 @@ class MiddlewareServer(object):
 
     """
 
-    def __init__(self, name, address, version, platform_version,
-                 endpoint, callback, **kwargs):
+    def __init__(self, address, endpoint, callback, cli_args, **kwargs):
 
         self.__process_list = []
 
-        self.name = name
-        self.version = version
-        self.platform_version = platform_version
         self.callback = callback
+        self.cli_args = cli_args
         self.channel = ipc(address, endpoint)
         self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()
         self.sock = None
         self.workers_sock = None
-        # TODO: Change arguments for the component to a single object
-        # .. debug/version/name/platform_version. To avoid saving
-        # .. properties from other class here.
         self.debug = kwargs.get('debug', False)
         # TODO: Document and set engine variable values
         self.variables = kwargs.get('variables') or {}
@@ -67,12 +61,10 @@ class MiddlewareServer(object):
 
         for number in range(self.processes):
             process = MiddlewareProcess(
-                self.name,
-                self.version,
-                self.platform_version,
                 self.workers_channel,
                 self.workers,
                 self.callback,
+                self.cli_args,
                 )
             process.daemon = True
             self.__process_list.append(process)

@@ -109,6 +109,13 @@ class SDK(object):
                 help='Endpoint name',
                 ),
             click.option(
+                '-s', '--success-status',
+                required=False,
+                default='200 OK',
+                show_default=True,
+                help='Default HTTP success status',
+                ),
+            click.option(
                 '--debug',
                 is_flag=True,
                 ),

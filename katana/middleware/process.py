@@ -37,17 +37,12 @@ class MiddlewareWorker(object):
 
     pool_size = 15
 
-    def __init__(self, name, version, platform_version, callback,
-                 channel, **kwargs):
+    def __init__(self, callback, channel, cli_args):
 
-        self.name = name
-        self.version = version
-        self.platform_version = platform_version
         self.callback = callback
-        self.source_file = os.path.abspath(inspect.getfile(callback))
-        self.worker_number = kwargs.get('worker_number')
-        self.debug = kwargs.get('debug', False)
         self.channel = channel
+        self.cli_args = cli_args
+        self.source_file = os.path.abspath(inspect.getfile(callback))
         self.loop = asyncio.get_event_loop()
         self.context = zmq.asyncio.Context()
 
@@ -57,11 +52,31 @@ class MiddlewareWorker(object):
         else:
             self.executor = None
 
+    @property
+    def middleware_name(self):
+        return self.cli_args['name']
+
+    @property
+    def middleware_version(self):
+        return self.cli_args['version']
+
+    @property
+    def platform_version(self):
+        return self.cli_args['platform_version']
+
+    @property
+    def http_success_status(self):
+        return self.cli_args.get('success_status', '200 OK')
+
+    @property
+    def debug(self):
+        return self.cli_args['debug']
+
     def _create_request_component_instance(self, payload):
         return Request(
             self.source_file,
-            self.name,
-            self.version,
+            self.middleware_name,
+            self.middleware_version,
             self.platform_version,
             payload.get('request/method'),
             payload.get('request/url'),
@@ -82,11 +97,10 @@ class MiddlewareWorker(object):
     def _create_response_component_instance(self, payload):
         return Response(
             self.source_file,
-            self.name,
-            self.version,
+            self.middleware_name,
+            self.middleware_version,
             self.platform_version,
-            # TODO: Get default status from gateway config (cli argument)
-            '200 OK',
+            self.http_success_status,
             Transport(payload.get('transport')),
             )
 
@@ -133,10 +147,12 @@ class MiddlewareWorker(object):
 
         """
 
+        name = self.middleware_name
+
         if not result:
             # TODO: Review error w/ @JW
             raise MiddlewareError(
-                body='Empty middleware %s response'.format(self.name),
+                body='Empty middleware %s response'.format(name),
                 )
         elif isinstance(result, Request):
             # Return a service call payload
@@ -157,7 +173,7 @@ class MiddlewareWorker(object):
         else:
             # TODO: Review error w/ @JW
             raise MiddlewareError(
-                body='Invalid middleware %s response'.format(self.name),
+                body='Invalid middleware %s response'.format(name),
                 )
 
         return payload
@@ -278,8 +294,7 @@ class MiddlewareProcess(Process):
 
     """
 
-    def __init__(self, name, version, platform_version, channel, workers,
-                 callback, *args, **kwargs):
+    def __init__(self, channel, workers, callback, cli_args, *args, **kwargs):
         """Constructor.
 
         :param channel: IPC channel to connect to parent process.
@@ -288,16 +303,16 @@ class MiddlewareProcess(Process):
         :type workers: int.
         :param callback: A callable to use a request handler callback.
         :type callback: callable.
+        :param cli_args: Command line arguments used to run current process.
+        :type cli_args: dict.
 
         """
 
         super().__init__(*args, **kwargs)
-        self.name = name
-        self.version = version
-        self.platform_version = platform_version
         self.channel = channel
         self.workers = workers
         self.callback = callback
+        self.cli_args = cli_args
 
     def run(self):
         """Child process main code."""
@@ -312,12 +327,9 @@ class MiddlewareProcess(Process):
         task_list = []
         for number in range(self.workers):
             worker = MiddlewareWorker(
-                self.name,
-                self.version,
-                self.platform_version,
                 self.callback,
                 self.channel,
-                worker_number=number,
+                self.cli_args,
                 )
             task = loop.create_task(worker())
             task_list.append(task)

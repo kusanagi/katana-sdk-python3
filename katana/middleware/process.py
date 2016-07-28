@@ -188,8 +188,6 @@ class MiddlewareWorker(object):
         # call user land callback to process it.
         component = self._create_component_instance(payload)
         try:
-            # TODO: Decorate callback to handle response types ...
-            # Request, Response, mierda o nada
             if self.executor:
                 # Execute middleware code in a different thread
                 result = yield from self.loop.run_in_executor(

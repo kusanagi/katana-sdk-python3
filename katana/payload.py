@@ -115,6 +115,7 @@ class Payload(LookupDict):
 
     """
 
+    # Payload entity name
     name = ''
 
     def __init__(self, *args, **kwargs):
@@ -122,7 +123,22 @@ class Payload(LookupDict):
         # Use global payload field name mappings
         self.set_mappings(FIELD_MAPPINGS)
 
-    def named(self, name=None):
+    def entity(self, name=None):
+        """Get payload as an entity.
+
+        When a payload is created it contains all fields as first
+        level values. A payload entity moves all fields in payload
+        to a "namespace"; This way is possible to reference fields
+        using a path like 'entity-name/field' instead of just using
+        'field'.
+
+        :param name: Alternative entity name to use.
+        :type nme: str.
+
+        :rtype: `Payload`
+
+        """
+
         name = name or self.name
         if name:
             payload = Payload()

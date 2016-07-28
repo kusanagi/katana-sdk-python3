@@ -207,7 +207,7 @@ class MiddlewareWorker(object):
             raise MiddlewareError()
 
         payload = self._callback_result_to_payload(result)
-        return payload.named()
+        return payload.entity()
 
     @asyncio.coroutine
     def handle_stream(self, stream):
@@ -224,7 +224,7 @@ class MiddlewareWorker(object):
             payload = yield from self.process_payload(payload)
         except HTTPError as err:
             payload = ErrorPayload.new(status=err.status, message=err.body)
-            payload = payload.named()
+            payload = payload.entity()
         except:
             LOG.exception('Middleware request payload processing failed')
             # TODO: Review error w/ @JW

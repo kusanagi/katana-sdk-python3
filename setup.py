@@ -6,10 +6,10 @@ from katana import __version__
 
 
 setup(
-    name='katana',
+    name='katana-sdk-python3',
     version=__version__,
     url='http://kusanagi.io/',
-    license='MIT',  
+    license='MIT',
     author='Jerónimo Albi',
     author_email='jeronimo.albi@kusanagi.io',
     packages=find_packages(exclude=['tests']),

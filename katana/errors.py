@@ -99,3 +99,9 @@ class HTTPError(KatanaError):
         """
 
         return self.status[4:]
+
+
+class MiddlewareError(HTTPError):
+    """Error class for middleware related errors."""
+
+    message = '509 Middleware Error'

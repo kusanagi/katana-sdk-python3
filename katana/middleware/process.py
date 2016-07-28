@@ -13,6 +13,8 @@ from .. import serialization
 from ..component.request import Request
 from ..component.response import Response
 from ..component.transport import Transport
+from ..errors import HTTPError
+from ..errors import MiddlewareError
 from ..payload import CommandPayload
 from ..payload import ErrorPayload
 from ..payload import Payload
@@ -89,6 +91,21 @@ class MiddlewareWorker(object):
             )
 
     def _create_component_instance(self, payload):
+        """Create a component instance for a payload.
+
+        The type of component created depends on the payload type.
+
+        Supported components are `Request` and `Response`.
+
+        :param payload: A payload.
+        :type payload: Payload.
+
+        :raises: MiddlewareError
+
+        :returns: A component instance for the type of payload.
+        :rtype: `Component`.
+
+        """
 
         command_name = payload.get('command/name')
         # Create a new payload using data in command arguments
@@ -98,8 +115,52 @@ class MiddlewareWorker(object):
         elif command_name == 'middleware-response':
             return self._create_response_component_instance(payload)
         else:
-            # TODO: Raise unknown command error
-            pass
+            LOG.error('Unknown middleware command %s', command_name)
+            # TODO: Review error w/ @JW
+            raise MiddlewareError()
+
+    def _callback_result_to_payload(self, result):
+        """Convert callback result to a payload.
+
+        Valid callback results are `Request` and `Response` objects.
+
+        :params result: The callback result.
+
+        :raises: MiddlewareError
+
+        :returns: A payload for the result type.
+        :rtype: Payload.
+
+        """
+
+        if not result:
+            # TODO: Review error w/ @JW
+            raise MiddlewareError(
+                body='Empty middleware %s response'.format(self.name),
+                )
+        elif isinstance(result, Request):
+            # Return a service call payload
+            payload = ServiceCallPayload.new(
+                service=result.get_service_name(),
+                version=result.get_service_version(),
+                action=result.get_action_name(),
+                params=list(result.get_action_params().items()),
+                )
+        elif isinstance(result, Response):
+            # Return a response payload
+            payload = ResponsePayload.new(
+                version=result.get_protocol_version(),
+                status=result.get_status(),
+                body=result.get_body(),
+                headers=list(result.get_headers().items()),
+                )
+        else:
+            # TODO: Review error w/ @JW
+            raise MiddlewareError(
+                body='Invalid middleware %s response'.format(self.name),
+                )
+
+        return payload
 
     @asyncio.coroutine
     def process_payload(self, payload):
@@ -114,14 +175,17 @@ class MiddlewareWorker(object):
         """
 
         if not payload.path_exists('command'):
-            # TODO: Return an error because a command payload was not sent
-            pass
+            LOG.error('Middleware receive a payload that is not a command')
+            # TODO: Review error w/ @JW
+            raise MiddlewareError()
 
         # Check that command scope is gateway, otherwise is not valid
         if payload.get('meta/scope') != 'gateway':
-            # TODO: Raise invalid scope error
-            pass
+            # TODO: Review error w/ @JW
+            raise MiddlewareError(body='Invalid middleware scope')
 
+        # Create a component instance using the command payload and
+        # call user land callback to process it.
         component = self._create_component_instance(payload)
         try:
             # TODO: Decorate callback to handle response types ...
@@ -138,38 +202,11 @@ class MiddlewareWorker(object):
                 result = yield from self.callback(component)
         except:
             LOG.exception('Middleware error')
-            # Return an error payload
-            # TODO
-            raise NotImplementedError()
+            # Return an error payload when an exception
+            # is raised inside user land callback.
+            raise MiddlewareError()
 
-        # TODO: Move result to payload conversion to a callback decorator
-        # Convert result to a payload
-        if not result:
-            raise NotImplementedError()
-
-        if isinstance(result, Request):
-            # Return a service call payload
-            payload = ServiceCallPayload.new(
-                service=result.get_service_name(),
-                version=result.get_service_version(),
-                action=result.get_action_name(),
-                # TODO: Check that headers as always converted to dict
-                params=list(result.get_action_params().items()),
-                )
-        elif isinstance(result, Response):
-            # Return a response payload
-            payload = ResponsePayload.new(
-                version=result.get_protocol_version(),
-                status=result.get_status(),
-                body=result.get_body(),
-                # TODO: Check that headers as always converted to dict
-                headers=list(result.get_headers().items()),
-                )
-        else:
-            # mierda
-            # TODO: Create a response for the case where data is corrupt
-            raise NotImplementedError()
-
+        payload = self._callback_result_to_payload(result)
         return payload.named()
 
     @asyncio.coroutine
@@ -178,16 +215,20 @@ class MiddlewareWorker(object):
         try:
             payload = CommandPayload(serialization.unpack(stream))
         except (ValueError, TypeError):
-            # TODO: Return an error payload
-            raise NotImplementedError()
+            LOG.exception('Middleware command stream parsing failed')
+            # TODO: Review error w/ @JW
+            raise MiddlewareError()
 
         # Process command and return payload response serialized
         try:
             payload = yield from self.process_payload(payload)
+        except HTTPError as err:
+            payload = ErrorPayload.new(status=err.status, message=err.body)
+            payload = payload.named()
         except:
-            LOG.exception('Middleware payload process failed')
-            # TODO: Return response for possible processing errors
-            raise NotImplementedError()
+            LOG.exception('Middleware request payload processing failed')
+            # TODO: Review error w/ @JW
+            raise MiddlewareError()
 
         return serialization.pack(payload)
 

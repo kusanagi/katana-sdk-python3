@@ -38,26 +38,6 @@ class PayloadError(KatanaError):
         self.code = code
 
 
-class InvalidOrigin(PayloadError):
-    """Error for invalid/unknown request origins.
-
-    Used when origin is unknown to a service or is not handled by it.
-
-    """
-
-    message = 'Invalid origin'
-
-
-class InvalidScope(PayloadError):
-    """Error for invalid/unknown request scopes.
-
-    Used when scope is unknown to a component or is not handled by it.
-
-    """
-
-    message = 'Invalid scope'
-
-
 class HTTPError(KatanaError):
     """Base HTTP error exception."""
 

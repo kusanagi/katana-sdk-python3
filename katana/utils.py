@@ -1,5 +1,6 @@
 import asyncio
 import os
+import socket
 import sys
 
 from datetime import datetime
@@ -7,7 +8,7 @@ from uuid import uuid4
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
 
-LOCALHOST = '127.0.0.1'
+LOCALHOSTS = ('localhost', '127.0.0.1', '127.0.1.1')
 
 # CLI exit status codes
 EXIT_OK = os.EX_OK
@@ -86,8 +87,43 @@ def guess_channel(local, remote):
 
     """
 
-    local = local.split(':')[0]
-    return ipc(remote) if remote.startswith(local) else tcp(remote)
+    remote_host = remote.split(':')[0]
+    if remote_host in LOCALHOSTS:
+        return ipc(remote)
+
+    local_host = local.split(':')[0]
+    return ipc(remote) if remote_host == local_host else tcp(remote)
+
+
+def guess_channel_to_remote(remote):
+    """Guess connection channel to use to connect to a remote host.
+
+    Function guesses what channel to use to connect from a local host
+    to remote host. Unix socket channel is used when remote host is in
+    the same IP, or TCP otherwise.
+
+    All local IP are used to check if remote host can be reached using
+    Unix sockets.
+
+    :param remote: IP address and port for remote host.
+    :type remote: str.
+
+    :returns: Channel to connect to remote host.
+    :rtype: str.
+
+    """
+
+    remote_host = remote.split(':')[0]
+    if remote_host in LOCALHOSTS:
+        return ipc(remote)
+
+    # Check if remote matches a local IP
+    for local_host in socket.gethostbyname_ex(socket.gethostname())[2]:
+        if remote_host == local_host:
+            return ipc(remote)
+
+    # By default TCP will be used
+    return tcp(remote)
 
 
 def str_to_date(value):

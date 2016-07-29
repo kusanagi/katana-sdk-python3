@@ -1,22 +1,46 @@
 import asyncio
 import functools
+import logging
 
 from collections import defaultdict
 
-from .error import InvalidScope
-from .error import InvalidPayload
-from .error import KatanaError
+from .errors import KatanaError
 from .payload import CommandPayload
 from .serialization import unpack
 
+LOG = logging.getLogger(__name__)
 
-class InvalidCommand(KatanaError):
+
+class CommandError(KatanaError):
+    """Command exception class."""
+
+    message = 'Command failed'
+
+
+class InvalidCommand(CommandError):
     """Error for invalid/unknown component commands."""
 
     message = 'Invalid component command {}:{}'
 
     def __init__(self, scope, name):
         super().__init__(message=self.message.format(scope, name))
+
+
+class InvalidCommandPayload(CommandError):
+    """Error for invalid command payloads.
+
+    Payload can be invalid because it can't be deserialized/unpacked
+    or just because its data formas is not valid.
+
+    """
+
+    message = 'Invalid command payload'
+
+
+class InvalidCommandScope(CommandError):
+    """Exception raised when command scope is invalid for current command."""
+
+    message = 'Invalid command scope'
 
 
 def register_handler(cls, scopes, name=None):
@@ -124,14 +148,15 @@ class CommandsManager(object):
         :params name: Command name.
         :type name: str.
 
-        :raises: InvalidCommand, InvalidScope.
+        :raises: InvalidCommand
+        :raises: InvalidCommandScope
 
         :rtype: callable.
 
         """
 
         if scope not in self.handlers:
-            raise InvalidScope()
+            raise InvalidCommandScope()
 
         try:
             return self.handlers[scope][name]
@@ -158,7 +183,8 @@ class CommandsManager(object):
         :param payload: Payload with command data.
         :type payload: CommandPayload.
 
-        :raises: InvalidCommand, InvalidScope.
+        :raises: InvalidCommand
+        :raises: InvalidCommandScope
 
         :returns: Command result.
 
@@ -179,7 +205,10 @@ class CommandsManager(object):
         :param stream: Packed payload with command data.
         :type stream: bytes.
 
-        :raises: InvalidCommand, InvalidScope, InvalidPayload.
+        :raises: CommandError
+        :raises: InvalidCommand
+        :raises: InvalidCommandScope
+        :raises: InvalidCommandPayload
 
         :returns: The command result.
 
@@ -189,7 +218,12 @@ class CommandsManager(object):
             payload = self.payload_cls(unpack(stream))
             return self.process_payload(payload)
         except (TypeError, ValueError):
-            raise InvalidPayload()
+            raise InvalidCommandPayload()
+        except CommandError:
+            raise
+        except:
+            LOG.exception('Command stream processing failed')
+            raise CommandError()
 
 
 class AsyncCommandsManager(CommandsManager):
@@ -210,7 +244,8 @@ class AsyncCommandsManager(CommandsManager):
         :param payload: Payload with command data.
         :type payload: CommandPayload.
 
-        :raises: InvalidCommand, InvalidScope.
+        :raises: InvalidCommand
+        :raises: InvalidCommandScope
 
         :returns: The command result.
         :rtype: coroutine.
@@ -235,7 +270,10 @@ class AsyncCommandsManager(CommandsManager):
         :param stream: Packed payload with command data.
         :type stream: bytes.
 
-        :raises: InvalidCommand, InvalidScope.
+        :raises: CommandError
+        :raises: InvalidCommand
+        :raises: InvalidCommandScope
+        :raises: InvalidCommandPayload
 
         :returns: The command result.
         :rtype: coroutine.
@@ -245,7 +283,11 @@ class AsyncCommandsManager(CommandsManager):
         try:
             payload = self.payload_cls(unpack(stream))
             response = yield from self.process_payload(payload)
-        except (TypeError, ValueError):
-            response = InvalidPayload()
-        finally:
             return response
+        except (TypeError, ValueError):
+            raise InvalidCommandPayload()
+        except CommandError:
+            raise
+        except:
+            LOG.exception('Async command stream processing failed')
+            raise CommandError()

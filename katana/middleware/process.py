@@ -16,6 +16,7 @@ from ..component.transport import Transport
 from ..errors import HTTPError
 from ..errors import MiddlewareError
 from ..payload import CommandPayload
+from ..payload import CommandResultPayload
 from ..payload import ErrorPayload
 from ..payload import Payload
 from ..payload import ResponsePayload
@@ -133,17 +134,19 @@ class MiddlewareWorker(object):
             # TODO: Review error w/ @JW
             raise MiddlewareError()
 
-    def _callback_result_to_payload(self, result):
-        """Convert callback result to a payload.
+    def _callback_result_to_payload(self, command_name, result):
+        """Convert callback result to a command result payload.
 
         Valid callback results are `Request` and `Response` objects.
 
+        :params command_name: Name of command being executed.
+        :type command_name: str
         :params result: The callback result.
 
         :raises: MiddlewareError
 
-        :returns: A payload for the result type.
-        :rtype: Payload.
+        :returns: A command result payload.
+        :rtype: CommandResultPayload
 
         """
 
@@ -176,7 +179,8 @@ class MiddlewareWorker(object):
                 body='Invalid middleware %s response'.format(name),
                 )
 
-        return payload
+        # Add result payload as a full entity result
+        return CommandResultPayload.new(command_name, payload.entity())
 
     @asyncio.coroutine
     def process_payload(self, payload):
@@ -220,7 +224,11 @@ class MiddlewareWorker(object):
             # is raised inside user land callback.
             raise MiddlewareError()
 
-        payload = self._callback_result_to_payload(result)
+        # Conver callback result to a command payload
+        payload = self._callback_result_to_payload(
+            payload.get('command/name'),
+            result,
+            )
         return payload.entity()
 
     @asyncio.coroutine

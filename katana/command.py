@@ -6,6 +6,7 @@ from collections import defaultdict
 
 from .errors import KatanaError
 from .payload import CommandPayload
+from .payload import CommandResultPayload
 from .serialization import unpack
 
 LOG = logging.getLogger(__name__)
@@ -186,7 +187,8 @@ class CommandsManager(object):
         :raises: InvalidCommand
         :raises: InvalidCommandScope
 
-        :returns: Command result.
+        :returns: The command result payload.
+        :rtype: `CommandResultPayload`
 
         """
 
@@ -194,7 +196,8 @@ class CommandsManager(object):
         name = payload.get('command/name', 'MISSING')
         args = payload.get('command/arguments', None) or {}
         handler = self.get_handler(scope, name)
-        return handler(args, **self.get_handler_kwargs(scope, name))
+        result = handler(args, **self.get_handler_kwargs(scope, name))
+        return CommandResultPayload.new(name, result).entity()
 
     def process_stream(self, stream):
         """Process a stream that contains a packed command payload.
@@ -203,21 +206,23 @@ class CommandsManager(object):
         calls `process_payload`.
 
         :param stream: Packed payload with command data.
-        :type stream: bytes.
+        :type stream: bytes
 
         :raises: CommandError
         :raises: InvalidCommand
         :raises: InvalidCommandScope
         :raises: InvalidCommandPayload
 
-        :returns: The command result.
+        :returns: The command result payload.
+        :rtype: `CommandResultPayload`
 
         """
 
         try:
             payload = self.payload_cls(unpack(stream))
             return self.process_payload(payload)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError) as err:
+            LOG.error('Command payload stream process failed: %s', err)
             raise InvalidCommandPayload()
         except CommandError:
             raise
@@ -247,7 +252,7 @@ class AsyncCommandsManager(CommandsManager):
         :raises: InvalidCommand
         :raises: InvalidCommandScope
 
-        :returns: The command result.
+        :returns: The command result payload.
         :rtype: coroutine.
 
         """
@@ -258,7 +263,7 @@ class AsyncCommandsManager(CommandsManager):
         kwargs = self.get_handler_kwargs(scope, name)
         handler = self.get_handler(scope, name)
         result = yield from handler(args, **kwargs)
-        return result
+        return CommandResultPayload.new(name, result).entity()
 
     @asyncio.coroutine
     def process_stream(self, stream):
@@ -275,16 +280,17 @@ class AsyncCommandsManager(CommandsManager):
         :raises: InvalidCommandScope
         :raises: InvalidCommandPayload
 
-        :returns: The command result.
+        :returns: The command result payload.
         :rtype: coroutine.
 
         """
 
         try:
             payload = self.payload_cls(unpack(stream))
-            response = yield from self.process_payload(payload)
-            return response
-        except (TypeError, ValueError):
+            payload = yield from self.process_payload(payload)
+            return payload
+        except (TypeError, ValueError) as err:
+            LOG.error('Command payload stream process failed: %s', err)
             raise InvalidCommandPayload()
         except CommandError:
             raise

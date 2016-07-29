@@ -79,6 +79,7 @@ FIELD_MAPPINGS = {
     'request': 'r',
     'required': 'r',
     'relations': 'r',
+    'result': 'r',
     'response': 'R',
     'schema': 's',
     'scope': 's',
@@ -325,4 +326,18 @@ class CommandPayload(Payload):
         payload.set('command/name', name)
         payload.set('command/arguments', args)
         payload.set('meta/scope', scope)
+        return payload
+
+
+# TODO: Discuss w/ @JW
+class CommandResultPayload(Payload):
+    """Class definition for command result payloads."""
+
+    name = 'command'
+
+    @classmethod
+    def new(cls, name, result=None):
+        payload = cls()
+        payload.set('name', name)
+        payload.set('result', result)
         return payload

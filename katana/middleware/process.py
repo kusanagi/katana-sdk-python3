@@ -101,8 +101,9 @@ class MiddlewareWorker(object):
             self.middleware_name,
             self.middleware_version,
             self.platform_version,
-            self.http_success_status,
+            payload.get('response/status', self.http_success_status),
             Transport(payload.get('transport')),
+            body=payload.get('response/body', ''),
             )
 
     def _create_component_instance(self, payload):
@@ -163,7 +164,7 @@ class MiddlewareWorker(object):
                 service=result.get_service_name(),
                 version=result.get_service_version(),
                 action=result.get_action_name(),
-                params=list(result.get_action_params().items()),
+                params=result.get_action_params().multi_items(),
                 )
         elif isinstance(result, Response):
             # Return a response payload
@@ -171,7 +172,7 @@ class MiddlewareWorker(object):
                 version=result.get_protocol_version(),
                 status=result.get_status(),
                 body=result.get_body(),
-                headers=list(result.get_headers().items()),
+                headers=result.get_headers().multi_items(),
                 )
         else:
             # TODO: Review error w/ @JW

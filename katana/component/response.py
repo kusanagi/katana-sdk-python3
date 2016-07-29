@@ -66,7 +66,7 @@ class Response(Component):
     def is_status(self, status):
         """Determine if the response uses the given status.
 
-        :param status: The HTTP status code.
+        :param status: The HTTP status.
         :type status: str.
 
         :rtype: bool.
@@ -96,6 +96,16 @@ class Response(Component):
 
         self.__status = status
 
+    # TODO: We need more methods. Discuss w/ @JW
+    def get_status_code(self):
+        """Get HTTP status code.
+
+        :rtype: int.
+
+        """
+
+        return int(self.get_status()[:3])
+
     def has_header(self, name):
         """Determines if the HTTP header is defined.
 
@@ -106,7 +116,7 @@ class Response(Component):
 
         """
 
-        return hasattr(self.__headers, name)
+        return name in self.__headers
 
     def get_header(self, name):
         """Get an HTTP header.

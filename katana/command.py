@@ -273,7 +273,7 @@ class AsyncCommandsManager(CommandsManager):
         calls `process_payload`.
 
         :param stream: Packed payload with command data.
-        :type stream: bytes.
+        :type stream: bytes
 
         :raises: CommandError
         :raises: InvalidCommand

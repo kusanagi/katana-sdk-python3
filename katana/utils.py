@@ -172,8 +172,12 @@ class LookupDict(dict):
 
         """
 
-        default = object()
-        return self.get(path, default=default) != default
+        try:
+            self.get(path)
+        except KeyError:
+            return False
+        else:
+            return True
 
     def set_mappings(self, mappings):
         """Set key name mappings.

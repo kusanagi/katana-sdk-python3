@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import multiprocessing
+import signal
 
 import click
 import zmq.asyncio
@@ -84,20 +84,26 @@ class MiddlewareServer(object):
         """Terminate all child processes."""
 
         for process in self.__process_list:
-            # TODO: Implement a communication channel to properly terminate
-            # childrens. This is required to have a proper process cleanup.
             process.terminate()
+            # TODO: Use wait to terminate children ?
             process.join()
 
-    def stop(self):
+    def stop(self, *args):
         """Stop service discovery.
 
         This terminate all child processes and closes all sockets.
 
+        :note: This method can be called from a signal like SIGTERM.
+
         """
 
+        if not self.sock:
+            return
+
+        self.sock.close()
+        self.sock = None
+        self.workers_sock.close()
         self.terminate_child_processes()
-        self.context.destroy()
 
     @asyncio.coroutine
     def proxy(self, frontend_sock, backend_sock):
@@ -163,6 +169,10 @@ class MiddlewareServer(object):
             # Create subprocesses to handle requests
             self.create_child_processes()
             self.start_child_processes()
+
+            # Gracefully close on SIGTERM events to avoid
+            # leaving child processes running in background.
+            signal.signal(signal.SIGTERM, self.stop)
 
         try:
             click.echo('Listening for requests')

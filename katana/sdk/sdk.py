@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import logging
-import sys
+import os
 
 import click
 import zmq.asyncio
@@ -30,7 +30,7 @@ class SDK(object):
 
         self.__callback = None
 
-    def __start_component(self, **kwargs):
+    def __start_component_server(self, **kwargs):
         """Start component server.
 
         This call blocks the caller script until server finishes.
@@ -63,7 +63,7 @@ class SDK(object):
 
         # Finish event loop and exit with an exit code
         loop.close()
-        sys.exit(exit_code)
+        os._exit(exit_code)
 
     def set_callback(self, callback):
         """Assign a callback to the SDK.
@@ -161,9 +161,9 @@ class SDK(object):
             name=inspect.getfile(callback),
             help=inspect.getdoc(inspect.getmodule(callback)),
             )
-        # Command must call `__start_component` method when
+        # Command must call `__start_component_server` method when
         # command line options are valid.
-        start_component = command(self.__start_component)
+        start_component = command(self.__start_component_server)
 
         # Apply CLI options to command
         for option in self.get_argument_options():

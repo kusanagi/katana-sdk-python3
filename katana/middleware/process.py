@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import logging
 import os
+import signal
 
 from concurrent.futures import CancelledError
 from concurrent.futures import ThreadPoolExecutor
@@ -28,23 +29,26 @@ LOG = logging.getLogger(__name__)
 
 
 class MiddlewareWorker(object):
-    """Middleware worker class.
+    """Middleware worker task class.
 
     This class handles middleware requests.
 
-    A thread poll executor is used to allow concurrency in middlewares.
+    A thread poll executor is used to allow concurrency in middlewares
+    that are not implemented as coroutines.
 
     """
 
     pool_size = 15
 
     def __init__(self, callback, channel, cli_args):
+        self.__socket = None
 
         self.callback = callback
         self.channel = channel
         self.cli_args = cli_args
         self.source_file = os.path.abspath(inspect.getfile(callback))
         self.loop = asyncio.get_event_loop()
+        self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()
 
         # Only create the executor when callback is not a coroutine
@@ -256,6 +260,24 @@ class MiddlewareWorker(object):
         return serialization.pack(payload)
 
     @asyncio.coroutine
+    def _start_handling_requests(self):
+        """Start handling incoming middleware requests and responses.
+
+        This method starts an infinite loop that polls socket for
+        incoming requests.
+
+        """
+
+        while True:
+            events = yield from self.poller.poll()
+            if dict(events).get(self.__socket) == zmq.POLLIN:
+                # Get stream data from socket
+                stream = yield from self.__socket.recv()
+                # Call request handler and send response back
+                response_stream = yield from self.handle_stream(stream)
+                yield from self.__socket.send(response_stream)
+
+    @asyncio.coroutine
     def __call__(self):
         """Handle worker requests.
 
@@ -263,33 +285,24 @@ class MiddlewareWorker(object):
 
         """
 
-        poller = zmq.asyncio.Poller()
-        socket = self.context.socket(zmq.REP)
-        socket.connect(self.channel)
-        poller.register(socket, zmq.POLLIN)
-
-        while True:
-            events = yield from poller.poll()
-            if dict(events).get(socket) == zmq.POLLIN:
-                try:
-                    # Get stream data from socket
-                    stream = yield from socket.recv()
-                    # Call request handler and send response back
-                    response_stream = yield from self.handle_stream(stream)
-                    yield from socket.send(response_stream)
-                except CancelledError:
-                    socket.close()
-                    self.stop()
-                    # Re raise exception to signal cancellation
-                    raise
+        self.__socket = self.context.socket(zmq.REP)
+        self.__socket.connect(self.channel)
+        self.poller.register(self.__socket, zmq.POLLIN)
+        try:
+            yield from self._start_handling_requests()
+        except CancelledError:
+            # Call stop before cancelling task
+            self.stop()
+            # Re raise exception to signal task cancellation
+            raise
 
     def stop(self):
-        """Terminates worker."""
+        """Terminates worker task."""
 
+        self.poller.unregister(self.__socket)
+        self.__socket.close()
         if self.executor:
             self.executor.shutdown()
-
-        self.context.term()
 
 
 class MiddlewareProcess(Process):
@@ -318,6 +331,8 @@ class MiddlewareProcess(Process):
         """
 
         super().__init__(*args, **kwargs)
+        self.__loop = None
+        self.__tasks = []
         self.channel = channel
         self.workers = workers
         self.callback = callback
@@ -326,31 +341,37 @@ class MiddlewareProcess(Process):
     def run(self):
         """Child process main code."""
 
-        install_uvevent_loop()
-
         # Create an event loop for current process
-        loop = zmq.asyncio.ZMQEventLoop()
-        asyncio.set_event_loop(loop)
+        install_uvevent_loop()
+        self.__loop = zmq.asyncio.ZMQEventLoop()
+        asyncio.set_event_loop(self.__loop)
+
+        # Gracefully terminate process on SIGTERM events.
+        self.__loop.add_signal_handler(signal.SIGTERM, self._cleanup)
 
         # Create a task for each worker
-        task_list = []
         for number in range(self.workers):
             worker = MiddlewareWorker(
                 self.callback,
                 self.channel,
                 self.cli_args,
                 )
-            task = loop.create_task(worker())
-            task_list.append(task)
+            task = self.__loop.create_task(worker())
+            self.__tasks.append(task)
 
         try:
-            loop.run_forever()
+            self.__loop.run_forever()
         except KeyboardInterrupt:
-            pass
-        finally:
-            # Finish all tasks
-            for task in task_list:
-                loop.call_soon(task.cancel)
+            LOG.debug('Middleware process SIGINT')
+            self._cleanup()
 
-            # After tasks are cancelled close loop
-            loop.call_soon(loop.close)
+    def _cleanup(self, *args):
+        """Cleanup process."""
+
+        # Finish all tasks
+        LOG.debug('Canceling middleware PID %s workers', self.pid)
+        for task in self.__tasks:
+            task.cancel()
+
+        # After tasks are cancelled close event loop
+        self.__loop.call_soon(self.__loop.stop)

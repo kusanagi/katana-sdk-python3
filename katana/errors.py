@@ -41,11 +41,13 @@ class PayloadError(KatanaError):
 class HTTPError(KatanaError):
     """Base HTTP error exception."""
 
+    headers = None
     message = '500 Internal Server Error'
 
-    def __init__(self, body=None):
+    def __init__(self, body=None, headers=None):
         super().__init__(self.message)
         self.body = body or self.message
+        self.headers = headers or []
 
     def __str__(self):
         return self.message

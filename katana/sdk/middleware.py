@@ -6,14 +6,7 @@ from katana.middleware.server import MiddlewareServer
 class Middleware(SDK):
     """KATANA SDK middleware."""
 
-    def get_server(self, callback, cli_args):
-        return MiddlewareServer(
-            cli_args['address'],
-            cli_args['endpoint'],
-            callback,
-            cli_args,
-            debug=cli_args['debug']
-            )
+    server_factory = MiddlewareServer
 
     def run_request(self, callback):
         self.run(callback)

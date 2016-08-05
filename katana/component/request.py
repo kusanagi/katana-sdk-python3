@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from ..payload import Payload
 from ..utils import MultiDict
 
@@ -9,10 +11,8 @@ from .transport import Transport
 class Request(Component):
     """Endpoint request class."""
 
-    def __init__(self, path, name, version, platform_version, method,
-                 url, **kwargs):
-
-        self.__method = method
+    def __init__(self, method, url, *args, **kwargs):
+        self.__method = method.upper()
         self.__url = url
         self.__protocol_version = kwargs.pop('protocol_version', None) or '1.1'
         self.__query = kwargs.pop('query', None) or MultiDict()
@@ -21,18 +21,20 @@ class Request(Component):
         self.__body = kwargs.pop('body', None) or ''
         self.__files = kwargs.pop('files', None) or MultiDict()
 
+        # Save parsed URL
+        self.__parsed_url = urlparse(self.get_url())
+
         self.set_service_name(kwargs.pop('service_name', None) or '')
         self.set_service_version(kwargs.pop('service_version', None) or '')
         self.set_action_name(kwargs.pop('action_name', None) or '')
-        self.set_action_params(
-            kwargs.pop('action_params', None) or MultiDict()
-            )
-        super().__init__(path, name, version, platform_version, **kwargs)
+
+        super().__init__(*args, **kwargs)
 
     def is_method(self, method):
         """Determine if the request used the given HTTP method.
 
-        Returns True if the HTTP method of the request is the same as the specified method, otherwise False.
+        Returns True if the HTTP method of the request is the same
+        as the specified method, otherwise False.
 
         :param method: The HTTP method.
         :type method: str.
@@ -41,7 +43,7 @@ class Request(Component):
 
         """
 
-        return self.__method == method
+        return self.__method == method.upper()
 
     def get_method(self):
         """Gets the HTTP method.
@@ -56,16 +58,45 @@ class Request(Component):
         return self.__method
 
     def get_url(self):
-        """Gets the HTTP method.
+        """Get request URL.
 
-        Returns the HTTP method used for the request.
-
-        :returns: The HTTP method.
         :rtype: str.
 
         """
 
         return self.__url
+
+    # TODO: Add to spec ? @JW
+    def get_url_scheme(self):
+        """Get request URL scheme.
+
+        :rtype: str.
+
+        """
+
+        return self.__parsed_url.scheme
+
+    # TODO: Add to spec ? @JW
+    def get_url_host(self):
+        """Get request URL host.
+
+        When a port is given in the URL it will be added to host.
+
+        :rtype: str.
+
+        """
+
+        return self.__parsed_url.netloc
+
+    # TODO: Add to spec ? @JW
+    def get_url_path(self):
+        """Get request URL path.
+
+        :rtype: str.
+
+        """
+
+        return self.__parsed_url.path
 
     def has_query_param(self, name):
         """Determines if the param is defined.
@@ -323,33 +354,6 @@ class Request(Component):
 
         self.__action_name = action
 
-    def get_action_params(self):
-        """Get the parameters for the action.
-
-        :rtype: MultiDict.
-
-        """
-
-        return self.__action_params
-
-    def set_action_params(self, params):
-        """Set the parameters for the action.
-
-        Sets the parameters for the action passed in the HTTP request,
-        where each property name is the param name and the value the given
-        value. If a parameter is an array the value of the property must be
-        an array with the given values. Multi-dimensional arrays required
-        that every level above the lowest be an object, with the keys as the
-        array keys and the value an object if an additional level is present,
-        or an array of values.
-
-        :param params: The action parameters.
-        :type params: MultiDict.
-
-        """
-
-        self.__action_params = params
-
     def new_response(self, status, **kwargs):
         """Creates a new Response object.
 
@@ -367,11 +371,11 @@ class Request(Component):
         """
 
         return Response(
+            status,
+            Transport(Payload()),
             self.get_path(),
             self.get_name(),
             self.get_version(),
             self.get_platform_version(),
-            status,
-            Transport(Payload()),
             **kwargs,
             )

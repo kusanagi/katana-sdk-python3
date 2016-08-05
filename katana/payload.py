@@ -12,6 +12,7 @@ FIELD_MAPPINGS = {
     'arguments': 'a',
     'attributes': 'a',
     'available': 'a',
+    'actions': 'ac',
     'array_format': 'af',
     'body': 'b',
     'buffers': 'b',
@@ -25,12 +26,13 @@ FIELD_MAPPINGS = {
     'config': 'c',
     'count': 'c',
     'cpu': 'c',
+    'consumes': 'cn',
     'data': 'd',
     'datetime': 'd',
     'default_value': 'd',
     'disk': 'd',
     'path_delimiter': 'd',
-    'allow_empty_value': 'e',
+    'allow_empty': 'e',
     'entity_path': 'e',
     'errors': 'e',
     'error': 'E',
@@ -82,6 +84,7 @@ FIELD_MAPPINGS = {
     'result': 'r',
     'response': 'R',
     'schema': 's',
+    'schemes': 's',
     'scope': 's',
     'service': 's',
     'shared': 's',
@@ -100,6 +103,7 @@ FIELD_MAPPINGS = {
     'user': 'u',
     'userland': 'u',
     'unique_items': 'ui',
+    'value': 'v',
     'version': 'v',
     'iowait': 'w',
     'writes': 'w',
@@ -155,9 +159,9 @@ class ErrorPayload(Payload):
     name = 'error'
 
     @classmethod
-    def new(cls, message, code=None, status=None):
+    def new(cls, message=None, code=None, status=None):
         payload = cls()
-        payload.set('message', message)
+        payload.set('message', message or 'Internal Server Error')
         payload.set('code', code)
         payload.set('status', status or '500 Internal Server Error')
         return payload
@@ -264,12 +268,11 @@ class ServiceCallPayload(Payload):
     name = 'call'
 
     @classmethod
-    def new(cls, service=None, version=None, action=None, params=None):
+    def new(cls, service=None, version=None, action=None):
         payload = cls()
         payload.set('service', service or '')
         payload.set('version', version or '')
         payload.set('action', action or '')
-        payload.set('params', params or '')
         return payload
 
 
@@ -329,7 +332,6 @@ class CommandPayload(Payload):
         return payload
 
 
-# TODO: Discuss w/ @JW
 class CommandResultPayload(Payload):
     """Class definition for command result payloads."""
 

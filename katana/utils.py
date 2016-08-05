@@ -1,11 +1,13 @@
 import asyncio
 import functools
+import json
 import os
 import socket
 import sys
 
 from collections import OrderedDict
 from datetime import datetime
+from hashlib import md5
 from uuid import uuid4
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
@@ -152,6 +154,7 @@ def date_to_str(datetime):
         return datetime.strftime(DATE_FORMAT)
 
 
+# TODO: Use Cython for lookup dict ? It is used all the time.
 class LookupDict(dict):
     """Dictionary class that allows field value setting and lookup by path.
 
@@ -165,6 +168,7 @@ class LookupDict(dict):
 
     def __init__(self, *args, **kwargs):
         self.__mappings = {}
+        self.__defaults = {}
         super().__init__(*args, **kwargs)
 
     def path_exists(self, path):
@@ -190,6 +194,16 @@ class LookupDict(dict):
         """
 
         self.__mappings = mappings
+
+    def set_defaults(self, defaults):
+        """Set default values to use during get calls.
+
+        :param mappings: Key name mappings.
+        :type mappings: dict.
+
+        """
+
+        self.__defaults = defaults
 
     def get(self, path, default=EMPTY):
         """Get value by key path.
@@ -223,6 +237,8 @@ class LookupDict(dict):
         except KeyError:
             if default != EMPTY:
                 return default
+            elif path in self.__defaults:
+                return self.__defaults[path]
             else:
                 raise
 
@@ -282,6 +298,59 @@ class LookupDict(dict):
 
         for path, value in values.items():
             self.set(path, value)
+
+    def push(self, path, value):
+        """Push value by key path.
+
+        Path traversing is only done for dictionary like values.
+        TypeError is raised for a key when a non traversable value is found.
+
+        When a key name does not exists a new dictionary is created for that
+        key name that it is used for traversing the other key names, so many
+        dictionaries are created inside one another to complete the given path.
+
+        When the final key is found is is expected to be a list where the value
+        will be appended. TypeError is raised when final key is not a list.
+        A new list is created when last key does not exists.
+
+        When a mapping is assigned it is used to reverse key names in path to
+        the original mapped key name.
+
+        Example path: 'key_name/another/last'.
+
+        :param path: Path to a value.
+        :type path: str.
+        :param value: Value to set in the give path.
+
+        :raises: TypeError.
+
+        """
+
+        item = self
+        parts = path.split('/')
+        last_part_index = len(parts) - 1
+        for index, part in enumerate(parts):
+            name = self.__mappings.get(part, part)
+            # Current part is the last item in path
+            if index == last_part_index:
+                if name not in item:
+                    # When last key does not exists create a list
+                    item[name] = []
+                elif not isinstance(item[name], list):
+                    # When last key exists it must be a list
+                    raise TypeError(name)
+
+                item[name].append(value)
+                break
+
+            if name not in item:
+                item[name] = {}
+                item = item[name]
+            elif isinstance(item[name], dict):
+                # Only keep traversing dictionaries
+                item = item[name]
+            else:
+                raise TypeError(part)
 
 
 class MultiDict(dict):
@@ -382,3 +451,16 @@ def async_lru(size=100, timeout=None):
         return memoizer
 
     return decorator
+
+
+def dict_crc(dict):
+    """Create a CRC for a dictionary like object.
+
+    :param dict: Dictionary to use for CRC generation.
+    :type dict: dict
+
+    :rtype: str
+
+    """
+
+    return md5(json.dumps(dict, sort_keys=True).encode('utf8')).hexdigest()

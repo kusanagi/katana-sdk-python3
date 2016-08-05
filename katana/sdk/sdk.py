@@ -28,42 +28,64 @@ class SDK(object):
 
         """
 
-        self.__callback = None
+        self.__args = {}
+        self.callback = None
 
-    def __start_component_server(self, **kwargs):
-        """Start component server.
+    @property
+    def server_factory(self):
+        """Component server class or factory.
 
-        This call blocks the caller script until server finishes.
+        When factory is a callable it must return a
+        `katana.sdk.server.Server` instance.
 
-        Caller script is stopped when server finishes, by exiting
-        with an exit code.
+        :rtype: `katana.sdk.server.Server` or callable.
 
         """
 
-        # Initialize component logging
-        level = logging.DEBUG if kwargs['debug'] else logging.INFO
-        logging.basicConfig(level=level)
+        raise NotImplementedError()
 
-        # Set main event loop
-        install_uvevent_loop()
-        loop = zmq.asyncio.ZMQEventLoop()
-        asyncio.set_event_loop(loop)
+    @property
+    def args(self):
+        """Command line arguments.
 
-        # Run component server
-        try:
-            server = self.get_server(self.__callback, kwargs)
-            exit_code = loop.run_until_complete(server.listen())
-        except KeyboardInterrupt:
-            exit_code = EXIT_OK
-        except Exception as exc:
-            LOG.exception('Component server failed')
-            exit_code = EXIT_ERROR
-        finally:
-            server.stop()
+        Command line arguments are initialized during `run` with the values
+        used to run the component.
 
-        # Finish event loop and exit with an exit code
-        loop.close()
-        os._exit(exit_code)
+        :rtype: dict
+
+        """
+
+        return self.__args
+
+    @property
+    def address(self):
+        """Component address.
+
+        :rtype: str
+
+        """
+
+        return self.__args.get('address')
+
+    @property
+    def endpoint(self):
+        """Component endpoint name.
+
+        :rtype: str
+
+        """
+
+        return self.__args.get('endpoint')
+
+    @property
+    def debug(self):
+        """Check if debug is enabled for current component.
+
+        :rtype: bool
+
+        """
+
+        return self.__args.get('debug', False)
 
     def set_callback(self, callback):
         """Assign a callback to the SDK.
@@ -73,7 +95,7 @@ class SDK(object):
 
         """
 
-        self.__callback = callback
+        self.callback = callback
 
     def get_argument_options(self):
         """Get command line argument options.
@@ -121,21 +143,48 @@ class SDK(object):
                 ),
             ]
 
-    def get_server(self, callback, args):
-        """Get server instance to run current SDK component.
+    def __start_component_server(self, **kwargs):
+        """Start component server.
 
-        Child classes MUST implement this method.
+        This call blocks the caller script until server finishes.
 
-        :param callback: Callable to handle requests.
-        :type callback: A callable.
-        :param args: Command line arguments.
-        :type args: dict.
-
-        :rtype: `katana.sdk.server.Server`.
+        Caller script is stopped when server finishes, by exiting
+        with an exit code.
 
         """
 
-        raise NotImplementedError()
+        self.__args = kwargs
+
+        # Initialize component logging
+        level = logging.DEBUG if self.debug else logging.INFO
+        logging.basicConfig(level=level)
+
+        # Set main event loop
+        install_uvevent_loop()
+        loop = zmq.asyncio.ZMQEventLoop()
+        asyncio.set_event_loop(loop)
+
+        # Run component server
+        try:
+            server = self.server_factory(
+                self.address,
+                self.endpoint,
+                self.callback,
+                self.args,
+                debug=self.debug,
+                )
+            exit_code = loop.run_until_complete(server.listen())
+        except KeyboardInterrupt:
+            exit_code = EXIT_OK
+        except Exception as exc:
+            LOG.exception('Component server failed')
+            exit_code = EXIT_ERROR
+        finally:
+            server.stop()
+
+        # Finish event loop and exit with an exit code
+        loop.close()
+        os._exit(exit_code)
 
     def run(self, callback):
         """Run SDK component.

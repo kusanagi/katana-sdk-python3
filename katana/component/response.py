@@ -6,9 +6,7 @@ from .component import Component
 class Response(Component):
     """Endpoint response class."""
 
-    def __init__(self, path, name, version, platform_version, status,
-                 transport, **kwargs):
-
+    def __init__(self, status, transport, *args, **kwargs):
         self.__transport = transport
         self.__headers = MultiDict()
         self.set_status(status)
@@ -27,7 +25,7 @@ class Response(Component):
             for name, value in headers:
                 self.set_header(name, value)
 
-        super().__init__(path, name, version, platform_version, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def is_protocol_version(self, version):
         """Determine if the response uses the given HTTP version.

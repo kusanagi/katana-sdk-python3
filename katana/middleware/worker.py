@@ -50,15 +50,23 @@ class MiddlewareWorker(ComponentWorker):
             )
 
     def create_component_instance(self, payload):
-        command_name = payload.get('command/name')
-        # Create a new payload using data in command arguments
-        payload = Payload(payload.get('command/arguments'))
-        if command_name == 'middleware-request':
+        """Create a component instance for current command payload.
+
+        :param payload: Command payload.
+        :type payload: `CommandPayload`
+
+        :rtype: `Request` or `Response`
+
+        """
+
+        middleware_type = payload.get('command/arguments/type')
+        payload = Payload(payload.get('command/arguments/component'))
+        if middleware_type == 'request':
             return self._create_request_component_instance(payload)
-        elif command_name == 'middleware-response':
+        elif middleware_type == 'response':
             return self._create_response_component_instance(payload)
         else:
-            LOG.error('Unknown middleware command %s', command_name)
+            LOG.error('Unknown middleware command %s', middleware_type)
             # TODO: Review error w/ @JW
             return ErrorPayload.new().entity()
 

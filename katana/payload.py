@@ -23,6 +23,7 @@ FIELD_MAPPINGS = {
     'code': 'c',
     'collection': 'c',
     'command': 'c',
+    'component': 'c',
     'config': 'c',
     'count': 'c',
     'cpu': 'c',

@@ -464,3 +464,18 @@ def dict_crc(dict):
     """
 
     return md5(json.dumps(dict, sort_keys=True).encode('utf8')).hexdigest()
+
+
+def safe_cast(value, cast_func, default=None):
+    """Cast a value to another type.
+
+    When casting fails return a default value, or None by default.
+
+    :returns: The casted value or None.
+
+    """
+
+    try:
+        return cast_func(value)
+    except:
+        return default

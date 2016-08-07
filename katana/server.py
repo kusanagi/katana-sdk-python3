@@ -7,7 +7,6 @@ import zmq.asyncio
 
 from .utils import EXIT_ERROR
 from .utils import EXIT_OK
-from .utils import ipc
 
 LOG = logging.getLogger(__name__)
 
@@ -26,13 +25,13 @@ class ComponentServer(object):
     # Default number of worker task per process
     workers = 5
 
-    def __init__(self, address, endpoint, callback, cli_args, **kwargs):
+    def __init__(self, socket_name, callback, cli_args, **kwargs):
 
         self.__process_list = []
 
         self.callback = callback
         self.cli_args = cli_args
-        self.channel = ipc(address, endpoint)
+        self.channel = 'ipc://{}'.format(socket_name)
         self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()
         self.sock = None

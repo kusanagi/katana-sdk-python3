@@ -8,5 +8,7 @@ class Service(SDK):
 
     server_factory = ServiceServer
 
+    help = 'Service component action to process application logic'
+
     def run_action(self, callback):
         self.run(callback)

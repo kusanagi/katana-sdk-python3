@@ -40,7 +40,7 @@ class MiddlewareWorker(ComponentWorker):
 
     def _create_response_component_instance(self, payload):
         return Response(
-            payload.get('response/status', self.http_success_status),
+            payload.get('response/status'),
             Transport(payload.get('transport')),
             self.source_file,
             self.component_name,

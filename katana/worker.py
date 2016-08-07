@@ -58,10 +58,6 @@ class ComponentWorker(object):
         return self.cli_args['platform_version']
 
     @property
-    def http_success_status(self):
-        return self.cli_args.get('success_status', '200 OK')
-
-    @property
     def debug(self):
         return self.cli_args['debug']
 

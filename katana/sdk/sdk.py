@@ -58,24 +58,14 @@ class SDK(object):
         return self.__args
 
     @property
-    def address(self):
-        """Component address.
+    def socket_name(self):
+        """IPC socket name.
 
         :rtype: str
 
         """
 
-        return self.__args.get('address')
-
-    @property
-    def endpoint(self):
-        """Component endpoint name.
-
-        :rtype: str
-
-        """
-
-        return self.__args.get('endpoint')
+        return self.__args['socket']
 
     @property
     def debug(self):
@@ -86,6 +76,16 @@ class SDK(object):
         """
 
         return self.__args.get('debug', False)
+
+    @property
+    def help(self):
+        """Get a description to be displayed as CLI help text
+
+        :rtype: str
+
+        """
+
+        raise NotImplementedError()
 
     def set_callback(self, callback):
         """Assign a callback to the SDK.
@@ -106,9 +106,8 @@ class SDK(object):
 
         return [
             click.option(
-                '-a', '--address',
-                required=True,
-                help='Component address',
+                '-D', '--debug',
+                is_flag=True,
                 ),
             click.option(
                 '-n', '--name',
@@ -116,30 +115,19 @@ class SDK(object):
                 help='Component name',
                 ),
             click.option(
-                '-v', '--version',
-                required=True,
-                help='Component version',
-                ),
-            click.option(
                 '-p', '--platform-version',
                 required=True,
                 help='KATANA platform version',
                 ),
             click.option(
-                '-e', '--endpoint',
+                '-s', '--socket',
                 required=True,
-                help='Endpoint name',
+                help='IPC socket name',
                 ),
             click.option(
-                '-s', '--success-status',
-                required=False,
-                default='200 OK',
-                show_default=True,
-                help='Default HTTP success status',
-                ),
-            click.option(
-                '--debug',
-                is_flag=True,
+                '-v', '--version',
+                required=True,
+                help='Component version',
                 ),
             ]
 
@@ -156,6 +144,7 @@ class SDK(object):
         self.__args = kwargs
 
         # Initialize component logging
+        # TODO: Implement logging solution
         level = logging.DEBUG if self.debug else logging.INFO
         logging.basicConfig(level=level)
 
@@ -167,8 +156,7 @@ class SDK(object):
         # Run component server
         try:
             server = self.server_factory(
-                self.address,
-                self.endpoint,
+                self.socket_name,
                 self.callback,
                 self.args,
                 debug=self.debug,
@@ -206,10 +194,7 @@ class SDK(object):
         # Use callback source file as command name, and the
         # docstring from the module where callback is defined
         # as help string for the command.
-        command = click.command(
-            name=inspect.getfile(callback),
-            help=inspect.getdoc(inspect.getmodule(callback)),
-            )
+        command = click.command(name=inspect.getfile(callback), help=self.help)
         # Command must call `__start_component_server` method when
         # command line options are valid.
         start_component = command(self.__start_component_server)

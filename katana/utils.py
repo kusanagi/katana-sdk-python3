@@ -3,7 +3,6 @@ import functools
 import json
 import os
 import socket
-import sys
 
 from collections import OrderedDict
 from datetime import datetime
@@ -23,16 +22,6 @@ EMPTY = object()
 
 # Make `utcnow` global so it can be imported
 utcnow = datetime.utcnow
-
-
-def print_error(text):
-    """Print an error message to stderr.
-
-    :type text: str.
-
-    """
-
-    print(text, file=sys.stderr)
 
 
 def uuid():

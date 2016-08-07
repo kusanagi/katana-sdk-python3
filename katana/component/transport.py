@@ -1,6 +1,5 @@
 from ..payload import Payload
 
-from .property import Property
 from .file import File
 
 
@@ -51,17 +50,12 @@ class Transport(object):
 
         Returns the request ID of the Transport.
 
-        :returns: The Property object.
-        :rtype: Property.
+        :returns: The property value.
+        :rtype: str.
 
         """
 
-        path = 'meta/userland/{}'.format(name)
-        return Property(
-            name,
-            self.__transport.get(path, None),
-            self.__transport.path_exists(path),
-            )
+        return self.__transport.get('meta/userland/{}'.format(name), '')
 
     def has_download(self):
         """Determines if a download has been registered.

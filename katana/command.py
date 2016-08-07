@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 class CommandError(KatanaError):
     """Command exception class."""
 
-    message = 'Command failed'
+    message = 'Operation failed'
 
 
 class InvalidCommand(CommandError):

@@ -3,7 +3,6 @@ import logging
 from ..component.request import Request
 from ..component.response import Response
 from ..component.transport import Transport
-from ..payload import CommandResultPayload
 from ..payload import ErrorPayload
 from ..payload import Payload
 from ..payload import ResponsePayload
@@ -66,22 +65,21 @@ class MiddlewareWorker(ComponentWorker):
         elif middleware_type == 'response':
             return self._create_response_component_instance(payload)
         else:
-            LOG.error('Unknown middleware command %s', middleware_type)
-            # TODO: Review error w/ @JW
+            LOG.error('Unknown Middleware type: "%s"', middleware_type)
             return ErrorPayload.new().entity()
 
-    def component_to_payload(self, command_name, component):
+    def component_to_payload(self, payload, component):
         """Convert component to a command result payload.
 
         Valid components are `Request` and `Response` objects.
 
-        :params command_name: Name of command being executed.
-        :type command_name: str
+        :params payload: Command payload from current request.
+        :type payload: `CommandPayload`
         :params component: The component being used.
         :type component: `Component`
 
-        :returns: A command result payload.
-        :rtype: CommandResultPayload
+        :returns: A result payload.
+        :rtype: `Payload`
 
         """
 
@@ -101,9 +99,15 @@ class MiddlewareWorker(ComponentWorker):
                 headers=component.get_headers().multi_items(),
                 )
         else:
-            # TODO: Talk with @JW
-            LOG.error('Invalid middleware %s response', self.component_name)
+            LOG.error('Invalid Middleware callback result')
             payload = ErrorPayload.new()
 
-        # Add result payload as a full entity result
-        return CommandResultPayload.new(command_name, payload.entity())
+        return payload.entity()
+
+    def create_error_payload(self, exc, component, **kwargs):
+        # Create a response with the error
+        return ResponsePayload.new(
+            version=component.get_protocol_version(),
+            status='500 Internal Server Error',
+            body=str(exc),
+            ).entity()

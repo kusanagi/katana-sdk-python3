@@ -154,6 +154,7 @@ class SDK(object):
         asyncio.set_event_loop(loop)
 
         # Run component server
+        exit_code = EXIT_OK
         try:
             server = self.server_factory(
                 self.socket_name,
@@ -161,11 +162,14 @@ class SDK(object):
                 self.args,
                 debug=self.debug,
                 )
-            exit_code = loop.run_until_complete(server.listen())
+            loop.run_until_complete(server.listen())
+        except zmq.error.ZMQError as err:
+            LOG.exception('Operation failed')
         except KeyboardInterrupt:
+            LOG.info('HARAKIRI!')
             exit_code = EXIT_OK
-        except Exception as exc:
-            LOG.exception('Component server failed')
+        except:
+            LOG.exception('Component failed')
             exit_code = EXIT_ERROR
         finally:
             server.stop()

@@ -2,11 +2,7 @@ import asyncio
 import logging
 import signal
 
-import click
 import zmq.asyncio
-
-from .utils import EXIT_ERROR
-from .utils import EXIT_OK
 
 LOG = logging.getLogger(__name__)
 
@@ -136,63 +132,43 @@ class ComponentServer(object):
                 yield from frontend_sock.send_multipart(stream)
 
     def initialize_sockets(self):
-        """Initialize component server sockets.
+        """Initialize component server sockets."""
 
-        :returns: False when initialization of a socket fails.
-        :rtype: bool.
-
-        """
-
+        LOG.debug('Initializing internal sockets...')
         # Connect to katana forwarder
-        try:
-            self.sock = self.context.socket(zmq.ROUTER)
-            self.sock.connect(self.channel)
-        except zmq.error.ZMQError as err:
-            msg = 'Unable to connect socket to %s. Error: %s'
-            LOG.error(msg, self.channel, err)
-            return False
+        self.sock = self.context.socket(zmq.ROUTER)
+        LOG.debug('Connecting to incoming socket: "%s"', self.channel)
+        self.sock.connect(self.channel)
 
         # Socket to forwrard incoming requests to workers
-        try:
-            self.workers_sock = self.context.socket(zmq.DEALER)
-            self.workers_sock.bind(self.workers_channel)
-        except zmq.error.ZMQError as err:
-            msg = 'Unable to bind worker socket to %s. Error: %s'
-            LOG.error(msg, self.workers_channel, err)
-            return False
+        self.workers_sock = self.context.socket(zmq.DEALER)
+        LOG.debug(
+            'Opening subprocess communication socket: "%s"',
+            self.workers_channel,
+            )
+        self.workers_sock.bind(self.workers_channel)
 
         self.poller.register(self.sock, zmq.POLLIN)
         self.poller.register(self.workers_sock, zmq.POLLIN)
-        return True
 
     @asyncio.coroutine
     def listen(self):
         """Start listening for requests."""
 
-        exit_code = EXIT_OK
+        self.initialize_sockets()
+        # Create subprocesses to handle requests
+        self.create_child_processes()
+        self.start_child_processes()
 
-        if not self.initialize_sockets():
-            self.stop()
-            return EXIT_ERROR
-        else:
-            # Create subprocesses to handle requests
-            self.create_child_processes()
-            self.start_child_processes()
-
-            # Gracefully close on SIGTERM events to avoid
-            # leaving child processes running in background.
-            signal.signal(signal.SIGTERM, self.stop)
+        # Gracefully close on SIGTERM events to avoid
+        # leaving child processes running in background.
+        signal.signal(signal.SIGTERM, self.stop)
 
         try:
-            click.echo('Listening for requests')
+            LOG.info('Component initiated...')
             yield from self.proxy(self.sock, self.workers_sock)
-        except (KeyboardInterrupt, GeneratorExit):
-            click.echo("Stopping server ..")
-        except:
-            LOG.exception('Component server error')
-            exit_code = EXIT_ERROR
+        except GeneratorExit:
+            pass
         finally:
             # Finally cleanup
             self.stop()
-
-        return exit_code

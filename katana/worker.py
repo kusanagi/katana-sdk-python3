@@ -11,6 +11,7 @@ import zmq.asyncio
 from . import serialization
 from .errors import HTTPError
 from .payload import CommandPayload
+from .payload import CommandResultPayload
 from .payload import ErrorPayload
 
 LOG = logging.getLogger(__name__)
@@ -61,6 +62,21 @@ class ComponentWorker(object):
     def debug(self):
         return self.cli_args['debug']
 
+    def create_error_payload(self, exc, component):
+        """Create a payload for the error response.
+
+        :params exc: The exception raised in user land callback.
+        :type exc: `Exception`
+        :params component: The component being used.
+        :type component: `Component`
+
+        :returns: A result payload.
+        :rtype: `Payload`
+
+        """
+
+        raise NotImplementedError()
+
     def create_component_instance(self, payload):
         """Create a component instance for a payload.
 
@@ -98,7 +114,7 @@ class ComponentWorker(object):
         """Process a request payload.
 
         :param payload: A command payload.
-        :type payload: CommandPayload.
+        :type payload: `CommandPayload`
 
         :returns: A Payload with the component response.
         :rtype: coroutine.
@@ -106,65 +122,64 @@ class ComponentWorker(object):
         """
 
         if not payload.path_exists('command'):
-            LOG.error('Component receive a payload that is not a command')
-            # TODO: Review error w/ @JW
-            return ErrorPayload.new().entity()
+            LOG.error('Payload missing command')
+            return ErrorPayload.new('Internal communication failed').entity()
 
         # Check that command scope is gateway, otherwise is not valid
         if payload.get('meta/scope') != 'gateway':
-            # TODO: Review error w/ @JW
-            LOG.error('Invalid component scope')
-            return ErrorPayload.new().entity()
+            LOG.error('Unable to satisfy scope')
+            return ErrorPayload.new('Internal communication failed').entity()
+
+        command_name = payload.get('command/name')
 
         # Create a component instance using the command payload and
-        # call user land callback to process it.
+        # call user land callback to process it and get a response component.
         component = self.create_component_instance(payload)
         try:
             if self.executor:
-                # Execute component code in a different thread
-                result_component = yield from self.loop.run_in_executor(
+                # Call callback in a different thread
+                component = yield from self.loop.run_in_executor(
                     self.executor,
                     self.callback,
                     component,
                     )
             else:
-                # Async call component callback
-                result_component = yield from self.callback(component)
-        except:
-            LOG.exception('Component error')
-            # Return an error payload when an exception
-            # is raised inside user land callback.
-            return ErrorPayload.new().entity()
+                # Call callback asynchronusly
+                component = yield from self.callback(component)
+        except Exception as exc:
+            LOG.exception('Component failed')
+            payload = self.create_error_payload(
+                exc,
+                component,
+                payload=payload,
+                )
         else:
-            # When no component is returned use the original one
-            if not result_component:
-                result_component = component
+            payload = self.component_to_payload(payload, component)
 
         # Conver callback result to a command payload
-        return self.component_to_payload(
-            payload.get('command/name'),
-            result_component,
-            ).entity()
+        return CommandResultPayload.new(command_name, payload).entity()
 
     @asyncio.coroutine
     def handle_stream(self, stream):
         # Parse stream to get the commnd payload
         try:
             payload = CommandPayload(serialization.unpack(stream))
-        except (ValueError, TypeError):
-            LOG.exception('Component command stream parsing failed')
-            # TODO: Review error w/ @JW
-            payload = ErrorPayload.new().entity()
+        except:
+            LOG.exception('Invalid message format received')
+            return serialization.pack(
+                ErrorPayload.new('Internal communication failed').entity()
+                )
 
         # Process command and return payload response serialized
         try:
             payload = yield from self.process_payload(payload)
         except HTTPError as err:
-            payload = ErrorPayload.new(status=err.status, message=err.body)
-            payload = payload.entity()
+            payload = ErrorPayload.new(
+                status=err.status,
+                message=err.body,
+                ).entity()
         except:
-            LOG.exception('Component request payload processing failed')
-            # TODO: Review error w/ @JW
+            LOG.exception('Component failed')
             payload = ErrorPayload.new().entity()
 
         return serialization.pack(payload)

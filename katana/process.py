@@ -60,6 +60,9 @@ class ComponentProcess(Process):
     def run(self):
         """Child process main code."""
 
+        # Ignore CTRL-C (parent process terminates children using SIGTERM)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         # Create an event loop for current process
         install_uvevent_loop()
         self.__loop = zmq.asyncio.ZMQEventLoop()
@@ -78,19 +81,17 @@ class ComponentProcess(Process):
             task = self.__loop.create_task(worker())
             self.__tasks.append(task)
 
-        try:
-            self.__loop.run_forever()
-        except KeyboardInterrupt:
-            LOG.debug('Component process SIGINT')
-            self._cleanup()
+        self.__loop.run_forever()
 
     def _cleanup(self, *args):
         """Cleanup process."""
 
         # Finish all tasks
-        LOG.debug('Canceling component PID %s workers', self.pid)
+        LOG.debug('Terminating workers for PID: "%s"', self.pid)
         for task in self.__tasks:
             task.cancel()
+
+        # TODO: Wait for tasks/workers to finish
 
         # After tasks are cancelled close event loop
         self.__loop.call_soon(self.__loop.stop)

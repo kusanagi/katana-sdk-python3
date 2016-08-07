@@ -158,14 +158,12 @@ class Action(Component):
         :param entity: The entity object.
         :type entity: dict.
 
-        :rtype: bool.
-
         """
 
         if not isinstance(entity, dict):
             raise TypeError('Entity must be an dict')
 
-        return self.__transport.set('data', entity)
+        self.__transport.set('data', entity)
 
     def set_collection(self, collection):
         """Sets the collection data.
@@ -187,16 +185,6 @@ class Action(Component):
                 raise TypeError('Entity must be an dict')
 
         return self.__transport.set('data', collection)
-
-    # TODO: Talk with @JW
-    def get_transport(self):
-        """Get current transport.
-
-        :rtype: dict
-
-        """
-
-        return self.__transport
 
     def relate_one(self, primary_key, service, foreign_key):
         """Creates a "one-to-one" relation between two entities.

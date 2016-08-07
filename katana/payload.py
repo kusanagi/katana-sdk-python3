@@ -28,6 +28,7 @@ FIELD_MAPPINGS = {
     'count': 'c',
     'cpu': 'c',
     'consumes': 'cn',
+    'command_reply': 'cr',
     'data': 'd',
     'datetime': 'd',
     'default_value': 'd',
@@ -336,7 +337,7 @@ class CommandPayload(Payload):
 class CommandResultPayload(Payload):
     """Class definition for command result payloads."""
 
-    name = 'command'
+    name = 'command_reply'
 
     @classmethod
     def new(cls, name, result=None):

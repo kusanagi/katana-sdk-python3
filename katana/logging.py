@@ -6,14 +6,8 @@ from datetime import datetime
 class KatanaFormatter(logging.Formatter):
     """Default KATANA logging formatter."""
 
-    log_template = "{timestamp}Z [{level}] {message}"
-
-    def format(self, record):
-        return self.log_template.format(
-            level=record.levelname,
-            message=(record.msg % record.args),
-            timestamp=datetime.fromtimestamp(record.created).isoformat()[:-3],
-            )
+    def formatTime(self, record, *args, **kwargs):
+        return datetime.fromtimestamp(record.created).isoformat()[:-3]
 
 
 def setup_katana_logging(level=logging.INFO):
@@ -23,9 +17,16 @@ def setup_katana_logging(level=logging.INFO):
 
     """
 
+    format = "%(asctime)sZ [%(levelname)s] %(message)s"
+
+    # Setup root logger
+    if not logging.root.handlers:
+        logging.basicConfig(level=level)
+        logging.root.setLevel(level)
+        logging.root.handlers[0].setFormatter(
+            KatanaFormatter(format),
+            )
+
+    # Setup katana logger
     logger = logging.getLogger('katana')
     logger.setLevel(level)
-    if not logger.handlers:
-        handler = logging.StreamHandler()
-        handler.setFormatter(KatanaFormatter())
-        logger.addHandler(handler)

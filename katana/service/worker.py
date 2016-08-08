@@ -36,6 +36,7 @@ class ServiceWorker(ComponentWorker):
             self.component_name,
             self.component_version,
             self.platform_version,
+            variables=self.cli_args.get('var'),
             debug=self.debug,
             )
 

@@ -4,6 +4,8 @@ import signal
 
 import zmq.asyncio
 
+from .utils import safe_cast
+
 LOG = logging.getLogger(__name__)
 
 
@@ -33,10 +35,10 @@ class ComponentServer(object):
         self.sock = None
         self.workers_sock = None
         self.debug = kwargs.get('debug', False)
-        # TODO: Document and set engine variable values
-        self.variables = kwargs.get('variables') or {}
-        self.workers = self.variables.get('workers', self.workers)
-        self.processes = self.variables.get('processes', self.processes)
+
+        var = self.cli_args.get('var') or {}
+        self.workers = safe_cast(var.get('workers'), int, self.workers)
+        self.processes = safe_cast(var.get('processes'), int, self.processes)
 
     @property
     def workers_channel(self):

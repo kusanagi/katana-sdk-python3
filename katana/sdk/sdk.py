@@ -15,6 +15,30 @@ from ..utils import install_uvevent_loop
 LOG = logging.getLogger(__name__)
 
 
+def key_value_strings_callback(ctx, param, values):
+    """Option callback to validate a list of key/value arguments.
+
+    Converts 'NAME=VALUE' cli parameters to a dictionary.
+
+    :rtype: dict
+
+    """
+
+    params = {}
+    if not values:
+        return params
+
+    for value in values:
+        parts = value.split('=')
+        if len(parts) != 2:
+            raise click.BadParameter('Invalid parameter format')
+
+        param_name, param_value = parts
+        params[param_name] = param_value
+
+    return params
+
+
 class SDKError(KatanaError):
     """Base exception for SDK errors."""
 
@@ -129,6 +153,12 @@ class SDK(object):
                 '-v', '--version',
                 required=True,
                 help='Component version',
+                ),
+            click.option(
+                '-V', '--var',
+                multiple=True,
+                callback=key_value_strings_callback,
+                help='Variables',
                 ),
             ]
 

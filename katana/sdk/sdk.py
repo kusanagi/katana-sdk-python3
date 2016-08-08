@@ -164,10 +164,16 @@ class SDK(object):
                 )
             loop.run_until_complete(server.listen())
         except zmq.error.ZMQError as err:
-            LOG.exception('Operation failed')
+            if err.errno == 98:
+                msg = 'Address unavailable: "{}"'.format(self.socket_name)
+            else:
+                LOG.error(err.strerror)
+                msg = 'Operation failed'
+
+            LOG.error(msg)
+            exit_code = EXIT_ERROR
         except KeyboardInterrupt:
             LOG.info('HARAKIRI!')
-            exit_code = EXIT_OK
         except:
             LOG.exception('Component failed')
             exit_code = EXIT_ERROR

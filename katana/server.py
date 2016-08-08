@@ -105,9 +105,14 @@ class ComponentServer(object):
         if not self.sock:
             return
 
-        self.sock.close()
-        self.sock = None
-        self.workers_sock.close()
+        if self.sock:
+            self.sock.close()
+            self.sock = None
+
+        if self.workers_sock:
+            self.workers_sock.close()
+            self.workers_sock = None
+
         self.terminate_child_processes()
 
     @asyncio.coroutine
@@ -137,8 +142,8 @@ class ComponentServer(object):
         LOG.debug('Initializing internal sockets...')
         # Connect to katana forwarder
         self.sock = self.context.socket(zmq.ROUTER)
-        LOG.debug('Connecting to incoming socket: "%s"', self.channel)
-        self.sock.connect(self.channel)
+        LOG.debug('Opening incoming socket: "%s"', self.channel)
+        self.sock.bind(self.channel)
 
         # Socket to forwrard incoming requests to workers
         self.workers_sock = self.context.socket(zmq.DEALER)

@@ -5,6 +5,9 @@ from .utils import date_to_str
 from .utils import LookupDict
 from .utils import utcnow
 
+# Disable field mappings in all payloads
+DISABLE_FIELD_MAPPINGS = False
+
 # Field name mappings for all payload fields
 FIELD_MAPPINGS = {
     'action': 'a',
@@ -128,7 +131,12 @@ class Payload(LookupDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Use global payload field name mappings
-        self.set_mappings(FIELD_MAPPINGS)
+        if not DISABLE_FIELD_MAPPINGS:
+            self.set_mappings(FIELD_MAPPINGS)
+
+    def set_mappings(self, mappings):
+        if not DISABLE_FIELD_MAPPINGS:
+            super().set_mappings(mappings)
 
     def entity(self, name=None):
         """Get payload as an entity.

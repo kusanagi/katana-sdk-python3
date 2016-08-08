@@ -7,6 +7,7 @@ import click
 import zmq.asyncio
 
 from ..errors import KatanaError
+from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
 from ..utils import install_uvevent_loop
@@ -144,9 +145,7 @@ class SDK(object):
         self.__args = kwargs
 
         # Initialize component logging
-        # TODO: Implement logging solution
-        level = logging.DEBUG if self.debug else logging.INFO
-        logging.basicConfig(level=level)
+        setup_katana_logging(logging.DEBUG if self.debug else logging.INFO)
 
         # Set main event loop
         install_uvevent_loop()

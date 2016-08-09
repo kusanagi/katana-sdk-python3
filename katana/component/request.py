@@ -377,5 +377,5 @@ class Request(Component):
             self.get_name(),
             self.get_version(),
             self.get_platform_version(),
-            **kwargs,
+            **kwargs
             )

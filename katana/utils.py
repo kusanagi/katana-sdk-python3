@@ -421,7 +421,8 @@ def async_lru(size=100, timeout=None):
 
     def decorator(func):
         @functools.wraps(func)
-        async def memoizer(self, *args, **kwargs):
+        @asyncio.coroutine
+        def memoizer(self, *args, **kwargs):
             key = str((args, kwargs))
             try:
                 result = cache[key] = cache.pop(key)
@@ -429,7 +430,7 @@ def async_lru(size=100, timeout=None):
                 if len(cache) >= size:
                     cache.popitem(last=False)
 
-                result = cache[key] = await func(self, *args, **kwargs)
+                result = cache[key] = yield from func(self, *args, **kwargs)
                 # When a timeout is given clear value after some time
                 if timeout:
                     loop = asyncio.get_event_loop()

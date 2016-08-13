@@ -104,18 +104,20 @@ class Param(object):
 
         """
 
-        error_msg = 'Param "{}" value is not a {}'.format(self.name, self.type)
+        name = self.get_name()
+        type_ = self.get_type()
+        error_msg = 'Param "{}" value is not a {}'.format(name, type_)
         try:
             value = self.__value
-            if self.type == 'string':
+            if type_ == 'string':
                 value = '"{}"'.format(value)
 
             value = json.deserialize(value)
         except:
-            LOG.error('Param "%s" is not %s: %s', self.name, self.type, value)
+            LOG.error('Param "%s" is not %s: %s', name, type_, value)
             raise TypeError(error_msg)
 
-        if not isinstance(value, TYPE_CLASSES[self.type]):
+        if not isinstance(value, TYPE_CLASSES[type_]):
             raise TypeError(error_msg)
 
         return value

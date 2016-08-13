@@ -1,7 +1,6 @@
 import logging
 
-from ..component.action import Action
-from ..payload import CommandResultPayload
+from ..api.action import Action
 from ..payload import ErrorPayload
 from ..payload import Payload
 from ..payload import TransportPayload

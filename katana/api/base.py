@@ -1,8 +1,5 @@
-from .variable import Variable
-
-
-class Component(object):
-    """Base SDK endpoint component class."""
+class Api(object):
+    """Base API class for SDK components."""
 
     def __init__(self, path, name, version, platform_version, **kwargs):
         self.__path = path
@@ -75,12 +72,9 @@ class Component(object):
         :param name: Variable name.
         :type name: str.
 
-        :rtype: `Variable`.
+        :rtype: str or None.
 
         """
 
-        variable = Variable(name)
         if name in self.__variables:
-            variable.value = self.__variables[name]
-
-        return variable
+            return self.__variables[name]

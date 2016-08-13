@@ -1,8 +1,8 @@
 import logging
 
-from ..component.request import Request
-from ..component.response import Response
-from ..component.transport import Transport
+from ..api.request import Request
+from ..api.response import Response
+from ..api.transport import Transport
 from ..payload import ErrorPayload
 from ..payload import Payload
 from ..payload import ResponsePayload

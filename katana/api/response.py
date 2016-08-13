@@ -1,10 +1,10 @@
 from ..utils import MultiDict
 
-from .component import Component
+from .base import Api
 
 
-class Response(Component):
-    """Endpoint response class."""
+class Response(Api):
+    """Response API class for Middleware component."""
 
     def __init__(self, status, transport, *args, **kwargs):
         self.__transport = transport

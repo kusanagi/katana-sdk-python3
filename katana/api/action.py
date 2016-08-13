@@ -1,6 +1,6 @@
 from ..payload import ErrorPayload
 
-from .component import Component
+from .base import Api
 from .file import File
 from .param import Param
 
@@ -21,8 +21,8 @@ def _new_payload_from_params(payload, params):
     return payload
 
 
-class Action(Component):
-    """Endpoint action class."""
+class Action(Api):
+    """Action API class for Service component."""
 
     def __init__(self, action, params, transport, *args, **kwargs):
         self.__action = action

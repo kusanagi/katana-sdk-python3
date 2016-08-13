@@ -3,13 +3,13 @@ from urllib.parse import urlparse
 from ..payload import Payload
 from ..utils import MultiDict
 
-from .component import Component
+from .base import Api
 from .response import Response
 from .transport import Transport
 
 
-class Request(Component):
-    """Endpoint request class."""
+class Request(Api):
+    """Request API class for Middleware component."""
 
     def __init__(self, method, url, *args, **kwargs):
         self.__method = method.upper()

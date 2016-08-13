@@ -6,7 +6,6 @@ import os
 import click
 import zmq.asyncio
 
-from ..errors import KatanaError
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
@@ -39,19 +38,11 @@ def key_value_strings_callback(ctx, param, values):
     return params
 
 
-class SDKError(KatanaError):
-    """Base exception for SDK errors."""
-
-
-class SDK(object):
+class Component(object):
     """Base KATANA SDK component class."""
 
     def __init__(self):
-        """Constructor.
-
-        :rtype: `SDK`.
-
-        """
+        """Constructor."""
 
         self.__args = {}
         self.callback = None
@@ -217,7 +208,7 @@ class SDK(object):
         """Run SDK component.
 
         Callback must be a callable that receives a
-        `katana.sdk.component.Component` argument.
+        `katana.api.base.Api` argument.
 
         Calling this method checks command line arguments before
         component server starts.

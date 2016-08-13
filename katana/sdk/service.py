@@ -1,10 +1,10 @@
-from .sdk import SDK
+from ..service.server import ServiceServer
 
-from katana.service.server import ServiceServer
+from .component import Component
 
 
-class Service(SDK):
-    """KATANA SDK service."""
+class Service(Component):
+    """KATANA SDK Service component."""
 
     server_factory = ServiceServer
 

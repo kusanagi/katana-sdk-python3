@@ -1,10 +1,10 @@
-from .sdk import SDK
+from ..middleware.server import MiddlewareServer
 
-from katana.middleware.server import MiddlewareServer
+from .component import Component
 
 
-class Middleware(SDK):
-    """KATANA SDK middleware."""
+class Middleware(Component):
+    """KATANA SDK Middleware component."""
 
     server_factory = MiddlewareServer
 

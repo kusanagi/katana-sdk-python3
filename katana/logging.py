@@ -17,7 +17,7 @@ def setup_katana_logging(level=logging.INFO):
 
     """
 
-    format = "%(asctime)sZ [%(levelname)s] %(message)s"
+    format = "%(asctime)sZ [%(levelname)s] [SDK] %(message)s"
 
     # Setup root logger
     if not logging.root.handlers:
@@ -30,3 +30,8 @@ def setup_katana_logging(level=logging.INFO):
     # Setup katana logger
     logger = logging.getLogger('katana')
     logger.setLevel(level)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(KatanaFormatter(format))
+        logger.addHandler(handler)
+        logger.propagate = False

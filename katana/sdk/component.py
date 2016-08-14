@@ -6,6 +6,7 @@ import os
 import click
 import zmq.asyncio
 
+from ..errors import KatanaError
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
@@ -44,7 +45,7 @@ class Component(object):
     def __init__(self):
         """Constructor."""
 
-        self.__args = {}
+        self._args = {}
         self.callback = None
 
     @property
@@ -71,17 +72,27 @@ class Component(object):
 
         """
 
-        return self.__args
+        return self._args
 
     @property
     def socket_name(self):
         """IPC socket name.
 
+        :rtype: str or None
+
+        """
+
+        return self._args.get('socket') or self.get_default_socket_name()
+
+    @property
+    def name(self):
+        """Component name.
+
         :rtype: str
 
         """
 
-        return self.__args['socket']
+        return self._args['name']
 
     @property
     def debug(self):
@@ -91,11 +102,20 @@ class Component(object):
 
         """
 
-        return self.__args.get('debug', False)
+        return self._args.get('debug', False)
 
     @property
     def help(self):
         """Get a description to be displayed as CLI help text
+
+        :rtype: str
+
+        """
+
+        raise NotImplementedError()
+
+    def get_default_socket_name(self):
+        """Get a default socket name to use when socket name is missing.
 
         :rtype: str
 
@@ -137,7 +157,6 @@ class Component(object):
                 ),
             click.option(
                 '-s', '--socket',
-                required=True,
                 help='IPC socket name',
                 ),
             click.option(
@@ -163,7 +182,7 @@ class Component(object):
 
         """
 
-        self.__args = kwargs
+        self._args = kwargs
 
         # Initialize component logging
         setup_katana_logging(logging.DEBUG if self.debug else logging.INFO)

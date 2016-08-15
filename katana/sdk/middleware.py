@@ -16,7 +16,7 @@ class Middleware(Component):
         self.__middleware_type = None
 
     def get_default_socket_name(self):
-        name = ipc('middleware', self.__middleware_type, self.name)
+        name = ipc('middleware', self.name, self.__middleware_type)
         return name.replace('ipc://', '')
 
     def run_request(self, callback):

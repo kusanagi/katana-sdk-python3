@@ -27,7 +27,7 @@ class Service(Component):
         return args
 
     def get_default_socket_name(self):
-        name = ipc('service-action', self.name, self.action_name)
+        name = ipc('service', self.name, self.action_name)
         return name.replace('ipc://', '')
 
     def run_action(self, callback):

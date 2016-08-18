@@ -1,13 +1,15 @@
 from ..payload import ErrorPayload
+from ..payload import Payload
 
 from .base import Api
 from .file import File
 from .param import Param
 
 
-def _new_payload_from_params(payload, params):
+def _new_payload_from_params(params):
+    payload = Payload()
     if not params:
-        return
+        return payload
 
     if not isinstance(params, list):
         raise TypeError('Parameters must be a list')

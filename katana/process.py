@@ -37,8 +37,10 @@ class ComponentProcess(Process):
         """
 
         super().__init__(*args, **kwargs)
-        self.__loop = None
-        self.__tasks = []
+        self.__stop = False
+        self.tasks = []
+        self.sleep_period = 0.1
+        self.loop = None
         self.channel = channel
         self.workers = workers
         self.callback = callback
@@ -57,6 +59,131 @@ class ComponentProcess(Process):
 
         raise NotImplementedError()
 
+    def create_worker_task(self):
+        """Create a new worker task to process incoming requests.
+
+        After worker is created it is added to the event loop as a task.
+
+        :rtype: `Task`
+
+        """
+
+        worker = self.worker_factory(
+            self.callback,
+            self.channel,
+            self.cli_args,
+            )
+        task = self.loop.create_task(worker())
+        self.tasks.append(task)
+        return task
+
+    def restart_worker_task(self, task):
+        """Remove a worker task and start a new one.
+
+        Task is restarted only when is done.
+
+        :param task: Task to be restarted.
+        :type task: `Task`
+
+        """
+
+        # Task must be done before it is restarted
+        if not task.done():
+            LOG.error(
+                'Failed to restart unfinished task in SDK PID: "%s"',
+                self.pid,
+                )
+            return
+
+        LOG.debug('Restarting task in SDK PID: "%s"', self.pid)
+        self.tasks.remove(task)
+        self.create_worker_task()
+
+    def handle_task_exception(self, task, exc):
+        """Handler for tasks that finished because of an error.
+
+        By default exceptions are raised.
+
+        :param task: Task to handle.
+        :rtype task: `Task`
+        :param exc: Exception raised inside the task.
+        :rtype exc: `Exception`
+
+        """
+
+        try:
+            raise exc
+        except:
+            LOG.exception('Task error in SDK PID: "%s"', self.pid)
+
+        self.restart_worker_task(task)
+
+    def handle_task_done(self, task):
+        """Handler for tasks that are finished.
+
+        These tasks didn't raise an exception, they were finished
+        naturally of because `CancelledError` was raised.
+
+        :param task: Task to handle.
+        :rtype task: `Task`
+
+        """
+
+    def handle_main_task_done(self, task):
+        """Callback called when main task is finished.
+
+        :param task: Main task.
+        :type task: `Task`
+
+        """
+
+        self.loop.stop()
+
+    @asyncio.coroutine
+    def run_tasks(self):
+        """Run manager until halt is called.
+
+        Runs an infinite loop that checks status for all tasks
+        and then sleeps for a short period.
+
+        """
+
+        while True:
+            yield from asyncio.sleep(self.sleep_period)
+
+            # Check tasks status
+            for task in self.tasks:
+                # Skip when task is not done
+                if not task.done():
+                    continue
+
+                # When task is finished check for errors
+                exc = task.exception()
+                if exc:
+                    self.handle_task_exception(task, exc)
+                else:
+                    self.handle_task_done(task)
+
+            if self.__stop:
+                yield from self.stop_tasks()
+                break
+
+    @asyncio.coroutine
+    def stop_tasks(self, timeout=1.5):
+        """Stop all tasks.
+
+        :param timeout: Seconds to wait for all tasks to be finished.
+        :param timeout: float
+
+        """
+
+        for task in self.tasks:
+            if not task.done():
+                task.cancel()
+
+        # Wait for tasks to finish
+        yield from asyncio.wait(self.tasks, timeout=timeout)
+
     def run(self):
         """Child process main code."""
 
@@ -65,33 +192,23 @@ class ComponentProcess(Process):
 
         # Create an event loop for current process
         install_uvevent_loop()
-        self.__loop = zmq.asyncio.ZMQEventLoop()
-        asyncio.set_event_loop(self.__loop)
-
-        # Gracefully terminate process on SIGTERM events.
-        self.__loop.add_signal_handler(signal.SIGTERM, self._cleanup)
+        self.loop = zmq.asyncio.ZMQEventLoop()
+        asyncio.set_event_loop(self.loop)
 
         # Create a task for each worker
         for number in range(self.workers):
-            worker = self.worker_factory(
-                self.callback,
-                self.channel,
-                self.cli_args,
-                )
-            task = self.__loop.create_task(worker())
-            self.__tasks.append(task)
+            self.create_worker_task()
 
-        self.__loop.run_forever()
+        # Gracefully terminate process on SIGTERM events.
+        self.loop.add_signal_handler(signal.SIGTERM, self.stop)
 
-    def _cleanup(self, *args):
-        """Cleanup process."""
+        # Create a main task and run it until SIGTERM is received
+        task = self.loop.create_task(self.run_tasks())
+        task.add_done_callback(self.handle_main_task_done)
+        self.loop.run_forever()
 
-        # Finish all tasks
-        LOG.debug('Terminating workers for PID: "%s"', self.pid)
-        for task in self.__tasks:
-            task.cancel()
+    def stop(self, *args, **kwargs):
+        """Stop main loop and all running tasks."""
 
-        # TODO: Wait for tasks/workers to finish
-
-        # After tasks are cancelled close event loop
-        self.__loop.call_soon(self.__loop.stop)
+        LOG.debug('Terminating all tasks in SDK PID: "%s"', self.pid)
+        self.__stop = True

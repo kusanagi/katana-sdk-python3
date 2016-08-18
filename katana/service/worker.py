@@ -8,9 +8,20 @@ from ..worker import ComponentWorker
 
 LOG = logging.getLogger(__name__)
 
+# Constants for response meta frame
+SC = SERVICE_CALL = b'\x01'
+
 
 class ServiceWorker(ComponentWorker):
     """Service worker task class."""
+
+    def get_response_meta(self, payload):
+        meta = super().get_response_meta(payload)
+        # Add meta for service call when an inter service call is made
+        if payload.path_exists('command_reply/result/transport/calls'):
+            meta += SERVICE_CALL
+
+        return meta
 
     def create_component_instance(self, payload):
         """Create a component instance for current command payload.

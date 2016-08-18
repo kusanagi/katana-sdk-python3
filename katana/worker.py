@@ -104,7 +104,7 @@ class ComponentWorker(object):
         :type component: `Component`
 
         :returns: A command result payload.
-        :rtype: CommandResultPayload
+        :rtype: `CommandResultPayload`
 
         """
 
@@ -160,8 +160,22 @@ class ComponentWorker(object):
         # Conver callback result to a command payload
         return CommandResultPayload.new(command_name, payload).entity()
 
+    def get_response_meta(self, payload):
+        """Get metadata for multipart response.
+
+        By default no metadata is added to response.
+
+        :param payload: Response payload.
+        :type payload: `Payload`
+
+        :rtype: bytes
+
+        """
+
+        return b''
+
     @asyncio.coroutine
-    def handle_stream(self, stream):
+    def process_stream(self, stream):
         # Parse stream to get the commnd payload
         try:
             payload = CommandPayload(serialization.unpack(stream))
@@ -186,7 +200,7 @@ class ComponentWorker(object):
             LOG.exception('Component failed')
             payload = ErrorPayload.new().entity()
 
-        return serialization.pack(payload)
+        return [self.get_response_meta(payload), serialization.pack(payload)]
 
     @asyncio.coroutine
     def _start_handling_requests(self):
@@ -202,9 +216,11 @@ class ComponentWorker(object):
             if dict(events).get(self.__socket) == zmq.POLLIN:
                 # Get stream data from socket
                 stream = yield from self.__socket.recv()
-                # Call request handler and send response back
-                response_stream = yield from self.handle_stream(stream)
-                yield from self.__socket.send(response_stream)
+                # Call request handler and send response back.
+                # Response stream is a multipart response that contains
+                # extra metadata at the beginning of the stream.
+                response_stream = yield from self.process_stream(stream)
+                yield from self.__socket.send_multipart(response_stream)
 
     @asyncio.coroutine
     def __call__(self):
@@ -228,7 +244,12 @@ class ComponentWorker(object):
     def stop(self):
         """Terminates worker task."""
 
-        self.poller.unregister(self.__socket)
-        self.__socket.close()
+        if self.__socket:
+            self.poller.unregister(self.__socket)
+            if not self.__socket.closed:
+                self.__socket.close()
+
+            self.__socket = None
+
         if self.executor:
             self.executor.shutdown()

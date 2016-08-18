@@ -2,14 +2,14 @@
 from setuptools import find_packages
 from setuptools import setup
 
-from katana.sdk import __version__
+from katana import __version__
 
 
 setup(
-    name='katana.sdk',
+    name='katana-sdk-python3',
     version=__version__,
     url='http://kusanagi.io/',
-    license='MIT',  
+    license='MIT',
     author='Jerónimo Albi',
     author_email='jeronimo.albi@kusanagi.io',
     packages=find_packages(exclude=['tests']),
@@ -17,12 +17,8 @@ setup(
     zip_safe=True,
     install_requires=[
         'click==6.4',
-        'lxml==3.6.0',
         'pyzmq==15.2.0',
         'msgpack-python==0.4.7',
-        'dogpile.cache==0.5.7',
-        'redis==2.10.5',
-        'python-binary-memcached==0.24.6',
     ],
     classifiers=[
         'Intended Audience :: Developers',

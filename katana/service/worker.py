@@ -12,6 +12,16 @@ LOG = logging.getLogger(__name__)
 class ServiceWorker(ComponentWorker):
     """Service worker task class."""
 
+    @property
+    def action(self):
+        """Name of service action this service handles.
+
+        :rtype: str
+
+        """
+
+        return self.cli_args['action']
+
     def create_component_instance(self, payload):
         """Create a component instance for current command payload.
 
@@ -28,7 +38,7 @@ class ServiceWorker(ComponentWorker):
             )
 
         return Action(
-            payload.get('command/name'),
+            self.action,
             Payload(payload.get('command/arguments/params')),
             self.__transport,
             self.source_file,

@@ -163,7 +163,14 @@ class Action(Api):
         if not isinstance(entity, dict):
             raise TypeError('Entity must be an dict')
 
-        self.__transport.set('data', entity)
+        return self.__transport.set(
+            'data/{}/{}/{}'.format(
+                self.get_name(),
+                self.get_version(),
+                self.get_action_name(),
+                ),
+            entity,
+            )
 
     def set_collection(self, collection):
         """Sets the collection data.
@@ -184,7 +191,14 @@ class Action(Api):
             if not isinstance(entity, dict):
                 raise TypeError('Entity must be an dict')
 
-        return self.__transport.set('data', collection)
+        return self.__transport.set(
+            'data/{}/{}/{}'.format(
+                self.get_name(),
+                self.get_version(),
+                self.get_action_name(),
+                ),
+            collection,
+            )
 
     def relate_one(self, primary_key, service, foreign_key):
         """Creates a "one-to-one" relation between two entities.

@@ -45,17 +45,19 @@ class Transport(object):
 
         return self.__transport.get('meta/origin', '')
 
-    def get_property(self, name):
-        """Gets the request ID.
+    def get_property(self, name, default=''):
+        """Get a userland property.
 
-        Returns the request ID of the Transport.
+        :param name: Name of the property.
+        :type name: str
+        :param default: A default value to return when property is missing.
+        :type default: object
 
-        :returns: The property value.
-        :rtype: str.
+        :rtype: str
 
         """
 
-        return self.__transport.get('meta/userland/{}'.format(name), '')
+        return self.__transport.get('meta/userland/{}'.format(name), default)
 
     def has_download(self):
         """Determines if a download has been registered.
@@ -86,40 +88,44 @@ class Transport(object):
             self.__transport.get('body/path'),
             )
 
-    def get_data(self, service=None):
-        """Gets the data from the Transport.
+    def get_data(self, service=None, version=None, action=None):
+        """Get data from Transport.
 
-        Return all of the data as an object, as it is stored in the Transport.
+        By default get all data from Transport.
 
-        If the service is specified, it only returns the data stored by that
-        service.
+        :param service: Service name.
+        :type service: str
+        :param version: Service version.
+        :type version: str
+        :param action: Service action name.
+        :type action: str
 
-        :param service: The optional service.
-        :type service: str.
-
-        :returns: The data from the Transport.
-        :rtype: object.
+        :returns: The Transport data.
+        :rtype: object
 
         """
 
         data = self.__transport.get('data')
-        if service:
-            return data.get(service, {})
+        for key in (service, version, action):
+            if not key:
+                break
+
+            data = data.get(key, {})
 
         return data
 
     def get_relations(self, service=None):
-        """Gets the relations from the Transport.
+        """Get relations from Transport.
 
         Return all of the relations as an object, as they are stored in the
         Transport. If the service is specified, it only returns the relations
         stored by that service.
 
-        :param service: The optional service.
-        :type service: str.
+        :param service: Service name
+        :type service: str
 
         :returns: The relations from the Transport.
-        :rtype: object.
+        :rtype: object
 
         """
 

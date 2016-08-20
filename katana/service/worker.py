@@ -15,6 +15,16 @@ SC = SERVICE_CALL = b'\x01'
 class ServiceWorker(ComponentWorker):
     """Service worker task class."""
 
+    @property
+    def action(self):
+        """Name of service action this service handles.
+
+        :rtype: str
+
+        """
+
+        return self.cli_args['action']
+
     def get_response_meta(self, payload):
         meta = super().get_response_meta(payload)
         # Add meta for service call when an inter service call is made
@@ -39,7 +49,7 @@ class ServiceWorker(ComponentWorker):
             )
 
         return Action(
-            payload.get('command/name'),
+            self.action,
             Payload(payload.get('command/arguments/params')),
             self.__transport,
             self.source_file,

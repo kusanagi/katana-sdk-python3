@@ -28,7 +28,7 @@ class ServiceWorker(ComponentWorker):
     def get_response_meta(self, payload):
         meta = super().get_response_meta(payload)
         # Add meta for service call when an inter service call is made
-        if payload.path_exists('command_reply/result/transport/calls'):
+        if payload.get('command_reply/result/transport/calls', None):
             meta += SERVICE_CALL
 
         return meta

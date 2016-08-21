@@ -18,7 +18,12 @@ def _new_payload_from_params(params):
         if not isinstance(param, Param):
             raise TypeError('Parameter must be an instance of Param class')
         else:
-            payload[param.location][param.name] = param.value
+            location = param.get_location()
+            if not payload.path_exists(location):
+                payload.set(location, {})
+
+            values = payload.get(location)
+            values[param.get_name()] = param.get_value()
 
     return payload
 

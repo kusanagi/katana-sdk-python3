@@ -126,11 +126,6 @@ class ComponentWorker(object):
             LOG.error('Payload missing command')
             return ErrorPayload.new('Internal communication failed').entity()
 
-        # Check that command scope is gateway, otherwise is not valid
-        if payload.get('meta/scope') != 'gateway':
-            LOG.error('Unable to satisfy scope')
-            return ErrorPayload.new('Internal communication failed').entity()
-
         command_name = payload.get('command/name')
 
         # Create a component instance using the command payload and

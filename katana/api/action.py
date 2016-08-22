@@ -170,7 +170,7 @@ class Action(Api):
         if not isinstance(entity, dict):
             raise TypeError('Entity must be an dict')
 
-        return self.__transport.set(
+        return self.__transport.push(
             'data/{}/{}/{}'.format(
                 self.get_name(),
                 self.get_version(),
@@ -198,7 +198,7 @@ class Action(Api):
             if not isinstance(entity, dict):
                 raise TypeError('Entity must be an dict')
 
-        return self.__transport.set(
+        return self.__transport.push(
             'data/{}/{}/{}'.format(
                 self.get_name(),
                 self.get_version(),

@@ -1,7 +1,9 @@
 from time import time
 
+from . import utils
 from .errors import PayloadExpired
 from .utils import date_to_str
+from .utils import EMPTY
 from .utils import LookupDict
 from .utils import utcnow
 
@@ -116,6 +118,30 @@ FIELD_MAPPINGS = {
     'maximum_items': 'xi',
     'maximum_length': 'xl',
 }
+
+
+def get_path(payload, path, default=EMPTY, mappings=None):
+    """Get payload dictionary value by path.
+
+    Global payload field mappings are used when no mappings are given.
+
+    See: `katana.utils.get_path`.
+
+    :param payload: A dictionaty like object.
+    :type payload: dict
+    :param path: Path to a value.
+    :type path: str
+    :param default: Default value to return when value is not found.
+    :type default: object
+
+    :raises: `KeyError`
+
+    :returns: The value for the given path.
+    :rtype: object
+
+    """
+
+    return utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
 
 
 class Payload(LookupDict):

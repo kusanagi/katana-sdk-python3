@@ -143,6 +143,49 @@ def date_to_str(datetime):
         return datetime.strftime(DATE_FORMAT)
 
 
+def get_path(item, path, default=EMPTY, mappings=None):
+    """Get dictionary value by path.
+
+    Path can countain the name for a single or for many keys. In case
+    a of many keys, path must separate each key name with a '/'.
+
+    Example path: 'key_name/another/last'.
+
+    KeyError is raised when no default value is given.
+
+    By default global payload field mappings are used to traverse keys.
+
+    :param item: A dictionaty like object.
+    :type item: dict
+    :param path: Path to a value.
+    :type path: str
+    :param default: Default value to return when value is not found.
+    :type default: object
+
+    :raises: `KeyError`
+
+    :returns: The value for the given path.
+    :rtype: object
+
+    """
+
+    try:
+        for part in path.split('/'):
+            name = part
+            # When path name is not available get its mapping
+            if mappings and (name not in item):
+                name = mappings.get(part, part)
+
+            item = item[name]
+    except KeyError:
+        if default != EMPTY:
+            return default
+        else:
+            raise
+
+    return item
+
+
 # TODO: Use Cython for lookup dict ? It is used all the time.
 class LookupDict(dict):
     """Dictionary class that allows field value setting and lookup by path.

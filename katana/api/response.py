@@ -9,7 +9,7 @@ class Response(Api):
     def __init__(self, status, transport, *args, **kwargs):
         self.__transport = transport
         self.__headers = MultiDict()
-        self.set_status(status)
+        self.__status = status
         self.set_protocol_version(
             kwargs.pop('protocol_version', None) or '1.1'
             )
@@ -82,17 +82,20 @@ class Response(Api):
 
         return self.__status
 
-    def set_status(self, status):
+    def set_status(self, code, text):
         """Set the HTTP status to the given status.
 
-        Sets the status of the response to the specified status code.
+        Sets the status of the response to the specified
+        status code and text.
 
-        :param status: The HTTP status code.
-        :type status: str.
+        :param code: The HTTP status code.
+        :type code: int
+        :param text: The HTTP status text.
+        :type text: str
 
         """
 
-        self.__status = status
+        self.__status = '{} {}'.format(code, text)
 
     # TODO: We need more methods. Discuss w/ @JW
     def get_status_code(self):

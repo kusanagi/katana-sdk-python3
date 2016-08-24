@@ -6,7 +6,6 @@ import os
 import click
 import zmq.asyncio
 
-from ..errors import KatanaError
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
@@ -29,7 +28,7 @@ def key_value_strings_callback(ctx, param, values):
         return params
 
     for value in values:
-        parts = value.split('=')
+        parts = value.split('=', 1)
         if len(parts) != 2:
             raise click.BadParameter('Invalid parameter format')
 

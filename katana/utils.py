@@ -347,6 +347,9 @@ class LookupDict(dict):
 
         :raises: TypeError.
 
+        :returns: Current instance.
+        :rtype: `LookupDict`
+
         """
 
         item = self
@@ -368,6 +371,8 @@ class LookupDict(dict):
             else:
                 raise TypeError(part)
 
+        return self
+
     def set_many(self, values):
         """Set set multiple values by key path.
 
@@ -376,10 +381,15 @@ class LookupDict(dict):
 
         :raises: TypeError.
 
+        :returns: Current instance.
+        :rtype: `LookupDict`
+
         """
 
         for path, value in values.items():
             self.set(path, value)
+
+        return self
 
     def push(self, path, value):
         """Push value by key path.
@@ -406,6 +416,9 @@ class LookupDict(dict):
         :type value: object
 
         :raises: TypeError
+
+        :returns: Current instance.
+        :rtype: `LookupDict`
 
         """
 
@@ -435,6 +448,8 @@ class LookupDict(dict):
             else:
                 raise TypeError(part)
 
+        return self
+
     def merge(self, path, value):
         """Merge a dictionary value into a location.
 
@@ -448,6 +463,9 @@ class LookupDict(dict):
 
         :raises: `TypeError`
 
+        :returns: Current instance.
+        :rtype: `LookupDict`
+
         """
 
         if not isinstance(value, dict):
@@ -458,6 +476,7 @@ class LookupDict(dict):
             raise TypeError('Value in path "{}" is not dict'.format(path))
 
         merge(value, item, mappings=self.__mappings, lists=True)
+        return self
 
 
 class MultiDict(dict):

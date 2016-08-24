@@ -1,24 +1,43 @@
 from ..payload import ErrorPayload
+from ..payload import Payload
 
 from .base import Api
 from .file import File
 from .param import Param
 
 
-def _new_payload_from_params(payload, params):
+def parse_params(params):
+    """Parse a list of parameters to be used in payloads.
+
+    Each parameter is converted to a `Payload`.
+
+    :param params: List of `Param` instances.
+    :type params: list
+
+    :returns: A list of `Payload`.
+    :rtype: list
+
+    """
+
     if not params:
         return
 
     if not isinstance(params, list):
         raise TypeError('Parameters must be a list')
 
+    result = []
     for param in params:
         if not isinstance(param, Param):
             raise TypeError('Parameter must be an instance of Param class')
         else:
-            payload[param.location][param.name] = param.value
+            result.append(Payload().set_many({
+                'location': param.get_location(),
+                'name': param.get_name(),
+                'value': param.get_value(),
+                'type': param.get_type(),
+                }))
 
-    return payload
+    return result
 
 
 class Action(Api):
@@ -277,12 +296,11 @@ class Action(Api):
         """
 
         return self.__transport.push(
-            'transactions/{}/{}/{}'.format(
-                self.get_name(),
-                self.get_version(),
-                action
-                ),
-            _new_payload_from_params(params),
+            'transactions/{}/{}'.format(self.get_name(), self.get_version()),
+            Payload.set_many({
+                'action': action,
+                'params': parse_params(params),
+                })
             )
 
     def call(self, service, version, action, params=None, files=None):
@@ -304,14 +322,13 @@ class Action(Api):
         """
 
         return self.__transport.push(
-            'calls/{}/{}/{}/{}/{}'.format(
-                self.get_name(),
-                self.get_version(),
-                service,
-                version,
-                action
-                ),
-            _new_payload_from_params(params),
+            'calls/{}/{}'.format(self.get_name(), self.get_version()),
+            Payload().set_many({
+                'name': service,
+                'version': version,
+                'action': action,
+                'params': parse_params(params),
+                })
             )
 
     def error(self, message, code=None, status=None):

@@ -10,6 +10,7 @@ from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
 from ..utils import install_uvevent_loop
+from ..utils import tcp
 
 LOG = logging.getLogger(__name__)
 
@@ -82,6 +83,16 @@ class Component(object):
         """
 
         return self._args.get('socket') or self.get_default_socket_name()
+
+    @property
+    def tcp_port(self):
+        """TCP port number.
+
+        :rtype: str or None
+
+        """
+
+        return self._args.get('tcp')
 
     @property
     def name(self):
@@ -159,6 +170,11 @@ class Component(object):
                 help='IPC socket name',
                 ),
             click.option(
+                '-t', '--tcp',
+                help='TCP port',
+                type=click.INT,
+                ),
+            click.option(
                 '-v', '--version',
                 required=True,
                 help='Component version',
@@ -191,11 +207,18 @@ class Component(object):
         loop = zmq.asyncio.ZMQEventLoop()
         asyncio.set_event_loop(loop)
 
+        # Create channel for TCP or IPC conections
+        if self.tcp_port:
+            channel = tcp('127.0.0.1:{}'.format(self.tcp_port))
+        else:
+            # Abstract domain unix socket
+            channel = 'ipc://{}'.format(self.socket_name)
+
         # Run component server
         exit_code = EXIT_OK
         try:
             server = self.server_factory(
-                self.socket_name,
+                channel,
                 self.callback,
                 self.args,
                 debug=self.debug,

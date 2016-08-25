@@ -4,6 +4,7 @@ import signal
 
 import zmq.asyncio
 
+from .utils import ipc
 from .utils import safe_cast
 
 LOG = logging.getLogger(__name__)
@@ -23,13 +24,13 @@ class ComponentServer(object):
     # Default number of worker task per process
     workers = 5
 
-    def __init__(self, socket_name, callback, cli_args, **kwargs):
+    def __init__(self, channel, callback, cli_args, **kwargs):
 
         self.__process_list = []
 
         self.callback = callback
         self.cli_args = cli_args
-        self.channel = 'ipc://{}'.format(socket_name)
+        self.channel = channel
         self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()
         self.sock = None
@@ -42,13 +43,14 @@ class ComponentServer(object):
 
     @property
     def workers_channel(self):
-        """Component workers connection channel.
+        """Component workers IPC connection channel.
 
         :rtype: str.
 
         """
 
-        return '{}-{}'.format(self.channel, 'workers')
+        # Strip protocol from channel, in case channel is TCP
+        return ipc(self.channel[6:], 'workers')
 
     @property
     def process_factory(self):

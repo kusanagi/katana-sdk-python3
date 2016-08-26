@@ -36,7 +36,10 @@ class Param(object):
         self.__value = kwargs.get('value') or ''
         self.__location = location
         self.__name = name
-        self.__type = kwargs.get('datatype') or TYPE_STRING
+        self.__type = kwargs.get('datatype')
+        if not self.__type:
+            self.__type = self.resolve_type(self.__value)
+
         self.__exists = kwargs.get('exists', False)
 
     @classmethod

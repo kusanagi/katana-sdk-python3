@@ -143,6 +143,99 @@ def date_to_str(datetime):
         return datetime.strftime(DATE_FORMAT)
 
 
+def get_path(item, path, default=EMPTY, mappings=None):
+    """Get dictionary value by path.
+
+    Path can countain the name for a single or for many keys. In case
+    a of many keys, path must separate each key name with a '/'.
+
+    Example path: 'key_name/another/last'.
+
+    KeyError is raised when no default value is given.
+
+    By default global payload field mappings are used to traverse keys.
+
+    :param item: A dictionaty like object.
+    :type item: dict
+    :param path: Path to a value.
+    :type path: str
+    :param default: Default value to return when value is not found.
+    :type default: object
+
+    :raises: `KeyError`
+
+    :returns: The value for the given path.
+    :rtype: object
+
+    """
+
+    try:
+        for part in path.split('/'):
+            name = part
+            # When path name is not available get its mapping
+            if mappings and (name not in item):
+                name = mappings.get(part, part)
+
+            item = item[name]
+    except KeyError:
+        if default != EMPTY:
+            return default
+        else:
+            raise
+
+    return item
+
+
+def merge(from_value, to_value, mappings=None, lists=False):
+    """Merge two dictionaries.
+
+    When mappings are given fields names are checked also using their
+    mapped names, and merged values are saved using mapped field names.
+
+    :param from_value: Dictionary containing values to merge.
+    :type from_value: dict
+    :param to_value: Dictionary to merge values into.
+    :type to_value: dict
+    :param mappings: Field name mappings.
+    :type mappings: dict
+    :param lists: Optional flag for merging list values.
+    :type lists: bool
+
+    :returns: The dictionary where values were merged.
+    :rtype: dict
+
+    """
+
+    for key, value in from_value.items():
+        # Check if key exists in destination dict and get mapped
+        # key name when full name does not exist in destination.
+        if (key not in to_value) and mappings:
+            # When mapped name exists use it
+            name = mappings.get(key, key)
+        else:
+            # use dictionary key as name
+            name = key
+
+        # When field is not available in destination
+        # dict add the value from the original dict.
+        if name not in to_value:
+            # Use mapped name, when available, to save value
+            if name == key and mappings:
+                name = mappings.get(name, name)
+
+            # Add new value to destination and continue with next value
+            to_value[name] = value
+        elif isinstance(value, dict):
+            # Field exists in destination and is dict, then merge dict values
+            merge(value, to_value[name], mappings=mappings, lists=lists)
+        elif lists:
+            if isinstance(value, list) and isinstance(to_value[name], list):
+                # Field exists in destination and is a list, then extend it
+                to_value[name].extend(value)
+
+    return to_value
+
+
 # TODO: Use Cython for lookup dict ? It is used all the time.
 class LookupDict(dict):
     """Dictionary class that allows field value setting and lookup by path.
@@ -233,6 +326,26 @@ class LookupDict(dict):
 
         return item
 
+    def get_many(self, *paths):
+        """Get multiple values by key path.
+
+        KeyError is raised when no default value is given.
+        Default values can be assigned using `set_defaults`.
+
+        :raises: KeyError.
+
+        :returns: The values for the given path.
+        :rtype: list
+
+        """
+
+        result = []
+        for path in paths:
+            default = self.__defaults.get(path, EMPTY)
+            result.append(self.get(path, default=default))
+
+        return result
+
     def set(self, path, value):
         """Set value by key path.
 
@@ -318,10 +431,11 @@ class LookupDict(dict):
         Example path: 'key_name/another/last'.
 
         :param path: Path to a value.
-        :type path: str.
+        :type path: str
         :param value: Value to set in the give path.
+        :type value: object
 
-        :raises: TypeError.
+        :raises: TypeError
 
         :returns: Current instance.
         :rtype: `LookupDict`
@@ -354,6 +468,34 @@ class LookupDict(dict):
             else:
                 raise TypeError(part)
 
+        return self
+
+    def merge(self, path, value):
+        """Merge a dictionary value into a location.
+
+        Value must be a dictionary. Location given by path must
+        contain a dictionary where to merge the dictionary value.
+
+        :param path: Path to a value.
+        :type path: str
+        :param value: Value to set in the give path.
+        :type value: object
+
+        :raises: `TypeError`
+
+        :returns: Current instance.
+        :rtype: `LookupDict`
+
+        """
+
+        if not isinstance(value, dict):
+            raise TypeError('Merge value is not a dict')
+
+        item = self.get(path)
+        if not isinstance(item, dict):
+            raise TypeError('Value in path "{}" is not dict'.format(path))
+
+        merge(value, item, mappings=self.__mappings, lists=True)
         return self
 
 

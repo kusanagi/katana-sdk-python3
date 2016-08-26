@@ -96,7 +96,7 @@ class Request(Api):
 
         """
 
-        return self.__parsed_url.path
+        return self.__parsed_url.path.rstrip('/')
 
     def has_query_param(self, name):
         """Determines if the param is defined.

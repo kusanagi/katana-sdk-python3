@@ -57,8 +57,8 @@ class Action(Api):
         """
 
         return (
-            self.__transport.get('meta/origin')
-            == [self.get_name(), self.get_version()]
+            self.__transport.get('meta/origin') ==
+            [self.get_name(), self.get_version()]
             )
 
     def set_property(self, name, value=''):
@@ -77,7 +77,7 @@ class Action(Api):
         """
 
         return self.__transport.set(
-            'meta/userland/{}'.format(name),
+            'meta/properties/{}'.format(name),
             str(value),
             )
 

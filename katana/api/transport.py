@@ -57,7 +57,7 @@ class Transport(object):
 
         """
 
-        return self.__transport.get('meta/userland/{}'.format(name), default)
+        return self.__transport.get('meta/properties/{}'.format(name), default)
 
     def has_download(self):
         """Determines if a download has been registered.

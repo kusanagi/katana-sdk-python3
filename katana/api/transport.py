@@ -22,28 +22,24 @@ class Transport(object):
         return self.__transport.get('meta/id')
 
     def get_request_timestamp(self):
-        """Gets the request ID.
+        """Get request timestamp.
 
-        Returns the request ID of the Transport.
-
-        :returns: The request ID.
-        :rtype: str.
+        :rtype: str
 
         """
 
         return self.__transport.get('meta/datetime')
 
     def get_origin(self):
-        """Gets the request ID.
+        """Get transport origin.
 
-        Returns the request ID of the Transport.
+        Origin is a tuple with origin name and version.
 
-        :returns: The request ID.
-        :rtype: str.
+        :rtype: list
 
         """
 
-        return self.__transport.get('meta/origin', '')
+        return self.__transport.get('meta/origin', [])
 
     def get_property(self, name, default=''):
         """Get a userland property.

@@ -80,6 +80,7 @@ FIELD_MAPPINGS = {
     'percent': 'p',
     'pid': 'p',
     'post_data': 'p',
+    'properties': 'p',
     'query': 'q',
     'raddr': 'r',
     'reads': 'r',
@@ -106,7 +107,6 @@ FIELD_MAPPINGS = {
     'url': 'u',
     'used': 'u',
     'user': 'u',
-    'userland': 'u',
     'unique_items': 'ui',
     'value': 'v',
     'version': 'v',
@@ -314,9 +314,9 @@ class TransportPayload(Payload):
         payload.set('meta/version', version)
         payload.set('meta/id', request_id)
         payload.set('meta/datetime', date_to_str(date_time or utcnow()))
-        payload.set('meta/origin', origin or '')
+        payload.set('meta/origin', origin or [])
         payload.set('meta/level', 1)
-        payload.set('meta/userland', {})
+        payload.set('meta/properties', {})
         payload.set('body', {})
         payload.set('files', {})
         payload.set('data', {})

@@ -326,6 +326,26 @@ class LookupDict(dict):
 
         return item
 
+    def get_many(self, *paths):
+        """Get multiple values by key path.
+
+        KeyError is raised when no default value is given.
+        Default values can be assigned using `set_defaults`.
+
+        :raises: KeyError.
+
+        :returns: The values for the given path.
+        :rtype: list
+
+        """
+
+        result = []
+        for path in paths:
+            default = self.__defaults.get(path, EMPTY)
+            result.append(self.get(path, default=default))
+
+        return result
+
     def set(self, path, value):
         """Set value by key path.
 

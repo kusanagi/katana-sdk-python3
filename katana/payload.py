@@ -340,7 +340,7 @@ class TransportPayload(Payload):
         payload.set('meta/version', version)
         payload.set('meta/id', request_id)
         payload.set('meta/datetime', date_to_str(date_time or utcnow()))
-        payload.set('meta/origin', origin or '')
+        payload.set('meta/origin', origin or [])
         payload.set('meta/level', 1)
         payload.set('meta/properties', {})
         payload.set('body', {})

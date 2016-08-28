@@ -62,6 +62,7 @@ FIELD_MAPPINGS = {
     'laddr': 'l',
     'level': 'l',
     'links': 'l',
+    'location': 'l',
     'memory': 'm',
     'message': 'm',
     'meta': 'm',
@@ -142,6 +143,22 @@ def get_path(payload, path, default=EMPTY, mappings=None):
     """
 
     return utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
+
+
+def path_exists(payload, path, default=EMPTY, mappings=None):
+    """Check if a path is available.
+
+    :rtype: bool.
+
+    """
+
+    try:
+        return utils.get_path(
+            payload, path, default, mappings or FIELD_MAPPINGS)
+    except KeyError:
+        return False
+    else:
+        return True
 
 
 class Payload(LookupDict):

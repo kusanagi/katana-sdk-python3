@@ -66,7 +66,6 @@ class Request(Api):
 
         return self.__url
 
-    # TODO: Add to spec ? @JW
     def get_url_scheme(self):
         """Get request URL scheme.
 
@@ -76,7 +75,6 @@ class Request(Api):
 
         return self.__parsed_url.scheme
 
-    # TODO: Add to spec ? @JW
     def get_url_host(self):
         """Get request URL host.
 
@@ -88,7 +86,6 @@ class Request(Api):
 
         return self.__parsed_url.netloc
 
-    # TODO: Add to spec ? @JW
     def get_url_path(self):
         """Get request URL path.
 

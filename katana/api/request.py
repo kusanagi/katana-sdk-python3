@@ -109,16 +109,6 @@ class Request(Api):
 
         return name in self.__query
 
-    def get_query_params(self):
-        """Get all HTTP query params.
-
-        :returns: The HTTP params.
-        :rtype: `MultiDict`
-
-        """
-
-        return self.__query
-
     def get_query_param(self, name, default=''):
         """Gets a param from the HTTP query string.
 
@@ -127,16 +117,54 @@ class Request(Api):
 
         :param name: The param from the HTTP query string.
         :type name: str
-
         :param default: The optional default value.
         :type name: str
 
-        :returns: The HTTP param.
+        :returns: The HTTP param value.
         :rtype: str
 
         """
 
         return self.__query.get(name, (default, ))[0]
+
+    def get_query_param_array(self, name, default=None):
+        """Gets a param from the HTTP query string.
+
+        Parameter is returned as a list of values.
+
+        :param name: The param from the HTTP query string.
+        :type name: str
+        :param default: The optional default value.
+        :type name: str
+
+        :returns: The HTTP param values as a list.
+        :rtype: list
+
+        """
+
+        return self.__query.get(name, default or [])
+
+    def get_query_params(self):
+        """Get all HTTP query params.
+
+        :returns: The HTTP params.
+        :rtype: dict
+
+        """
+
+        return {key: value[0] for key, value in self.__query.items()}
+
+    def get_query_params_array(self):
+        """Get all HTTP query params.
+
+        Each parameter value is returned as a list.
+
+        :returns: The HTTP params.
+        :rtype: `MultiDict`
+
+        """
+
+        return self.__query
 
     def has_post_param(self, name):
         """Determines if the param is defined.
@@ -152,16 +180,6 @@ class Request(Api):
         """
 
         return name in self.__post_data
-
-    def get_post_params(self):
-        """Get all HTTP post params.
-
-        :returns: The HTTP post params.
-        :rtype: `MultiDict`
-
-        """
-
-        return self.__post_data
 
     def get_post_param(self, name, default=''):
         """Gets a param from the HTTP post data.
@@ -181,6 +199,45 @@ class Request(Api):
         """
 
         return self.__post_data.get(name, (default, ))[0]
+
+    def get_post_param_array(self, name, default=None):
+        """Gets a param from the HTTP post data.
+
+        Parameter is returned as a list of values.
+
+        :param name: The param from the HTTP post data.
+        :type name: str
+        :param default: The optional default value.
+        :type name: str
+
+        :returns: The HTTP param values as a list.
+        :rtype: list
+
+        """
+
+        return self.__post_data.get(name, default or [])
+
+    def get_post_params(self):
+        """Get all HTTP post params.
+
+        :returns: The HTTP post params.
+        :rtype: dict
+
+        """
+
+        return {key: value[0] for key, value in self.__post_data.items()}
+
+    def get_post_params_array(self):
+        """Get all HTTP post params.
+
+        Each parameter value is returned as a list.
+
+        :returns: The HTTP post params.
+        :rtype: `MultiDict`
+
+        """
+
+        return self.__post_data
 
     def is_protocol_version(self, version):
         """Determine if the request used the given HTTP version.

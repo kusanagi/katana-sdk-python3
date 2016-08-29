@@ -24,6 +24,15 @@ TYPE_CLASSES = {
     }
 
 
+# Supported parameter locations
+LOC_PATH = 'path'
+LOC_QUERY = 'query'
+LOC_FORM = 'form-data'
+LOC_HEADER = 'header'
+LOC_BODY = 'body'
+LOCATIONS = (LOC_PATH, LOC_QUERY, LOC_FORM, LOC_HEADER, LOC_BODY)
+
+
 class Param(object):
     """Parameter class for API.
 
@@ -33,6 +42,9 @@ class Param(object):
     """
 
     def __init__(self, location, name, **kwargs):
+        if location not in LOCATIONS:
+            raise TypeError('Unknown location value')
+
         self.__value = kwargs.get('value') or ''
         self.__location = location
         self.__name = name
@@ -47,9 +59,9 @@ class Param(object):
         """Converts native types to schema types.
 
         :param value: The value to analyze.
-        :type value: mixed.
+        :type value: mixed
 
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -70,9 +82,6 @@ class Param(object):
 
     def get_location(self):
         """Get location where parameter was defined.
-
-        Parameters can be defined in "path", "query", "headers", "body"
-        and "form_data".
 
         :rtype: str
 
@@ -104,6 +113,7 @@ class Param(object):
         Value is returned using the parameter data type for casting.
 
         :returns: The parameter value.
+        :rtype: mixed
 
         """
 
@@ -146,7 +156,7 @@ class Param(object):
         :param type: Parameter data type.
         :type type: str
 
-        :rtype: `File`
+        :rtype: `Param`
 
         """
 

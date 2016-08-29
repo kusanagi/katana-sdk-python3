@@ -52,7 +52,7 @@ class Action(Api):
     def is_origin(self):
         """Determines if the current service is the origin of the request.
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -61,34 +61,37 @@ class Action(Api):
             [self.get_name(), self.get_version()]
             )
 
-    def set_property(self, name, value=''):
+    def get_action_name(self):
+        """Get the name of the action.
+
+        :rtype: str
+
+        """
+
+        return self.__action
+
+    def set_property(self, name, value):
         """Sets a user land property.
 
         Sets a userland property in the transport with the given
         name and value.
 
         :param name: The property name.
-        :type name: str.
+        :type name: str
         :param value: The property value.
-        :type value: str.
+        :type value: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
+
+        if not isinstance(value, str):
+            raise TypeError('Value is not a string')
 
         return self.__transport.set(
             'meta/properties/{}'.format(name),
             str(value),
             )
-
-    def get_action_name(self):
-        """Gets the action name.
-
-        :rtype: str.
-
-        """
-
-        return self.__action
 
     def get_param(self, location, name):
         """Gets a parameter passed to the action.
@@ -100,11 +103,11 @@ class Action(Api):
         and "body".
 
         :param location: The parameter location.
-        :type location: str.
+        :type location: str
         :param name: The parameter name.
-        :type name: str.
+        :type name: str
 
-        :rtype: Param.
+        :rtype: `Param`
 
         """
 
@@ -133,15 +136,15 @@ class Action(Api):
         "array" and "object".
 
         :param location: The parameter location.
-        :type location: str.
+        :type location: str
         :param name: The parameter name.
-        :type name: str.
+        :type name: str
         :param value: The parameter value.
-        :type value: mixed.
+        :type value: mixed
         :param datatype: The data type of the value.
-        :type datatype: str.
+        :type datatype: str
 
-        :rtype: Param.
+        :rtype: `Param`
 
         """
 
@@ -152,15 +155,45 @@ class Action(Api):
 
         return Param(location, name, value, datatype, True)
 
+    def get_file(self, name):
+        """Get a file with a given name.
+
+        :param name: File name.
+        :type name: str
+
+        :rtype: `File`
+
+        """
+
+        # TODO: Implement file support for actions
+        raise NotImplementedError()
+
+    def new_file(self, name, path, mime=None):
+        """Create a new file.
+
+        :param name: File name.
+        :type name: str
+        :param path: File path.
+        :type path: str
+        :param mime: Optional file mime type.
+        :type mime: str
+
+        :rtype: `File`
+
+        """
+
+        # TODO: Implement file support for actions
+        raise NotImplementedError()
+
     def set_download(self, file):
-        """Sets a file as the download.
+        """Set a file as the download.
 
         Sets a File object as the file to be downloaded via the Gateway.
 
         :param file: The file object.
-        :type file: File.
+        :type file: `File`
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -175,7 +208,7 @@ class Action(Api):
         Sets an object as the entity to be returned by the action.
 
         :param entity: The entity object.
-        :type entity: dict.
+        :type entity: dict
 
         """
 
@@ -197,9 +230,7 @@ class Action(Api):
         Sets a list as the collection of entities to be returned by the action.
 
         :param collection: The collection list.
-        :type collection: list.
-
-        :rtype: bool.
+        :type collection: list
 
         """
 
@@ -226,13 +257,11 @@ class Action(Api):
         primary key and service with the foreign key.
 
         :param primery_key: The primary key.
-        :type primary_key: mixed.
+        :type primary_key: mixed
         :param service: The foreign service.
-        :type service: str.
+        :type service: str
         :param foreign_key: The foreign key.
-        :type foreign_key: mixed.
-
-        :rtype: bool.
+        :type foreign_key: mixed
 
         """
 
@@ -248,13 +277,11 @@ class Action(Api):
         primary key and service with the foreign keys.
 
         :param primery_key: The primary key.
-        :type primary_key: mixed.
+        :type primary_key: mixed
         :param service: The foreign service.
-        :type service: str.
+        :type service: str
         :param foreign_key: The foreign keys.
-        :type foreign_key: list.
-
-        :rtype: bool.
+        :type foreign_key: list
 
         """
 
@@ -270,11 +297,9 @@ class Action(Api):
         """Sets a link for the given URI.
 
         :param link: The link name.
-        :type link: str.
+        :type link: str
         :param uri: The link URI.
-        :type uri: str.
-
-        :rtype: bool.
+        :type uri: str
 
         """
 
@@ -287,11 +312,9 @@ class Action(Api):
         """Registers a transaction for this service.
 
         :param action: The action name.
-        :type action: str.
+        :type action: str
         :param params: The list of Param objects.
-        :type params: list.
-
-        :rtype: bool.
+        :type params: list
 
         """
 
@@ -304,23 +327,22 @@ class Action(Api):
             )
 
     def call(self, service, version, action, params=None, files=None):
-        """Registers a call to a service.
+        """Register a call to a service.
 
         :param service: The service name.
-        :type service: str.
+        :type service: str
         :param version: The service version.
-        :type version: str.
+        :type version: str
         :param action: The action name.
-        :type action: str.
+        :type action: str
         :param params: The list of Param objects.
-        :type params: list.
+        :type params: list
         :param files: The list of File objects.
-        :type files: list.
-
-        :rtype: bool.
+        :type files: list
 
         """
 
+        # TODO: Implement files handling
         return self.__transport.push(
             'calls/{}/{}'.format(self.get_name(), self.get_version()),
             Payload().set_many({
@@ -339,13 +361,11 @@ class Action(Api):
         set then 500 Internal Server Error is assumed.
 
         :param message: The error message.
-        :type message: str.
+        :type message: str
         :param code: The error code.
-        :type code: int.
+        :type code: int
         :param status: The HTTP status message.
-        :type status: str.
-
-        :rtype: bool.
+        :type status: str
 
         """
 

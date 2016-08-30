@@ -89,7 +89,7 @@ class Response(Api):
 
         """
 
-        return int(self.get_status()[:3])
+        return self.__status_code
 
     def get_status_text(self):
         """Get HTTP status text.
@@ -98,7 +98,7 @@ class Response(Api):
 
         """
 
-        return self.get_status()[4:]
+        return self.__status_text
 
     def set_status(self, code, text):
         """Set the HTTP status to the given status.
@@ -113,6 +113,8 @@ class Response(Api):
 
         """
 
+        self.__status_code = code
+        self.__status_text = text
         self.__status = '{} {}'.format(code, text)
 
     def has_header(self, name):

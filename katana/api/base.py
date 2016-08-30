@@ -12,7 +12,7 @@ class Api(object):
     def is_debug(self):
         """Determine if component is running in debug mode.
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -21,7 +21,7 @@ class Api(object):
     def get_platform_version(self):
         """Get KATANA platform version.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -33,7 +33,7 @@ class Api(object):
         Returns the path to the endpoint userland source file.
 
         :returns: Source path file.
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -42,7 +42,7 @@ class Api(object):
     def get_name(self):
         """Get component name.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -51,7 +51,7 @@ class Api(object):
     def get_version(self):
         """Get component version.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -60,7 +60,7 @@ class Api(object):
     def get_variables(self):
         """Gets all component variables.
 
-        :rtype: dict.
+        :rtype: dict
 
         """
 
@@ -70,11 +70,10 @@ class Api(object):
         """Get a single component variable.
 
         :param name: Variable name.
-        :type name: str.
+        :type name: str
 
-        :rtype: str or None.
+        :rtype: str
 
         """
 
-        if name in self.__variables:
-            return self.__variables[name]
+        return self.__variables.get(name, '')

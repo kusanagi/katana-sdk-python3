@@ -38,8 +38,10 @@ class MiddlewareWorker(ComponentWorker):
             )
 
     def _create_response_component_instance(self, payload):
+        code, text = payload.get('response/status').split(' ')
         return Response(
-            payload.get('response/status'),
+            int(code),
+            text,
             Transport(payload.get('transport')),
             self.source_file,
             self.component_name,
@@ -96,7 +98,7 @@ class MiddlewareWorker(ComponentWorker):
                 version=component.get_protocol_version(),
                 status=component.get_status(),
                 body=component.get_body(),
-                headers=component.get_headers().multi_items(),
+                headers=dict(component.get_headers()),
                 )
         else:
             LOG.error('Invalid Middleware callback result')

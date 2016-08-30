@@ -15,7 +15,7 @@ class Transport(object):
         Returns the request ID of the Transport.
 
         :returns: The request ID.
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -47,11 +47,14 @@ class Transport(object):
         :param name: Name of the property.
         :type name: str
         :param default: A default value to return when property is missing.
-        :type default: object
+        :type default: str
 
         :rtype: str
 
         """
+
+        if not isinstance(default, str):
+            raise TypeError('Default value must be a string')
 
         return self.__transport.get('meta/properties/{}'.format(name), default)
 
@@ -60,7 +63,7 @@ class Transport(object):
 
         Returns True if a download has been registered, otherwise False.
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -72,7 +75,7 @@ class Transport(object):
         Return the download from the Transport as a File object.
 
         :returns: The File object.
-        :rtype: File.
+        :rtype: `File`
 
         """
 
@@ -139,10 +142,10 @@ class Transport(object):
         stored by that service.
 
         :param service: The optional service.
-        :type service: str.
+        :type service: str
 
         :returns: The links from the Transport.
-        :rtype: object.
+        :rtype: object
 
         """
 
@@ -160,10 +163,10 @@ class Transport(object):
         it only returns the calls performed by that service.
 
         :param service: The optional service.
-        :type service: str.
+        :type service: str
 
         :returns: The calls from the Transport.
-        :rtype: object.
+        :rtype: object
 
         """
 
@@ -183,10 +186,10 @@ class Transport(object):
         executed by the Gateway.
 
         :param service: The optional service.
-        :type service: str.
+        :type service: str
 
         :returns: The transactions from the Transport.
-        :rtype: object.
+        :rtype: object
 
         """
 
@@ -204,10 +207,10 @@ class Transport(object):
         it only returns the errors registered by that service.
 
         :param service: The optional service.
-        :type service: str.
+        :type service: str
 
         :returns: The errors from the Transport.
-        :rtype: object.
+        :rtype: object
 
         """
 

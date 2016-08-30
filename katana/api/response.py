@@ -6,10 +6,10 @@ from .base import Api
 class Response(Api):
     """Response API class for Middleware component."""
 
-    def __init__(self, status, transport, *args, **kwargs):
+    def __init__(self, status_code, status_text, transport, *args, **kwargs):
         self.__transport = transport
         self.__headers = MultiDict()
-        self.__status = status
+        self.set_status(status_code, status_text)
         self.set_protocol_version(
             kwargs.pop('protocol_version', None) or '1.1'
             )
@@ -31,9 +31,9 @@ class Response(Api):
         """Determine if the response uses the given HTTP version.
 
         :param version: The HTTP version.
-        :type version: str.
+        :type version: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -42,7 +42,7 @@ class Response(Api):
     def get_protocol_version(self):
         """Get the HTTP version.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -55,7 +55,7 @@ class Response(Api):
         protocol version.
 
         :param version: The HTTP version.
-        :type version: str.
+        :type version: str
 
         """
 
@@ -65,9 +65,9 @@ class Response(Api):
         """Determine if the response uses the given status.
 
         :param status: The HTTP status.
-        :type status: str.
+        :type status: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -76,11 +76,29 @@ class Response(Api):
     def get_status(self):
         """Get the HTTP status.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
         return self.__status
+
+    def get_status_code(self):
+        """Get HTTP status code.
+
+        :rtype: int
+
+        """
+
+        return self.__status_code
+
+    def get_status_text(self):
+        """Get HTTP status text.
+
+        :rtype: str
+
+        """
+
+        return self.__status_text
 
     def set_status(self, code, text):
         """Set the HTTP status to the given status.
@@ -95,25 +113,17 @@ class Response(Api):
 
         """
 
+        self.__status_code = code
+        self.__status_text = text
         self.__status = '{} {}'.format(code, text)
-
-    # TODO: We need more methods. Discuss w/ @JW
-    def get_status_code(self):
-        """Get HTTP status code.
-
-        :rtype: int.
-
-        """
-
-        return int(self.get_status()[:3])
 
     def has_header(self, name):
         """Determines if the HTTP header is defined.
 
         :param name: The HTTP header name.
-        :type name: str.
+        :type name: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -123,13 +133,22 @@ class Response(Api):
         """Get an HTTP header.
 
         :param name: The HTTP header.
-        :type name: str.
+        :type name: str
 
-        :rtype: str.
+        :rtype: str
 
         """
 
         self.__headers.get(name)
+
+    def get_headers(self):
+        """Get all HTTP header.
+
+        :rtype: `MultiDict`
+
+        """
+
+        return self.__headers
 
     def set_header(self, name, value):
         """Set a HTTP with the given name and value.
@@ -137,29 +156,20 @@ class Response(Api):
         Sets a header in the HTTP response with the specified name and value.
 
         :param name: The HTTP header.
-        :type name: str.
+        :type name: str
         :param value: The header value.
-        :type value: str.
+        :type value: str
 
         """
 
         self.__headers[name] = value
-
-    def get_headers(self):
-        """Get all HTTP header.
-
-        :rtype: MultiDict.
-
-        """
-
-        return self.__headers
 
     def has_body(self):
         """Determines if the response has content.
 
         Returns True if the HTTP response body has content, otherwise False.
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -169,7 +179,7 @@ class Response(Api):
         """Gets the response body.
 
         :returns: The HTTP response body.
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -182,7 +192,7 @@ class Response(Api):
         the specified content.
 
         :param content: The content for the HTTP response body.
-        :type content: str.
+        :type content: str
 
         """
 
@@ -193,7 +203,7 @@ class Response(Api):
 
         Returns the Transport object returned by the Services.
 
-        :rtype: Transport.
+        :rtype: `Transport`
 
         """
 

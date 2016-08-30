@@ -50,7 +50,7 @@ FIELD_MAPPINGS = {
     'filename': 'f',
     'files': 'f',
     'format': 'f',
-    'form_data': 'f',
+    'form-data': 'f',  # Maps to parameter location name
     'free': 'f',
     'header': 'h',
     'headers': 'h',
@@ -62,6 +62,7 @@ FIELD_MAPPINGS = {
     'laddr': 'l',
     'level': 'l',
     'links': 'l',
+    'location': 'l',
     'memory': 'm',
     'message': 'm',
     'meta': 'm',
@@ -142,6 +143,22 @@ def get_path(payload, path, default=EMPTY, mappings=None):
     """
 
     return utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
+
+
+def path_exists(payload, path, default=EMPTY, mappings=None):
+    """Check if a path is available.
+
+    :rtype: bool.
+
+    """
+
+    try:
+        return utils.get_path(
+            payload, path, default, mappings or FIELD_MAPPINGS)
+    except KeyError:
+        return False
+    else:
+        return True
 
 
 class Payload(LookupDict):
@@ -290,8 +307,8 @@ class RequestPayload(Payload):
         payload.set('version', request.version)
         payload.set('method', request.method)
         payload.set('url', request.url)
-        payload.set('query', list(request.query.multi_items()))
-        payload.set('post_data', list(request.post_data.multi_items()))
+        payload.set('query', request.query)
+        payload.set('post_data', request.post_data)
         payload.set('headers', request.headers)
         payload.set('body', request.body)
         payload.set('files', files or {})

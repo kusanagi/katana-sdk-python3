@@ -1,6 +1,5 @@
 from urllib.parse import urlparse
 
-from ..payload import Payload
 from ..utils import MultiDict
 
 from .base import Api
@@ -37,9 +36,9 @@ class Request(Api):
         as the specified method, otherwise False.
 
         :param method: The HTTP method.
-        :type method: str.
+        :type method: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -51,7 +50,7 @@ class Request(Api):
         Returns the HTTP method used for the request.
 
         :returns: The HTTP method.
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -60,39 +59,36 @@ class Request(Api):
     def get_url(self):
         """Get request URL.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
         return self.__url
 
-    # TODO: Add to spec ? @JW
     def get_url_scheme(self):
         """Get request URL scheme.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
         return self.__parsed_url.scheme
 
-    # TODO: Add to spec ? @JW
     def get_url_host(self):
         """Get request URL host.
 
         When a port is given in the URL it will be added to host.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
         return self.__parsed_url.netloc
 
-    # TODO: Add to spec ? @JW
     def get_url_path(self):
         """Get request URL path.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -105,23 +101,13 @@ class Request(Api):
         otherwise False.
 
         :param name: The HTTP param.
-        :type name: str.
+        :type name: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
         return name in self.__query
-
-    def get_query_params(self):
-        """Get all HTTP query params.
-
-        :returns: The HTTP params.
-        :rtype: MultiDict.
-
-        """
-
-        return self.__query
 
     def get_query_param(self, name, default=''):
         """Gets a param from the HTTP query string.
@@ -130,17 +116,55 @@ class Request(Api):
         name, or and empty string if not defined.
 
         :param name: The param from the HTTP query string.
-        :type name: str.
-
+        :type name: str
         :param default: The optional default value.
-        :type name: str.
+        :type name: str
 
-        :returns: The HTTP param.
-        :rtype: str.
+        :returns: The HTTP param value.
+        :rtype: str
 
         """
 
-        return self.__query_string.get(name, default)
+        return self.__query.get(name, (default, ))[0]
+
+    def get_query_param_array(self, name, default=None):
+        """Gets a param from the HTTP query string.
+
+        Parameter is returned as a list of values.
+
+        :param name: The param from the HTTP query string.
+        :type name: str
+        :param default: The optional default value.
+        :type name: str
+
+        :returns: The HTTP param values as a list.
+        :rtype: list
+
+        """
+
+        return self.__query.get(name, default or [])
+
+    def get_query_params(self):
+        """Get all HTTP query params.
+
+        :returns: The HTTP params.
+        :rtype: dict
+
+        """
+
+        return {key: value[0] for key, value in self.__query.items()}
+
+    def get_query_params_array(self):
+        """Get all HTTP query params.
+
+        Each parameter value is returned as a list.
+
+        :returns: The HTTP params.
+        :rtype: `MultiDict`
+
+        """
+
+        return self.__query
 
     def has_post_param(self, name):
         """Determines if the param is defined.
@@ -149,23 +173,13 @@ class Request(Api):
         otherwise False.
 
         :param name: The HTTP param.
-        :type name: str.
+        :type name: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
         return name in self.__post_data
-
-    def get_post_params(self):
-        """Get all HTTP post params.
-
-        :returns: The HTTP post params.
-        :rtype: MultiDict.
-
-        """
-
-        return self.__post_data
 
     def get_post_param(self, name, default=''):
         """Gets a param from the HTTP post data.
@@ -174,17 +188,56 @@ class Request(Api):
         name, or and empty string if not defined.
 
         :param name: The param from the HTTP post data.
-        :type name: str.
+        :type name: str
 
         :param default: The optional default value.
-        :type name: str.
+        :type name: str
 
         :returns: The HTTP param.
-        :rtype: str.
+        :rtype: str
 
         """
 
-        return self.__post_data.get(name, default)
+        return self.__post_data.get(name, (default, ))[0]
+
+    def get_post_param_array(self, name, default=None):
+        """Gets a param from the HTTP post data.
+
+        Parameter is returned as a list of values.
+
+        :param name: The param from the HTTP post data.
+        :type name: str
+        :param default: The optional default value.
+        :type name: str
+
+        :returns: The HTTP param values as a list.
+        :rtype: list
+
+        """
+
+        return self.__post_data.get(name, default or [])
+
+    def get_post_params(self):
+        """Get all HTTP post params.
+
+        :returns: The HTTP post params.
+        :rtype: dict
+
+        """
+
+        return {key: value[0] for key, value in self.__post_data.items()}
+
+    def get_post_params_array(self):
+        """Get all HTTP post params.
+
+        Each parameter value is returned as a list.
+
+        :returns: The HTTP post params.
+        :rtype: `MultiDict`
+
+        """
+
+        return self.__post_data
 
     def is_protocol_version(self, version):
         """Determine if the request used the given HTTP version.
@@ -193,9 +246,9 @@ class Request(Api):
         as the specified protocol version, otherwise False.
 
         :param version: The HTTP version.
-        :type version: str.
+        :type version: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
@@ -207,7 +260,7 @@ class Request(Api):
         Returns the HTTP version used for the request.
 
         :returns: The HTTP version.
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -219,40 +272,56 @@ class Request(Api):
         Returns True if the HTTP header is defined, otherwise False.
 
         :param name: The HTTP header.
-        :type name: str.
+        :type name: str
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
-        return hasattr(self.__headers, name)
+        return name in self.__headers
 
-    def get_header(self, name):
-        """Gets a HTTP header.
+    def get_header(self, name, default=''):
+        """Get an HTTP header.
 
         Returns the HTTP header with the given name, or and empty
         string if not defined.
 
+        A comma separated list of values ir returned when header
+        has multiple values.
+
         :param name: The HTTP header.
-        :type name: str.
+        :type name: str
 
         :returns: The HTTP header value.
-        :rtype: str.
+        :rtype: str
 
         """
 
-        return self.__headers.get(name, '')
+        if not self.has_header(name):
+            return default
+
+        return ', '.join(self.__headers[name])
+
+    def get_headers(self):
+        """Get all HTTP headers.
+
+        :returns: The HTTP headers.
+        :rtype: `MultiDict`
+
+        """
+
+        return self.__headers
 
     def has_body(self):
         """Determines if the HTTP request body has content.
 
         Returns True if the HTTP request body has content, otherwise False.
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
-        return self.__body is not None
+        return self.__body != ''
 
     def get_body(self):
         """Gets the HTTP request body.
@@ -261,7 +330,7 @@ class Request(Api):
         no content.
 
         :returns: The HTTP request body.
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -273,11 +342,11 @@ class Request(Api):
         Returns True if the HTTP request included file uploads,
         otherwise False.
 
-        :rtype: bool.
+        :rtype: bool
 
         """
 
-        return self.__files is not None
+        return len(self.__files) > 0
 
     def get_files(self):
         """Gets the uploaded files.
@@ -285,16 +354,16 @@ class Request(Api):
         Returns the files uploaded with the HTTP request, or an empty object.
 
         :returns: The uploaded files.
-        :rtype: object.
+        :rtype: `MultiDict`
 
         """
 
-        return self.get('_files', {})
+        return self.__files
 
     def get_service_name(self):
         """Get the name of the service.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -306,7 +375,7 @@ class Request(Api):
         Sets the name of the service passed in the HTTP request.
 
         :param service: The service name.
-        :type service: str.
+        :type service: str
 
         """
 
@@ -315,7 +384,7 @@ class Request(Api):
     def get_service_version(self):
         """Get the version of the service.
 
-        :type version: str.
+        :type version: str
 
         """
 
@@ -327,7 +396,7 @@ class Request(Api):
         Sets the version of the service passed in the HTTP request.
 
         :param version: The service version.
-        :type version: str.
+        :type version: str
 
         """
 
@@ -336,7 +405,7 @@ class Request(Api):
     def get_action_name(self):
         """Get the name of the action.
 
-        :rtype: str.
+        :rtype: str
 
         """
 
@@ -348,34 +417,31 @@ class Request(Api):
         Sets the name of the action passed in the HTTP request.
 
         :param action: The action name.
-        :type action: str.
+        :type action: str
 
         """
 
         self.__action_name = action
 
-    def new_response(self, status, **kwargs):
-        """Creates a new Response object.
+    def new_response(self, status_code, status_text):
+        """Create a new Response object.
 
-        Creates a new Response object.
-
-        This method receives keyword arguments that are passed to
-        `Response`.
-
-        :param status: The HTTP status code.
-        :type status: str.
+        :param status_code: The HTTP status code.
+        :type status_code: int
+        :param status_text: The HTTP status text.
+        :type status_text: str
 
         :returns: The response object.
-        :rtype: Response.
+        :rtype: `Response`
 
         """
 
         return Response(
-            status,
-            Transport(Payload()),
+            status_code,
+            status_text,
+            Transport({}),
             self.get_path(),
             self.get_name(),
             self.get_version(),
             self.get_platform_version(),
-            **kwargs
             )

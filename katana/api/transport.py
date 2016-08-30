@@ -47,11 +47,14 @@ class Transport(object):
         :param name: Name of the property.
         :type name: str
         :param default: A default value to return when property is missing.
-        :type default: mixed
+        :type default: str
 
         :rtype: str
 
         """
+
+        if not isinstance(default, str):
+            raise TypeError('Default value must be a string')
 
         return self.__transport.get('meta/properties/{}'.format(name), default)
 

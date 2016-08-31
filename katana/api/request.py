@@ -1,3 +1,4 @@
+from itertools import chain
 from urllib.parse import urlparse
 
 from ..utils import MultiDict
@@ -336,29 +337,48 @@ class Request(Api):
 
         return self.__body
 
-    def has_files(self):
-        """Determines if there were files uploaded.
+    def has_file(self, name):
+        """Check if a file was uploaded in current request.
 
-        Returns True if the HTTP request included file uploads,
-        otherwise False.
+        :param name: File name.
+        :type name: str
 
         :rtype: bool
 
         """
 
-        return len(self.__files) > 0
+        return name in self.__files
 
-    def get_files(self):
-        """Gets the uploaded files.
+    def get_file(self, name):
+        """Get an uploaded file.
 
-        Returns the files uploaded with the HTTP request, or an empty object.
+        Returns the file uploaded with the HTTP request, or None.
 
-        :returns: The uploaded files.
-        :rtype: `MultiDict`
+        :param name: Name of the file.
+        :type name: str
+
+        :returns: The uploaded file.
+        :rtype: `File`
 
         """
 
-        return self.__files
+        # Get only the first file.
+        # Note: Multiple files can be uploaded for the same name.
+        return self.__files.getone(name)
+
+    def get_files(self):
+        """Get uploaded files.
+
+        Returns the files uploaded with the HTTP request.
+
+        :returns: A list of `File` objects.
+        :rtype: iter
+
+        """
+
+        # Fields might have more than one file uploaded for the same name,
+        # there for it can happen that file names are duplicated.
+        return chain.from_iterable(self.__files.values())
 
     def get_service_name(self):
         """Get the name of the service.

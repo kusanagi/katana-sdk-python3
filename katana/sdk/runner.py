@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import logging
 import os
+import signal
 
 import click
 import zmq.asyncio
@@ -51,7 +52,12 @@ class ComponentRunner(object):
     def __init__(self, server_factory, help):
         """Constructor."""
 
+        self.__tasks = []
+        self.__stop = False
+        self.__server = None
+        self.loop = None
         self._args = {}
+        self.sleep_period = 0.1
         self.callback = None
         self.server_factory = server_factory
         self.help = help
@@ -219,10 +225,12 @@ class ComponentRunner(object):
         # Initialize component logging
         setup_katana_logging(logging.DEBUG if self.debug else logging.INFO)
 
+        LOG.debug('Using PID: "%s"', os.getpid())
+
         # Set main event loop
         install_uvevent_loop()
-        loop = zmq.asyncio.ZMQEventLoop()
-        asyncio.set_event_loop(loop)
+        self.loop = zmq.asyncio.ZMQEventLoop()
+        asyncio.set_event_loop(self.loop)
 
         # Create channel for TCP or IPC conections
         if self.tcp_port:
@@ -231,36 +239,91 @@ class ComponentRunner(object):
             # Abstract domain unix socket
             channel = 'ipc://{}'.format(self.socket_name)
 
+        # Gracefully terminate component on SIGTERM events.
+        self.loop.add_signal_handler(signal.SIGTERM, self.stop)
+        self.loop.add_signal_handler(signal.SIGINT, self.stop)
+
+        # Create component server and add it as a task
+        self.__server = self.server_factory(
+            channel,
+            self.callback,
+            self.args,
+            debug=self.debug,
+            )
+        task = self.loop.create_task(self.__server.listen())
+        self.__tasks.append(task)
+
+        # Create a task to monitor running tasks
+        self.loop.create_task(self.monitor_tasks())
+
         # Run component server
         exit_code = EXIT_OK
         try:
-            server = self.server_factory(
-                channel,
-                self.callback,
-                self.args,
-                debug=self.debug,
-                )
-            loop.run_until_complete(server.listen())
-        except zmq.error.ZMQError as err:
-            if err.errno == 98:
-                msg = 'Address unavailable: "{}"'.format(self.socket_name)
-            else:
-                LOG.error(err.strerror)
-                msg = 'Operation failed'
+            self.loop.run_forever()
+        except Exception as exc:
+            exit_code = EXIT_ERROR
+            if isinstance(exc, zmq.error.ZMQError):
+                if exc.errno == 98:
+                    LOG.error('Address unavailable: "%s"', self.socket_name)
+                else:
+                    LOG.error(exc.strerror)
 
-            LOG.error(msg)
-            exit_code = EXIT_ERROR
-        except KeyboardInterrupt:
-            LOG.info('HARAKIRI!')
-        except:
-            LOG.exception('Component failed')
-            exit_code = EXIT_ERROR
-        finally:
-            server.stop()
+                LOG.error('Component failed')
+            else:
+                LOG.exception('Component failed')
 
         # Finish event loop and exit with an exit code
-        loop.close()
+        self.loop.close()
+        if exit_code == EXIT_OK:
+            LOG.info('Operation complete')
+
         os._exit(exit_code)
+
+    @asyncio.coroutine
+    def monitor_tasks(self):
+        """Run until halt is called or a task exception is raised.
+
+        Runs an infinite loop that checks status for all tasks
+        and then sleeps for a short period.
+
+        """
+
+        while 1:
+            yield from asyncio.sleep(self.sleep_period)
+
+            # Check tasks status
+            for task in self.__tasks:
+                # Skip when task is not done
+                if not task.done():
+                    continue
+
+                # When task is finished check for errors
+                exc = task.exception()
+                if exc:
+                    raise exc
+
+            if self.__stop:
+                yield from self.stop_tasks()
+                break
+
+        # When monitor exists stop event loop
+        self.loop.stop()
+
+    @asyncio.coroutine
+    def stop_tasks(self, timeout=1.5):
+        """Stop all tasks.
+
+        :param timeout: Seconds to wait for all tasks to be finished.
+        :param timeout: float
+
+        """
+
+        for task in self.__tasks:
+            if not task.done():
+                task.cancel()
+
+        # Wait for tasks to finish
+        yield from asyncio.wait(self.__tasks, timeout=timeout)
 
     def run(self, callback):
         """Run SDK component.
@@ -293,3 +356,9 @@ class ComponentRunner(object):
 
         # Run SDK component
         start_component()
+
+    def stop(self, *args, **kwargs):
+        """Stop main loop and all running tasks."""
+
+        LOG.info('HARAKIRI!')
+        self.__stop = True

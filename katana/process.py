@@ -148,7 +148,7 @@ class ComponentProcess(Process):
 
         """
 
-        while True:
+        while 1:
             yield from asyncio.sleep(self.sleep_period)
 
             # Check tasks status

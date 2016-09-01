@@ -9,7 +9,12 @@ from ..worker import ComponentWorker
 LOG = logging.getLogger(__name__)
 
 # Constants for response meta frame
-SC = SERVICE_CALL = b'\x01'
+SE = SERVICE_CALL = b'\x01'
+FI = FILES = b'\x02'
+TR = TRANSACTIONS = b'\x03'
+
+# Allowed response meta values
+META_VALUES = (SE, FI, TR)
 
 
 class ServiceWorker(ComponentWorker):

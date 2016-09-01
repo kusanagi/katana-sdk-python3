@@ -1,6 +1,7 @@
 import asyncio
 import logging
-import signal
+
+from concurrent.futures import CancelledError
 
 import zmq.asyncio
 
@@ -106,6 +107,7 @@ class ComponentServer(object):
 
         """
 
+        LOG.debug('Stopping Component...')
         if not self.sock:
             return
 
@@ -130,7 +132,7 @@ class ComponentServer(object):
 
         """
 
-        while True:
+        while 1:
             events = yield from self.poller.poll()
             if dict(events).get(frontend_sock) == zmq.POLLIN:
                 stream = yield from frontend_sock.recv_multipart()
@@ -169,15 +171,11 @@ class ComponentServer(object):
         self.create_child_processes()
         self.start_child_processes()
 
-        # Gracefully close on SIGTERM events to avoid
-        # leaving child processes running in background.
-        signal.signal(signal.SIGTERM, self.stop)
-
         try:
             LOG.info('Component initiated...')
             yield from self.proxy(self.sock, self.workers_sock)
-        except GeneratorExit:
-            pass
-        finally:
-            # Finally cleanup
+        except CancelledError:
+            # Call stop before cancelling task
             self.stop()
+            # Re raise exception to signal task cancellation
+            raise

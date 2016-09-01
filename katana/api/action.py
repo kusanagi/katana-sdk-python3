@@ -155,6 +155,19 @@ class Action(Api):
 
         return Param(location, name, value, datatype, True)
 
+    def has_file(self, name):
+        """Check if a file was provided for the action.
+
+        :param name: File name.
+        :type name: str
+
+        :rtype: bool
+
+        """
+
+        # TODO: Implement file support for actions
+        raise NotImplementedError()
+
     def get_file(self, name):
         """Get a file with a given name.
 

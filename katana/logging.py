@@ -32,7 +32,7 @@ def setup_katana_logging(level=logging.INFO):
     logger = logging.getLogger('katana')
     logger.setLevel(level)
     if not logger.handlers:
-        handler = logging.StreamHandler()
+        handler = logging.StreamHandler(stream=sys.stdout)
         handler.setFormatter(KatanaFormatter(format))
         logger.addHandler(handler)
         logger.propagate = False

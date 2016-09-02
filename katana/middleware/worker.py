@@ -26,11 +26,11 @@ class MiddlewareWorker(ComponentWorker):
             self.platform_version,
             # Keyword arguments
             protocol_version=payload.get('request/version'),
-            query=MultiDict(payload.get('request/query')),
-            headers=MultiDict(payload.get('request/headers')),
-            post_data=MultiDict(payload.get('request/post_data')),
+            query=MultiDict(payload.get('request/query', {})),
+            headers=MultiDict(payload.get('request/headers', {})),
+            post_data=MultiDict(payload.get('request/post_data', {})),
             body=payload.get('request/body'),
-            files=payload.get('request/files'),
+            files=MultiDict(payload.get('request/files', {})),
             service_name=payload.get('call/service'),
             service_version=payload.get('call/version'),
             action_name=payload.get('call/action'),
@@ -38,7 +38,7 @@ class MiddlewareWorker(ComponentWorker):
             )
 
     def _create_response_component_instance(self, payload):
-        code, text = payload.get('response/status').split(' ')
+        code, text = payload.get('response/status').split(' ', 1)
         return Response(
             int(code),
             text,

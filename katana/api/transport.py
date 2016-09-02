@@ -104,7 +104,7 @@ class Transport(object):
 
         """
 
-        data = self.__transport.get('data')
+        data = self.__transport.get('data', {})
         for key in (service, version, action):
             if not key:
                 break
@@ -128,7 +128,7 @@ class Transport(object):
 
         """
 
-        relations = self.__transport.get('relations')
+        relations = self.__transport.get('relations', {})
         if service:
             return relations.get(service, {})
 
@@ -149,7 +149,7 @@ class Transport(object):
 
         """
 
-        links = self.__transport.get('links')
+        links = self.__transport.get('links', {})
         if service:
             return links.get(service, {})
 
@@ -170,7 +170,7 @@ class Transport(object):
 
         """
 
-        calls = self.__transport.get('calls')
+        calls = self.__transport.get('calls', {})
         if service:
             return calls.get(service, {})
 
@@ -193,7 +193,7 @@ class Transport(object):
 
         """
 
-        transactions = self.__transport.get('transactions')
+        transactions = self.__transport.get('transactions', {})
         if service:
             return transactions.get(service, {})
 
@@ -214,7 +214,7 @@ class Transport(object):
 
         """
 
-        errors = self.__transport.get('errors')
+        errors = self.__transport.get('errors', {})
         if service:
             return errors.get(service, {})
 

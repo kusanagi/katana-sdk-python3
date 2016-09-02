@@ -106,7 +106,7 @@ FIELD_MAPPINGS = {
     'total': 't',
     'transactions': 't',
     'transport': 't',
-    'type': 't',
+    'type': 'T',
     'url': 'u',
     'used': 'u',
     'user': 'u',

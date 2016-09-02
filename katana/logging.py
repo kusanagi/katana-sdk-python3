@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from datetime import datetime
 
@@ -21,7 +22,7 @@ def setup_katana_logging(level=logging.INFO):
 
     # Setup root logger
     if not logging.root.handlers:
-        logging.basicConfig(level=level)
+        logging.basicConfig(level=level, stream=sys.stdout)
         logging.root.setLevel(level)
         logging.root.handlers[0].setFormatter(
             KatanaFormatter(format),

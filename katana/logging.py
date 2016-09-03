@@ -21,12 +21,11 @@ def setup_katana_logging(level=logging.INFO):
     format = "%(asctime)sZ [%(levelname)s] [SDK] %(message)s"
 
     # Setup root logger
-    if not logging.root.handlers:
+    root = logging.root
+    if not root.handlers:
         logging.basicConfig(level=level, stream=sys.stdout)
-        logging.root.setLevel(level)
-        logging.root.handlers[0].setFormatter(
-            KatanaFormatter(format),
-            )
+        root.setLevel(level)
+        root.handlers[0].setFormatter(KatanaFormatter(format))
 
     # Setup katana logger
     logger = logging.getLogger('katana')
@@ -36,3 +35,7 @@ def setup_katana_logging(level=logging.INFO):
         handler.setFormatter(KatanaFormatter(format))
         logger.addHandler(handler)
         logger.propagate = False
+
+    # Setup other loggers
+    logger = logging.getLogger('asyncio')
+    logger.setLevel(logging.ERROR)

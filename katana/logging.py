@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from datetime import datetime
 
@@ -20,18 +21,21 @@ def setup_katana_logging(level=logging.INFO):
     format = "%(asctime)sZ [%(levelname)s] [SDK] %(message)s"
 
     # Setup root logger
-    if not logging.root.handlers:
-        logging.basicConfig(level=level)
-        logging.root.setLevel(level)
-        logging.root.handlers[0].setFormatter(
-            KatanaFormatter(format),
-            )
+    root = logging.root
+    if not root.handlers:
+        logging.basicConfig(level=level, stream=sys.stdout)
+        root.setLevel(level)
+        root.handlers[0].setFormatter(KatanaFormatter(format))
 
     # Setup katana logger
     logger = logging.getLogger('katana')
     logger.setLevel(level)
     if not logger.handlers:
-        handler = logging.StreamHandler()
+        handler = logging.StreamHandler(stream=sys.stdout)
         handler.setFormatter(KatanaFormatter(format))
         logger.addHandler(handler)
         logger.propagate = False
+
+    # Setup other loggers
+    logger = logging.getLogger('asyncio')
+    logger.setLevel(logging.ERROR)

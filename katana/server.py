@@ -51,7 +51,7 @@ class ComponentServer(object):
         """
 
         # Strip protocol from channel, in case channel is TCP
-        return ipc(self.channel[6:], 'workers')
+        return 'ipc://{}-workers'.format(self.channel[6:])
 
     @property
     def process_factory(self):
@@ -87,6 +87,7 @@ class ComponentServer(object):
 
         """
 
+        LOG.debug('Starting %s child process(es)', self.processes)
         for process in self.__process_list:
             process.start()
 

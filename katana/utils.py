@@ -491,9 +491,13 @@ class LookupDict(dict):
         if not isinstance(value, dict):
             raise TypeError('Merge value is not a dict')
 
-        item = self.get(path)
-        if not isinstance(item, dict):
-            raise TypeError('Value in path "{}" is not dict'.format(path))
+        if self.path_exists(path):
+            item = self.get(path)
+            if not isinstance(item, dict):
+                raise TypeError('Value in path "{}" is not dict'.format(path))
+        else:
+            item = {}
+            self.set(path, item)
 
         merge(value, item, mappings=self.__mappings, lists=True)
         return self

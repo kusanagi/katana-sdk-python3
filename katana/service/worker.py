@@ -89,4 +89,4 @@ class ServiceWorker(ComponentWorker):
             'errors/{}/{}'.format(action.get_name(), action.get_version()),
             ErrorPayload.new(str(exc))
             )
-        return transport
+        return transport.entity()

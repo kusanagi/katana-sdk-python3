@@ -55,9 +55,9 @@ class ComponentRunner(object):
         self.__tasks = []
         self.__stop = False
         self.__server = None
-        self.loop = None
         self._args = {}
         self.sleep_period = 0.1
+        self.loop = None
         self.callback = None
         self.server_factory = server_factory
         self.help = help

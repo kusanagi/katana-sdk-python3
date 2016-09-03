@@ -106,7 +106,7 @@ FIELD_MAPPINGS = {
     'total': 't',
     'transactions': 't',
     'transport': 't',
-    'type': 't',
+    'type': 'T',
     'url': 'u',
     'used': 'u',
     'user': 'u',
@@ -211,12 +211,26 @@ class ErrorPayload(Payload):
 
     name = 'error'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_defaults({
+            'message': 'Unknown error',
+            'code': 0,
+            'status': '500 Internal Server Error',
+            })
+
     @classmethod
     def new(cls, message=None, code=None, status=None):
         payload = cls()
-        payload.set('message', message or 'Internal Server Error')
-        payload.set('code', code)
-        payload.set('status', status or '500 Internal Server Error')
+        if message:
+            payload.set('message', message)
+
+        if code:
+            payload.set('code', code)
+
+        if status:
+            payload.set('status', status)
+
         return payload
 
 
@@ -307,11 +321,19 @@ class RequestPayload(Payload):
         payload.set('version', request.version)
         payload.set('method', request.method)
         payload.set('url', request.url)
-        payload.set('query', request.query)
-        payload.set('post_data', request.post_data)
-        payload.set('headers', request.headers)
-        payload.set('body', request.body)
-        payload.set('files', files or {})
+        payload.set('body', request.body or '')
+        if request.query:
+            payload.set('query', request.query)
+
+        if request.post_data:
+            payload.set('post_data', request.post_data)
+
+        if request.headers:
+            payload.set('headers', request.headers)
+
+        if files:
+            payload.set('files', files)
+
         return payload
 
 
@@ -351,23 +373,30 @@ class TransportPayload(Payload):
 
     name = 'transport'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_defaults({
+            'body': {},
+            'files': {},
+            'data': {},
+            'relations': {},
+            'links': {},
+            'calls': {},
+            'transactions': {},
+            'errors': {},
+            })
+
     @classmethod
-    def new(cls, version, request_id, origin=None, date_time=None):
+    def new(cls, version, request_id, origin=None, date_time=None, **kwargs):
         payload = cls()
         payload.set('meta/version', version)
         payload.set('meta/id', request_id)
         payload.set('meta/datetime', date_to_str(date_time or utcnow()))
         payload.set('meta/origin', origin or [])
         payload.set('meta/level', 1)
-        payload.set('meta/properties', {})
-        payload.set('body', {})
-        payload.set('files', {})
-        payload.set('data', {})
-        payload.set('relations', {})
-        payload.set('links', {})
-        payload.set('calls', {})
-        payload.set('transactions', {})
-        payload.set('errors', {})
+        if kwargs.get('properties'):
+            payload.set('meta/properties', kwargs['properties'])
+
         return payload
 
 
@@ -376,12 +405,20 @@ class CommandPayload(Payload):
 
     name = 'command'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_defaults({
+            'command/arguments': None,
+            })
+
     @classmethod
     def new(cls, name, scope, args=None):
         payload = cls()
         payload.set('command/name', name)
-        payload.set('command/arguments', args)
         payload.set('meta/scope', scope)
+        if args:
+            payload.set('command/arguments', args)
+
         return payload
 
 

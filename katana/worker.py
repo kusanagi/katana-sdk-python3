@@ -63,7 +63,7 @@ class ComponentWorker(object):
     def debug(self):
         return self.cli_args['debug']
 
-    def create_error_payload(self, exc, component):
+    def create_error_payload(self, exc, component, **kwargs):
         """Create a payload for the error response.
 
         :params exc: The exception raised in user land callback.
@@ -152,7 +152,7 @@ class ComponentWorker(object):
         else:
             payload = self.component_to_payload(payload, component)
 
-        # Conver callback result to a command payload
+        # Convert callback result to a command payload
         return CommandResultPayload.new(command_name, payload).entity()
 
     def get_response_meta(self, payload):

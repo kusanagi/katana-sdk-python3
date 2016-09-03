@@ -61,7 +61,7 @@ class MiddlewareWorker(ComponentWorker):
         """
 
         middleware_type = payload.get('command/arguments/type')
-        payload = Payload(payload.get('command/arguments/component'))
+        payload = Payload(payload.get('command/arguments'))
         if middleware_type == 'request':
             return self._create_request_component_instance(payload)
         elif middleware_type == 'response':

@@ -142,6 +142,9 @@ class ComponentWorker(object):
             else:
                 # Call callback asynchronusly
                 component = yield from self.callback(component)
+        except CancelledError:
+            # Avoid logging task cancel errors by catching it here.
+            raise
         except Exception as exc:
             LOG.exception('Component failed')
             payload = self.create_error_payload(
@@ -186,6 +189,9 @@ class ComponentWorker(object):
         # Process command and return payload response serialized
         try:
             payload = yield from self.process_payload(payload)
+        except CancelledError:
+            # Avoid logging task cancel errors by catching it here
+            raise
         except HTTPError as err:
             payload = ErrorPayload.new(
                 status=err.status,

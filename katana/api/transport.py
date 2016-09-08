@@ -1,6 +1,6 @@
 from ..payload import Payload
 
-from .file import File
+from .file import payload_to_file
 
 
 class Transport(object):
@@ -79,13 +79,7 @@ class Transport(object):
 
         """
 
-        return File(
-            self.__transport.get('body/name'),
-            self.__transport.get('body/filename'),
-            self.__transport.get('body/size'),
-            self.__transport.get('body/mime'),
-            self.__transport.get('body/path'),
-            )
+        return payload_to_file(self.__transport.get('body'))
 
     def get_data(self, service=None, version=None, action=None):
         """Get data from Transport.

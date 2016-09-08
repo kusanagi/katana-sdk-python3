@@ -1,3 +1,47 @@
+from ..payload import get_path
+from ..payload import Payload
+
+
+def file_to_payload(file):
+    """Convert a File object to a payload.
+
+    :param file: A File object.
+    :type file: `File`
+
+    :rtype: dict
+
+    """
+
+    return Payload().set_many({
+        'name': file.get_name(),
+        'path': file.get_path(),
+        'mime': file.get_mime(),
+        'filename': file.get_filename(),
+        'size': file.get_size(),
+        'exists': file.exists(),
+        })
+
+
+def payload_to_file(payload):
+    """Convert payload to a File.
+
+    :param payload: A payload object.
+    :type payload: dict
+
+    :rtype: `File`
+
+    """
+
+    return File(
+        get_path(payload, 'name'),
+        get_path(payload, 'path'),
+        mime=get_path(payload, 'mime', None),
+        filename=get_path(payload, 'filename', None),
+        size=get_path(payload, 'size', None),
+        exists=get_path(payload, 'exists', False),
+        )
+
+
 class File(object):
     """File class for API.
 
@@ -81,7 +125,9 @@ class File(object):
 
         """
 
-        # TODO: Download file from path using HTTP protocol or read locally
+        # TODO: Download file from path using HTTP protocol or read locally.
+        # TODO: We might want to have a `read_chunk(chunk_size)` for big files.
+        # TODO: We need a token value here, either as property or argument.
         raise NotImplementedError()
 
     def copy(self, **kwargs):

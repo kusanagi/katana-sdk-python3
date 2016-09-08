@@ -1,8 +1,13 @@
+import os
+
 from ..payload import ErrorPayload
 from ..payload import Payload
+from ..utils import MultiDict
 
 from .base import Api
 from .file import File
+from .file import file_to_payload
+from .file import payload_to_file
 from .param import Param
 
 
@@ -44,10 +49,18 @@ class Action(Api):
     """Action API class for Service component."""
 
     def __init__(self, action, params, transport, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__action = action
         self.__params = params
         self.__transport = transport
-        super().__init__(*args, **kwargs)
+
+        # Get file data and convert each file to a File object
+        self.__files = transport.get('files', {})
+        for name, files in self.__files.items():
+            self.__files[name] = [payload_to_file(value) for value in files]
+
+        # Conver files dictionary to a multidict
+        self.__files = MultiDict(self.__files)
 
     def is_origin(self):
         """Determines if the current service is the origin of the request.
@@ -165,8 +178,7 @@ class Action(Api):
 
         """
 
-        # TODO: Implement file support for actions
-        raise NotImplementedError()
+        return name in self.__files
 
     def get_file(self, name):
         """Get a file with a given name.
@@ -174,12 +186,14 @@ class Action(Api):
         :param name: File name.
         :type name: str
 
-        :rtype: `File`
+        :rtype: `File` or None
 
         """
 
-        # TODO: Implement file support for actions
-        raise NotImplementedError()
+        if self.has_file(name):
+            # Get only the first file.
+            # Note: Multiple files can be uploaded to gateway for the same name
+            return self.__files.getone(name)
 
     def new_file(self, name, path, mime=None):
         """Create a new file.
@@ -195,8 +209,19 @@ class Action(Api):
 
         """
 
-        # TODO: Implement file support for actions
-        raise NotImplementedError()
+        if not path.startswith('file://'):
+            path = 'file://{}'.format(path)
+
+        # Initialize dynamic file values
+        extra = {'filename': os.path.basename(path)}
+        try:
+            extra['size'] = os.path.getsize(path[7:])
+            extra['exists'] = True
+        except OSError:
+            extra['size'] = None
+            extra['exists'] = False
+
+        return File(name, path, mime=mime, **extra)
 
     def set_download(self, file):
         """Set a file as the download.
@@ -213,7 +238,7 @@ class Action(Api):
         if not isinstance(file, File):
             raise TypeError('File must be an instance of File class')
 
-        return self.__transport.set('body', file)
+        return self.__transport.set('body', file_to_payload(file))
 
     def set_entity(self, entity):
         """Sets the entity data.

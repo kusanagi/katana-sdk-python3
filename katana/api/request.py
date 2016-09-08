@@ -12,6 +12,7 @@ class Request(Api):
     """Request API class for Middleware component."""
 
     def __init__(self, method, url, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__method = method.upper()
         self.__url = url
         self.__protocol_version = kwargs.pop('protocol_version', None) or '1.1'
@@ -27,8 +28,6 @@ class Request(Api):
         self.set_service_name(kwargs.pop('service_name', None) or '')
         self.set_service_version(kwargs.pop('service_version', None) or '')
         self.set_action_name(kwargs.pop('action_name', None) or '')
-
-        super().__init__(*args, **kwargs)
 
     def is_method(self, method):
         """Determine if the request used the given HTTP method.
@@ -363,7 +362,7 @@ class Request(Api):
         """
 
         # Get only the first file.
-        # Note: Multiple files can be uploaded for the same name.
+        # Note: Multiple files can be uploaded to gateway for the same name.
         return self.__files.getone(name)
 
     def get_files(self):

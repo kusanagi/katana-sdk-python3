@@ -5,16 +5,9 @@ from ..payload import ErrorPayload
 from ..payload import Payload
 from ..payload import TransportPayload
 from ..worker import ComponentWorker
+from ..worker import SERVICE_CALL
 
 LOG = logging.getLogger(__name__)
-
-# Constants for response meta frame
-SE = SERVICE_CALL = b'\x01'
-FI = FILES = b'\x02'
-TR = TRANSACTIONS = b'\x03'
-
-# Allowed response meta values
-META_VALUES = (SE, FI, TR)
 
 
 class ServiceWorker(ComponentWorker):

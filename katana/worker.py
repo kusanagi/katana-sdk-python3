@@ -17,6 +17,15 @@ from .payload import ErrorPayload
 
 LOG = logging.getLogger(__name__)
 
+# Constants for response meta frame
+EMPTY_META = b'\x00'
+SE = SERVICE_CALL = b'\x01'
+FI = FILES = b'\x02'
+TR = TRANSACTIONS = b'\x03'
+
+# Allowed response meta values
+META_VALUES = (EMPTY_META, SE, FI, TR)
+
 
 class ComponentWorker(object):
     """Component worker task class.
@@ -201,7 +210,10 @@ class ComponentWorker(object):
             LOG.exception('Component failed')
             payload = ErrorPayload.new().entity()
 
-        return [self.get_response_meta(payload), serialization.pack(payload)]
+        return [
+            self.get_response_meta(payload) or EMPTY_META,
+            serialization.pack(payload),
+            ]
 
     @asyncio.coroutine
     def _start_handling_requests(self):

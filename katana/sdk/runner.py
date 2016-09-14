@@ -7,6 +7,8 @@ import signal
 import click
 import zmq.asyncio
 
+import katana.payload
+
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
@@ -135,6 +137,16 @@ class ComponentRunner(object):
 
         return self._args.get('debug', False)
 
+    @property
+    def compact_names(self):
+        """Check if payloads should use compact names.
+
+        :rtype: bool
+
+        """
+
+        return not self._args.get('disable_compact_names', False)
+
     def get_default_socket_name(self):
         """Get a default socket name to use when socket name is missing.
 
@@ -173,6 +185,11 @@ class ComponentRunner(object):
                 type=click.Choice(['service', 'middleware']),
                 help='Component type',
                 required=True,
+                ),
+            click.option(
+                '-d', '--disable-compact-names',
+                is_flag=True,
+                help='Use full property names instead of compact in payloads.',
                 ),
             click.option(
                 '-n', '--name',
@@ -238,6 +255,10 @@ class ComponentRunner(object):
         else:
             # Abstract domain unix socket
             channel = 'ipc://{}'.format(self.socket_name)
+
+        # When compact mode is enabled use long payload field names
+        if not self.compact_names:
+            katana.payload.DISABLE_FIELD_MAPPINGS = True
 
         # Gracefully terminate component on SIGTERM events.
         self.loop.add_signal_handler(signal.SIGTERM, self.stop)

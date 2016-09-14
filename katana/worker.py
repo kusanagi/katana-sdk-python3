@@ -186,9 +186,6 @@ class ComponentWorker(object):
         # Parse stream to get the commnd payload
         try:
             payload = CommandPayload(serialization.unpack(stream))
-            # When compact mode is enabled use long payload field names
-            if payload.get('meta/disable_compact_mode', False):
-                katana.payload.DISABLE_FIELD_MAPPINGS = True
         except:
             LOG.exception('Invalid message format received')
             return serialization.pack(

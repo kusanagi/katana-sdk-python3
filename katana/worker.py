@@ -17,6 +17,15 @@ from .payload import ErrorPayload
 
 LOG = logging.getLogger(__name__)
 
+# Constants for response meta frame
+EMPTY_META = b'\x00'
+SE = SERVICE_CALL = b'\x01'
+FI = FILES = b'\x02'
+TR = TRANSACTIONS = b'\x03'
+
+# Allowed response meta values
+META_VALUES = (EMPTY_META, SE, FI, TR)
+
 
 class ComponentWorker(object):
     """Component worker task class.
@@ -142,6 +151,9 @@ class ComponentWorker(object):
             else:
                 # Call callback asynchronusly
                 component = yield from self.callback(component)
+        except CancelledError:
+            # Avoid logging task cancel errors by catching it here.
+            raise
         except Exception as exc:
             LOG.exception('Component failed')
             payload = self.create_error_payload(
@@ -174,9 +186,6 @@ class ComponentWorker(object):
         # Parse stream to get the commnd payload
         try:
             payload = CommandPayload(serialization.unpack(stream))
-            # When compact mode is enabled use long payload field names
-            if payload.get('meta/disable_compact_mode', False):
-                katana.payload.DISABLE_FIELD_MAPPINGS = True
         except:
             LOG.exception('Invalid message format received')
             return serialization.pack(
@@ -186,6 +195,9 @@ class ComponentWorker(object):
         # Process command and return payload response serialized
         try:
             payload = yield from self.process_payload(payload)
+        except CancelledError:
+            # Avoid logging task cancel errors by catching it here
+            raise
         except HTTPError as err:
             payload = ErrorPayload.new(
                 status=err.status,
@@ -195,7 +207,10 @@ class ComponentWorker(object):
             LOG.exception('Component failed')
             payload = ErrorPayload.new().entity()
 
-        return [self.get_response_meta(payload), serialization.pack(payload)]
+        return [
+            self.get_response_meta(payload) or EMPTY_META,
+            serialization.pack(payload),
+            ]
 
     @asyncio.coroutine
     def _start_handling_requests(self):

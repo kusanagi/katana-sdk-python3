@@ -222,10 +222,6 @@ class CommandsManager(object):
 
         try:
             payload = self.payload_cls(unpack(stream))
-            # When compact mode is enabled use long payload field names
-            if payload.get('meta/disable_compact_mode', False):
-                katana.payload.DISABLE_FIELD_MAPPINGS = True
-
             return self.process_payload(payload)
         except (TypeError, ValueError) as err:
             LOG.error('Command payload stream process failed: %s', err)

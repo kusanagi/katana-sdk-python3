@@ -189,7 +189,7 @@ class ComponentRunner(object):
             click.option(
                 '-d', '--disable-compact-names',
                 is_flag=True,
-                help='Show full payload names instead of compact ones.',
+                help='Use full property names instead of compact in payloads.',
                 ),
             click.option(
                 '-n', '--name',

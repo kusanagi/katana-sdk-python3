@@ -70,7 +70,7 @@ class File(object):
         self.__mime = kwargs.get('mime') or 'text/plain'
         self.__filename = kwargs.get('filename')
         self.__size = kwargs.get('size') or 0
-        self.__token = kwargs.get('token')
+        self.__token = kwargs.get('token') or ''
 
     def get_name(self):
         """Get parameter name.

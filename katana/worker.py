@@ -6,7 +6,6 @@ import os
 from concurrent.futures import CancelledError
 from concurrent.futures import ThreadPoolExecutor
 
-import katana.payload
 import zmq.asyncio
 
 from . import serialization
@@ -71,6 +70,10 @@ class ComponentWorker(object):
     @property
     def debug(self):
         return self.cli_args['debug']
+
+    @property
+    def component_path(self):
+        return '{}/{}'.format(self.component_name, self.component_version)
 
     def create_error_payload(self, exc, component, **kwargs):
         """Create a payload for the error response.

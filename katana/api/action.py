@@ -376,7 +376,13 @@ class Action(Api):
 
         """
 
-        # TODO: Implement files handling
+        # Add files to transport
+        if files:
+            self.__transport.set(
+                'files/{}/{}/{}'.format(service, version, action),
+                {file.get_name(): file_to_payload(file) for file in files}
+                )
+
         return self.__transport.push(
             'calls/{}/{}'.format(self.get_name(), self.get_version()),
             Payload().set_many({

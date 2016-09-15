@@ -21,19 +21,21 @@ def file_to_payload(file):
 
     """
 
+    # http:// or file:// prefix is removed from path in payload data
     return Payload().set_many({
-        'name': file.get_name(),
-        'path': file.get_path(),
+        'path': file.get_path()[7:],
         'mime': file.get_mime(),
         'filename': file.get_filename(),
         'size': file.get_size(),
-        'exists': file.exists(),
+        'token': file.get_token(),
         })
 
 
-def payload_to_file(payload):
+def payload_to_file(name, payload):
     """Convert payload to a File.
 
+    :param name: File field name.
+    :type name: str
     :param payload: A payload object.
     :type payload: dict
 
@@ -41,13 +43,14 @@ def payload_to_file(payload):
 
     """
 
+    # All files created from payload data are remote
     return File(
-        get_path(payload, 'name'),
-        get_path(payload, 'path'),
+        name,
+        'http://{}'.format(get_path(payload, 'path')),
         mime=get_path(payload, 'mime', None),
         filename=get_path(payload, 'filename', None),
         size=get_path(payload, 'size', None),
-        exists=get_path(payload, 'exists', False),
+        token=get_path(payload, 'token', None),
         )
 
 
@@ -67,7 +70,6 @@ class File(object):
         self.__mime = kwargs.get('mime') or 'text/plain'
         self.__filename = kwargs.get('filename')
         self.__size = kwargs.get('size') or 0
-        self.__exists = kwargs.get('exists')
         self.__token = kwargs.get('token')
 
     def get_name(self):
@@ -159,11 +161,9 @@ class File(object):
             except:
                 LOG.exception('File server request failed: %s', self.__path)
                 return False
-        elif self.__exists is None:
-            # When exists is not setted check file existence locally
+        else:
+            # Check file existence locally
             return os.path.isfile(self.__path[7:])
-
-        return self.__exists
 
     def read(self):
         """Get file data.

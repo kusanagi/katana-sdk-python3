@@ -54,13 +54,13 @@ class Action(Api):
         self.__params = params
         self.__transport = transport
 
-        # Get file data and convert each file to a File object
-        self.__files = transport.get('files', {})
-        for name, files in self.__files.items():
-            self.__files[name] = [payload_to_file(value) for value in files]
-
-        # Conver files dictionary to a multidict
-        self.__files = MultiDict(self.__files)
+        # Get files for current service, version and action
+        path = 'files/{}/{}/{}'.format(
+            self.get_name(),
+            self.get_version(),
+            self.get_action_name(),
+            )
+        self.__files = transport.get(path, default={})
 
     def is_origin(self):
         """Determines if the current service is the origin of the request.
@@ -69,10 +69,8 @@ class Action(Api):
 
         """
 
-        return (
-            self.__transport.get('meta/origin') ==
-            [self.get_name(), self.get_version()]
-            )
+        origin = self.__transport.get('meta/origin')
+        return (origin == [self.get_name(), self.get_version()])
 
     def get_action_name(self):
         """Get the name of the action.
@@ -191,9 +189,7 @@ class Action(Api):
         """
 
         if self.has_file(name):
-            # Get only the first file.
-            # Note: Multiple files can be uploaded to gateway for the same name
-            return self.__files.getone(name)
+            return payload_to_file(name, self.__files[name])
 
     def new_file(self, name, path, mime=None):
         """Create a new file.

@@ -33,7 +33,7 @@ def decode(data):
         elif data_type == 'datetime':
             return utils.str_to_date(data['value'])
         elif data_type == 'date':
-            return datetime.strptime(data['value'], '%Y-%m-%d')
+            return datetime.datetime.strptime(data['value'], '%Y-%m-%d')
 
     return data
 

@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import logging
 import os
 
@@ -14,6 +13,7 @@ from .errors import HTTPError
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .payload import ErrorPayload
+from .utils import get_source_file
 
 LOG = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class ComponentWorker(object):
         self.callback = callback
         self.channel = channel
         self.cli_args = cli_args
-        self.source_file = os.path.abspath(inspect.getfile(callback))
+        self.source_file = os.path.abspath(get_source_file(callback))
         self.loop = asyncio.get_event_loop()
         self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()

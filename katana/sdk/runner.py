@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import logging
 import os
 import signal
@@ -12,6 +11,7 @@ import katana.payload
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
+from ..utils import get_source_file
 from ..utils import install_uvevent_loop
 from ..utils import ipc
 from ..utils import tcp
@@ -366,7 +366,7 @@ class ComponentRunner(object):
         # Use callback source file as command name, and the
         # docstring from the module where callback is defined
         # as help string for the command.
-        command = click.command(name=inspect.getfile(callback), help=self.help)
+        command = click.command(name=get_source_file(callback), help=self.help)
         # Command must call `__start_component_server` method when
         # command line options are valid.
         start_component = command(self.__start_component_server)

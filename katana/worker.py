@@ -36,9 +36,10 @@ EMPTY_META = b'\x00'
 SE = SERVICE_CALL = b'\x01'
 FI = FILES = b'\x02'
 TR = TRANSACTIONS = b'\x03'
+DL = DOWNLOAD = b'\x04'
 
 # Allowed response meta values
-META_VALUES = (EMPTY_META, SE, FI, TR)
+META_VALUES = (EMPTY_META, SE, FI, TR, DL)
 
 
 class ComponentWorker(object):

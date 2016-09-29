@@ -22,6 +22,7 @@ from ..payload import path_exists
 from ..payload import Payload
 from ..payload import TransportPayload
 from ..worker import ComponentWorker
+from ..worker import DOWNLOAD
 from ..worker import FILES
 from ..worker import SERVICE_CALL
 
@@ -51,25 +52,31 @@ class ServiceWorker(ComponentWorker):
         if not transport:
             return meta
 
+        # When a download is registered add files flag
+        if transport.get('body', None):
+            meta += DOWNLOAD
+
         # Add meta for service call when inter service calls are made
         calls = get_path(transport, 'calls/{}'.format(self.component_path), None)
         if calls:
             meta += SERVICE_CALL
 
-            # Add meta for files only when service calls are made.
-            # Files are setted in a service ONLY when a call to
-            # another service is made.
-            files = get_path(transport, 'files', None)
-            for call in calls:
-                files_path = '{}/{}/{}'.format(
-                    get_path(call, 'name'),
-                    get_path(call, 'version'),
-                    get_path(call, 'action'),
-                    )
-                # Add flag and exit when at least one call has files
-                if path_exists(files, files_path):
-                    meta += FILES
-                    break
+            # Skip call files check when files flag is already in meta
+            if FILES not in meta:
+                # Add meta for files only when service calls are made.
+                # Files are setted in a service ONLY when a call to
+                # another service is made.
+                files = get_path(transport, 'files', None)
+                for call in calls:
+                    files_path = '{}/{}/{}'.format(
+                        get_path(call, 'name'),
+                        get_path(call, 'version'),
+                        get_path(call, 'action'),
+                        )
+                    # Add flag and exit when at least one call has files
+                    if path_exists(files, files_path):
+                        meta += FILES
+                        break
 
         return meta
 

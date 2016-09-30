@@ -1,3 +1,18 @@
+"""
+Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
 from ..utils import MultiDict
 
 from .base import Api
@@ -7,6 +22,7 @@ class Response(Api):
     """Response API class for Middleware component."""
 
     def __init__(self, status_code, status_text, transport, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__transport = transport
         self.__headers = MultiDict()
         self.set_status(status_code, status_text)
@@ -24,8 +40,6 @@ class Response(Api):
 
             for name, value in headers:
                 self.set_header(name, value)
-
-        super().__init__(*args, **kwargs)
 
     def is_protocol_version(self, version):
         """Determine if the response uses the given HTTP version.

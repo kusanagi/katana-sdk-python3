@@ -1,10 +1,29 @@
+"""
+Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
 import logging
 
 from ..api.action import Action
 from ..payload import ErrorPayload
+from ..payload import get_path
+from ..payload import path_exists
 from ..payload import Payload
 from ..payload import TransportPayload
 from ..worker import ComponentWorker
+from ..worker import DOWNLOAD
+from ..worker import FILES
 from ..worker import SERVICE_CALL
 
 LOG = logging.getLogger(__name__)
@@ -23,11 +42,41 @@ class ServiceWorker(ComponentWorker):
 
         return self.cli_args['action']
 
+    @property
+    def component_action_path(self):
+        return '{}/{}'.format(self.component_path, self.action)
+
     def get_response_meta(self, payload):
         meta = super().get_response_meta(payload)
-        # Add meta for service call when an inter service call is made
-        if payload.get('command_reply/result/transport/calls', None):
+        transport = payload.get('command_reply/result/transport', None)
+        if not transport:
+            return meta
+
+        # When a download is registered add files flag
+        if transport.get('body', None):
+            meta += DOWNLOAD
+
+        # Add meta for service call when inter service calls are made
+        calls = get_path(transport, 'calls/{}'.format(self.component_path), None)
+        if calls:
             meta += SERVICE_CALL
+
+            # Skip call files check when files flag is already in meta
+            if FILES not in meta:
+                # Add meta for files only when service calls are made.
+                # Files are setted in a service ONLY when a call to
+                # another service is made.
+                files = get_path(transport, 'files', None)
+                for call in calls:
+                    files_path = '{}/{}/{}'.format(
+                        get_path(call, 'name'),
+                        get_path(call, 'version'),
+                        get_path(call, 'action'),
+                        )
+                    # Add flag and exit when at least one call has files
+                    if path_exists(files, files_path):
+                        meta += FILES
+                        break
 
         return meta
 

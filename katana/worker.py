@@ -1,12 +1,25 @@
+"""
+Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
 import asyncio
-import inspect
 import logging
 import os
 
 from concurrent.futures import CancelledError
 from concurrent.futures import ThreadPoolExecutor
 
-import katana.payload
 import zmq.asyncio
 
 from . import serialization
@@ -14,6 +27,7 @@ from .errors import HTTPError
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .payload import ErrorPayload
+from .utils import get_source_file
 
 LOG = logging.getLogger(__name__)
 
@@ -22,9 +36,10 @@ EMPTY_META = b'\x00'
 SE = SERVICE_CALL = b'\x01'
 FI = FILES = b'\x02'
 TR = TRANSACTIONS = b'\x03'
+DL = DOWNLOAD = b'\x04'
 
 # Allowed response meta values
-META_VALUES = (EMPTY_META, SE, FI, TR)
+META_VALUES = (EMPTY_META, SE, FI, TR, DL)
 
 
 class ComponentWorker(object):
@@ -45,7 +60,7 @@ class ComponentWorker(object):
         self.callback = callback
         self.channel = channel
         self.cli_args = cli_args
-        self.source_file = os.path.abspath(inspect.getfile(callback))
+        self.source_file = os.path.abspath(get_source_file(callback))
         self.loop = asyncio.get_event_loop()
         self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()
@@ -71,6 +86,10 @@ class ComponentWorker(object):
     @property
     def debug(self):
         return self.cli_args['debug']
+
+    @property
+    def component_path(self):
+        return '{}/{}'.format(self.component_name, self.component_version)
 
     def create_error_payload(self, exc, component, **kwargs):
         """Create a payload for the error response.

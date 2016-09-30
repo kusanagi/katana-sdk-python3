@@ -1,3 +1,18 @@
+"""
+Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
 from itertools import chain
 from urllib.parse import urlparse
 
@@ -12,6 +27,7 @@ class Request(Api):
     """Request API class for Middleware component."""
 
     def __init__(self, method, url, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__method = method.upper()
         self.__url = url
         self.__protocol_version = kwargs.pop('protocol_version', None) or '1.1'
@@ -27,8 +43,6 @@ class Request(Api):
         self.set_service_name(kwargs.pop('service_name', None) or '')
         self.set_service_version(kwargs.pop('service_version', None) or '')
         self.set_action_name(kwargs.pop('action_name', None) or '')
-
-        super().__init__(*args, **kwargs)
 
     def is_method(self, method):
         """Determine if the request used the given HTTP method.
@@ -363,7 +377,7 @@ class Request(Api):
         """
 
         # Get only the first file.
-        # Note: Multiple files can be uploaded for the same name.
+        # Note: Multiple files can be uploaded to gateway for the same name.
         return self.__files.getone(name)
 
     def get_files(self):

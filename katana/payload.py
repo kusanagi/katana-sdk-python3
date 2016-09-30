@@ -1,3 +1,18 @@
+"""
+Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
 from time import time
 
 from . import utils
@@ -145,6 +160,10 @@ def get_path(payload, path, default=EMPTY, mappings=None):
     return utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
 
 
+def set_path(payload, path, value, mappings=None):
+    return utils.set_path(payload, path, value, mappings or FIELD_MAPPINGS)
+
+
 def path_exists(payload, path, default=EMPTY, mappings=None):
     """Check if a path is available.
 
@@ -153,8 +172,7 @@ def path_exists(payload, path, default=EMPTY, mappings=None):
     """
 
     try:
-        return utils.get_path(
-            payload, path, default, mappings or FIELD_MAPPINGS)
+        utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
     except KeyError:
         return False
     else:

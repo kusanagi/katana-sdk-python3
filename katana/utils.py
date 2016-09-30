@@ -1,5 +1,21 @@
+"""
+Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
 import asyncio
 import functools
+import inspect
 import json
 import os
 import socket
@@ -182,6 +198,28 @@ def get_path(item, path, default=EMPTY, mappings=None):
             return default
         else:
             raise
+
+    return item
+
+
+def set_path(item, path, value, mappings=None):
+    parts = path.split('/')
+    last_part_index = len(parts) - 1
+    for index, part in enumerate(parts):
+        name = mappings.get(part, part) if mappings else part
+        # Current part is the last item in path
+        if index == last_part_index:
+            item[name] = value
+            break
+
+        if name not in item:
+            item[name] = {}
+            item = item[name]
+        elif isinstance(item[name], dict):
+            # Only keep traversing dictionaries
+            item = item[name]
+        else:
+            raise TypeError(part)
 
     return item
 
@@ -630,3 +668,21 @@ def safe_cast(value, cast_func, default=None):
         return cast_func(value)
     except:
         return default
+
+
+def get_source_file(object):
+    """
+    Get the name of the Python source file in which an object was defined.
+
+    :param object: A Python object (module, function, ..).
+    :type object: object
+
+    :rtype: str
+
+    """
+
+    # When a decorator is used get inner object
+    if hasattr(object, '__wrapped__'):
+        object = object.__wrapped__
+
+    return inspect.getfile(object)

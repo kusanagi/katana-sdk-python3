@@ -1,6 +1,21 @@
+"""
+Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
 from ..payload import Payload
 
-from .file import File
+from .file import payload_to_file
 
 
 class Transport(object):
@@ -79,13 +94,7 @@ class Transport(object):
 
         """
 
-        return File(
-            self.__transport.get('body/name'),
-            self.__transport.get('body/filename'),
-            self.__transport.get('body/size'),
-            self.__transport.get('body/mime'),
-            self.__transport.get('body/path'),
-            )
+        return payload_to_file(self.__transport.get('body'))
 
     def get_data(self, service=None, version=None, action=None):
         """Get data from Transport.

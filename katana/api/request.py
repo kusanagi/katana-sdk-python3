@@ -150,7 +150,7 @@ class Request(Api):
         :param name: The param from the HTTP query string.
         :type name: str
         :param default: The optional default value.
-        :type name: str
+        :type default: list
 
         :returns: The HTTP param values as a list.
         :rtype: list
@@ -223,7 +223,7 @@ class Request(Api):
         :param name: The param from the HTTP post data.
         :type name: str
         :param default: The optional default value.
-        :type name: str
+        :type default: list
 
         :returns: The HTTP param values as a list.
         :rtype: list

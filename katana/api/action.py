@@ -13,11 +13,15 @@ file that was distributed with this source code.
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
+import os
+
 from ..payload import ErrorPayload
 from ..payload import Payload
 
 from .base import Api
 from .file import File
+from .file import file_to_payload
+from .file import payload_to_file
 from .param import Param
 
 
@@ -59,10 +63,18 @@ class Action(Api):
     """Action API class for Service component."""
 
     def __init__(self, action, params, transport, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__action = action
         self.__params = params
         self.__transport = transport
-        super().__init__(*args, **kwargs)
+
+        # Get files for current service, version and action
+        path = 'files/{}/{}/{}'.format(
+            self.get_name(),
+            self.get_version(),
+            self.get_action_name(),
+            )
+        self.__files = transport.get(path, default={})
 
     def is_origin(self):
         """Determines if the current service is the origin of the request.
@@ -71,10 +83,8 @@ class Action(Api):
 
         """
 
-        return (
-            self.__transport.get('meta/origin') ==
-            [self.get_name(), self.get_version()]
-            )
+        origin = self.__transport.get('meta/origin')
+        return (origin == [self.get_name(), self.get_version()])
 
     def get_action_name(self):
         """Get the name of the action.
@@ -180,8 +190,7 @@ class Action(Api):
 
         """
 
-        # TODO: Implement file support for actions
-        raise NotImplementedError()
+        return name in self.__files
 
     def get_file(self, name):
         """Get a file with a given name.
@@ -189,12 +198,12 @@ class Action(Api):
         :param name: File name.
         :type name: str
 
-        :rtype: `File`
+        :rtype: `File` or None
 
         """
 
-        # TODO: Implement file support for actions
-        raise NotImplementedError()
+        if self.has_file(name):
+            return payload_to_file(name, self.__files[name])
 
     def new_file(self, name, path, mime=None):
         """Create a new file.
@@ -210,8 +219,19 @@ class Action(Api):
 
         """
 
-        # TODO: Implement file support for actions
-        raise NotImplementedError()
+        if not path.startswith('file://'):
+            path = 'file://{}'.format(path)
+
+        # Initialize dynamic file values
+        extra = {'filename': os.path.basename(path)}
+        try:
+            extra['size'] = os.path.getsize(path[7:])
+            extra['exists'] = True
+        except OSError:
+            extra['size'] = None
+            extra['exists'] = False
+
+        return File(name, path, mime=mime, **extra)
 
     def set_download(self, file):
         """Set a file as the download.
@@ -228,7 +248,7 @@ class Action(Api):
         if not isinstance(file, File):
             raise TypeError('File must be an instance of File class')
 
-        return self.__transport.set('body', file)
+        return self.__transport.set('body', file_to_payload(file))
 
     def set_entity(self, entity):
         """Sets the entity data.
@@ -370,7 +390,13 @@ class Action(Api):
 
         """
 
-        # TODO: Implement files handling
+        # Add files to transport
+        if files:
+            self.__transport.set(
+                'files/{}/{}/{}'.format(service, version, action),
+                {file.get_name(): file_to_payload(file) for file in files}
+                )
+
         return self.__transport.push(
             'calls/{}/{}'.format(self.get_name(), self.get_version()),
             Payload().set_many({

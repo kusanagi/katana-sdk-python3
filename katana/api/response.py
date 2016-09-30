@@ -22,6 +22,7 @@ class Response(Api):
     """Response API class for Middleware component."""
 
     def __init__(self, status_code, status_text, transport, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__transport = transport
         self.__headers = MultiDict()
         self.set_status(status_code, status_text)
@@ -39,8 +40,6 @@ class Response(Api):
 
             for name, value in headers:
                 self.set_header(name, value)
-
-        super().__init__(*args, **kwargs)
 
     def is_protocol_version(self, version):
         """Determine if the response uses the given HTTP version.

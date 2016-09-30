@@ -202,6 +202,28 @@ def get_path(item, path, default=EMPTY, mappings=None):
     return item
 
 
+def set_path(item, path, value, mappings=None):
+    parts = path.split('/')
+    last_part_index = len(parts) - 1
+    for index, part in enumerate(parts):
+        name = mappings.get(part, part) if mappings else part
+        # Current part is the last item in path
+        if index == last_part_index:
+            item[name] = value
+            break
+
+        if name not in item:
+            item[name] = {}
+            item = item[name]
+        elif isinstance(item[name], dict):
+            # Only keep traversing dictionaries
+            item = item[name]
+        else:
+            raise TypeError(part)
+
+    return item
+
+
 def merge(from_value, to_value, mappings=None, lists=False):
     """Merge two dictionaries.
 

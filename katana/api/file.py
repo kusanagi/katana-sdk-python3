@@ -36,9 +36,8 @@ def file_to_payload(file):
 
     """
 
-    # http:// or file:// prefix is removed from path in payload data
     return Payload().set_many({
-        'path': file.get_path()[7:],
+        'path': file.get_path(),
         'mime': file.get_mime(),
         'filename': file.get_filename(),
         'size': file.get_size(),
@@ -61,7 +60,7 @@ def payload_to_file(name, payload):
     # All files created from payload data are remote
     return File(
         name,
-        'http://{}'.format(get_path(payload, 'path')),
+        get_path(payload, 'path'),
         mime=get_path(payload, 'mime', None),
         filename=get_path(payload, 'filename', None),
         size=get_path(payload, 'size', None),
@@ -77,7 +76,7 @@ class File(object):
     """
 
     def __init__(self, name, path, **kwargs):
-        if (not path) or path[:4] not in ('file', 'http'):
+        if (not path) or path[:7] not in ('file://', 'http://'):
             raise TypeError('Path must begin with file:// or http://')
 
         self.__name = name

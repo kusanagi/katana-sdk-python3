@@ -56,15 +56,18 @@ class Param(object):
 
     """
 
-    def __init__(self, location, name, **kwargs):
+    def __init__(self, name, location='query', **kwargs):
         if location not in LOCATIONS:
-            raise TypeError('Unknown location value')
+            location = 'query'
 
         self.__value = kwargs.get('value') or ''
         self.__location = location
         self.__name = name
+
         self.__type = kwargs.get('datatype')
-        if not self.__type:
+        if self.__type not in TYPE_CLASSES:
+            self.__type = TYPE_STRING
+        elif not self.__type:
             self.__type = self.resolve_type(self.__value)
 
         self.__exists = kwargs.get('exists', False)
@@ -95,15 +98,6 @@ class Param(object):
 
         return TYPE_OBJECT
 
-    def get_location(self):
-        """Get location where parameter was defined.
-
-        :rtype: str
-
-        """
-
-        return self.__location
-
     def get_name(self):
         """Get aprameter name.
 
@@ -112,6 +106,15 @@ class Param(object):
         """
 
         return self.__name
+
+    def get_location(self):
+        """Get location where parameter was defined.
+
+        :rtype: str
+
+        """
+
+        return self.__location
 
     def get_type(self):
         """Get parameter data type.

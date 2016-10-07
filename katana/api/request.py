@@ -19,6 +19,7 @@ from urllib.parse import urlparse
 from ..utils import MultiDict
 
 from .base import Api
+from .file import File
 from .response import Response
 from .transport import Transport
 
@@ -376,9 +377,11 @@ class Request(Api):
 
         """
 
-        # Get only the first file.
-        # Note: Multiple files can be uploaded to gateway for the same name.
-        return self.__files.getone(name)
+        if name in self.__files:
+            # Get only the first file
+            return self.__files.getone(name)
+        else:
+            return File(name, path='')
 
     def get_files(self):
         """Get uploaded files.

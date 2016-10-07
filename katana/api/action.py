@@ -196,12 +196,14 @@ class Action(Api):
         :param name: File name.
         :type name: str
 
-        :rtype: `File` or None
+        :rtype: `File`
 
         """
 
         if self.has_file(name):
             return payload_to_file(name, self.__files[name])
+        else:
+            return File(name, path='')
 
     def new_file(self, name, path, mime=None):
         """Create a new file.

@@ -138,8 +138,8 @@ class Action(Api):
         param_path = '{}/{}'.format(location, name)
         value = self.__params.get(param_path + '/value', None)
         return Param(
-            location,
             name,
+            location=location,
             value=value,
             datatype=self.__params.get(param_path + '/type', None),
             exists=self.__params.path_exists(param_path),
@@ -176,7 +176,13 @@ class Action(Api):
         else:
             datatype = Param.resolve_type(value)
 
-        return Param(location, name, value, datatype, True)
+        return Param(
+            name,
+            location=location,
+            value=value,
+            datatype=datatype,
+            exists=True,
+            )
 
     def has_file(self, name):
         """Check if a file was provided for the action.

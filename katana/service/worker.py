@@ -61,22 +61,25 @@ class ServiceWorker(ComponentWorker):
         if calls:
             meta += SERVICE_CALL
 
-            # Skip call files check when files flag is already in meta
+            # TODO: Check for file paths to be sure flag is added when local
+            # files are used in any call.
+            # Check if there are files added to calls
             if FILES not in meta:
                 # Add meta for files only when service calls are made.
                 # Files are setted in a service ONLY when a call to
                 # another service is made.
                 files = get_path(transport, 'files', None)
-                for call in calls:
-                    files_path = '{}/{}/{}'.format(
-                        get_path(call, 'name'),
-                        get_path(call, 'version'),
-                        get_path(call, 'action'),
-                        )
-                    # Add flag and exit when at least one call has files
-                    if path_exists(files, files_path):
-                        meta += FILES
-                        break
+                if files:
+                    for call in calls:
+                        files_path = '{}/{}/{}'.format(
+                            get_path(call, 'name'),
+                            get_path(call, 'version'),
+                            get_path(call, 'action'),
+                            )
+                        # Add flag and exit when at least one call has files
+                        if path_exists(files, files_path):
+                            meta += FILES
+                            break
 
         return meta
 

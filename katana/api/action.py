@@ -118,19 +118,18 @@ class Action(Api):
             str(value),
             )
 
-    def get_param(self, location, name):
+    def get_param(self, name, location='query'):
         """Gets a parameter passed to the action.
 
         Returns a Param object containing the parameter for the given location
         and name.
 
-        Valid location values are "path", "query", "form-data", "header"
-        and "body".
+        Valid location values are "path", "query", "form-data" and "header".
 
-        :param location: The parameter location.
-        :type location: str
         :param name: The parameter name.
         :type name: str
+        :param location: The parameter location.
+        :type location: str
 
         :rtype: `Param`
 
@@ -139,14 +138,14 @@ class Action(Api):
         param_path = '{}/{}'.format(location, name)
         value = self.__params.get(param_path + '/value', None)
         return Param(
-            location,
             name,
+            location=location,
             value=value,
             datatype=self.__params.get(param_path + '/type', None),
             exists=self.__params.path_exists(param_path),
             )
 
-    def new_param(self, location, name, value=None, datatype=None):
+    def new_param(self, name, location='query', value=None, datatype=None):
         """Creates a new parameter object.
 
         Creates an instance of Param with the given location and name, and
@@ -154,8 +153,7 @@ class Action(Api):
         an empty string is assumed. If the data type is not defined then
         "string" is assumed.
 
-        Valid location values are "path", "query", "form-data", "header"
-        and "body".
+        Valid location values are "path", "query", "form-data" and "header".
 
         Valid data types are "null", "boolean", "integer", "float", "string",
         "array" and "object".
@@ -178,7 +176,13 @@ class Action(Api):
         else:
             datatype = Param.resolve_type(value)
 
-        return Param(location, name, value, datatype, True)
+        return Param(
+            name,
+            location=location,
+            value=value,
+            datatype=datatype,
+            exists=True,
+            )
 
     def has_file(self, name):
         """Check if a file was provided for the action.
@@ -198,12 +202,14 @@ class Action(Api):
         :param name: File name.
         :type name: str
 
-        :rtype: `File` or None
+        :rtype: `File`
 
         """
 
         if self.has_file(name):
             return payload_to_file(name, self.__files[name])
+        else:
+            return File(name, path='')
 
     def new_file(self, name, path, mime=None):
         """Create a new file.

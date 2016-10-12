@@ -77,7 +77,8 @@ class File(object):
     """
 
     def __init__(self, name, path, **kwargs):
-        if (not path) or path[:4] not in ('file', 'http'):
+        # When a path is given check protocol
+        if path and path[:7] not in ('file://', 'http://'):
             raise TypeError('Path must begin with file:// or http://')
 
         self.__name = name
@@ -150,6 +151,9 @@ class File(object):
         :rtype: bool.
 
         """
+
+        if self.__path:
+            return False
 
         # Check remote file existence when path is HTTP (otherwise is file://)
         if self.__path[:7] == 'http://':

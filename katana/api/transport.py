@@ -45,10 +45,10 @@ class Transport(object):
 
         return self.__transport.get('meta/datetime')
 
-    def get_origin(self):
-        """Get transport origin.
+    def get_origin_service(self):
+        """Get transport origin service.
 
-        Origin is a tuple with origin name and version.
+        Service origin is a tuple with origin name and version.
 
         :rtype: list
 

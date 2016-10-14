@@ -152,7 +152,7 @@ class File(object):
 
         """
 
-        if self.__path:
+        if not self.__path:
             return False
 
         # Check remote file existence when path is HTTP (otherwise is file://)

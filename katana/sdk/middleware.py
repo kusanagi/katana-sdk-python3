@@ -13,10 +13,9 @@ file that was distributed with this source code.
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
-from ..middleware.server import MiddlewareServer
-
 from .component import Component
 from .runner import ComponentRunner
+from ..middleware.server import MiddlewareServer
 
 
 class Middleware(Component):
@@ -29,8 +28,8 @@ class Middleware(Component):
             'Middleware component to process HTTP requests and responses',
             )
 
-    def run_request(self, callback):
-        self.run(callback)
+    def request(self, callback):
+        self._callbacks['request'] = callback
 
-    def run_response(self, callback):
-        self.run(callback)
+    def response(self, callback):
+        self._callbacks['response'] = callback

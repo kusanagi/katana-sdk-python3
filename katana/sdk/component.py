@@ -18,19 +18,14 @@ class Component(object):
     """Base KATANA SDK component class."""
 
     def __init__(self):
+        self._callbacks = {}
         self._runner = None
 
-    def run(self, callback):
+    def run(self):
         """Run SDK component.
-
-        Callback must be a callable that receives a
-        `katana.api.base.Api` argument.
 
         Calling this method checks command line arguments before
         component server starts.
-
-        :param callback: Callable to handle requests.
-        :type callback: A callable.
 
         """
 
@@ -38,4 +33,5 @@ class Component(object):
             # Child classes must create a component runner instance
             raise Exception('No component runner defined')
 
-        self._runner.run(callback)
+        self._runner.set_callbacks(self._callbacks)
+        self._runner.run()

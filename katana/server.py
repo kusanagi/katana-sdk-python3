@@ -40,11 +40,12 @@ class ComponentServer(object):
     # Default number of worker task per process
     workers = 5
 
-    def __init__(self, channel, callback, cli_args, **kwargs):
+    def __init__(self, channel, callbacks, cli_args, **kwargs):
+        """Constructor."""
 
         self.__process_list = []
 
-        self.callback = callback
+        self.callbacks = callbacks
         self.cli_args = cli_args
         self.channel = channel
         self.poller = zmq.asyncio.Poller()
@@ -88,7 +89,7 @@ class ComponentServer(object):
             process = self.process_factory(
                 self.workers_channel,
                 self.workers,
-                self.callback,
+                self.callbacks,
                 self.cli_args,
                 )
             process.daemon = True

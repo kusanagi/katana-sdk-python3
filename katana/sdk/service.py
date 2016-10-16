@@ -13,10 +13,9 @@ file that was distributed with this source code.
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
-from ..service.server import ServiceServer
-
 from .component import Component
 from .runner import ComponentRunner
+from ..service.server import ServiceServer
 
 
 class Service(Component):
@@ -29,5 +28,5 @@ class Service(Component):
             'Service component action to process application logic',
             )
 
-    def run_action(self, callback):
-        self.run(callback)
+    def action(self, name, callback):
+        self._callbacks[name] = callback

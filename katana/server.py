@@ -20,7 +20,6 @@ from concurrent.futures import CancelledError
 
 import zmq.asyncio
 
-from .utils import ipc
 from .utils import safe_cast
 
 LOG = logging.getLogger(__name__)
@@ -188,6 +187,9 @@ class ComponentServer(object):
         self.create_child_processes()
         self.start_child_processes()
 
+        LOG.debug('Component action(s): %s', ','.join(
+            sorted(self.callbacks.keys())
+            ))
         try:
             LOG.info('Component initiated...')
             yield from self.proxy(self.sock, self.workers_sock)

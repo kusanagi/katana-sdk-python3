@@ -15,7 +15,6 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import asyncio
 import functools
-import inspect
 import json
 import os
 import socket
@@ -668,21 +667,3 @@ def safe_cast(value, cast_func, default=None):
         return cast_func(value)
     except:
         return default
-
-
-def get_source_file(object):
-    """
-    Get the name of the Python source file in which an object was defined.
-
-    :param object: A Python object (module, function, ..).
-    :type object: object
-
-    :rtype: str
-
-    """
-
-    # When a decorator is used get inner object
-    if hasattr(object, '__wrapped__'):
-        object = object.__wrapped__
-
-    return inspect.getfile(object)

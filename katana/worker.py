@@ -15,7 +15,6 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import asyncio
 import logging
-import os
 
 from collections import namedtuple
 from concurrent.futures import CancelledError
@@ -28,7 +27,6 @@ from .errors import HTTPError
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .payload import ErrorPayload
-from .utils import get_source_file
 
 LOG = logging.getLogger(__name__)
 
@@ -58,15 +56,13 @@ class ComponentWorker(object):
 
     pool_size = 15
 
-    def __init__(self, callbacks, channel, cli_args):
+    def __init__(self, callbacks, channel, cli_args, source_file):
         self.__socket = None
 
         self.callbacks = callbacks
         self.channel = channel
         self.cli_args = cli_args
-        # TODO: This might be removed
-        # self.source_file = os.path.abspath(get_source_file(callback))
-        self.source_file = ''
+        self.source_file = source_file
         self.loop = asyncio.get_event_loop()
         self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()

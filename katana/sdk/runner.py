@@ -73,6 +73,7 @@ class ComponentRunner(object):
         self.__stop = False
         self.__server = None
         self._args = {}
+        self.source_file = None
         self.sleep_period = 0.1
         self.loop = None
         self.callbacks = None
@@ -270,6 +271,7 @@ class ComponentRunner(object):
             self.callbacks,
             self.args,
             debug=self.debug,
+            source_file=self.source_file,
             )
         task = self.loop.create_task(self.__server.listen())
         self.__tasks.append(task)
@@ -357,7 +359,8 @@ class ComponentRunner(object):
         # Create a command object to run the SDK component.
         # Component caller source file name is used as command name.
         caller_frame = inspect.getouterframes(inspect.currentframe())[2]
-        command = click.command(name=caller_frame[1], help=self.help)
+        self.source_file = caller_frame[1]
+        command = click.command(name=self.source_file, help=self.help)
         # Command must call `__start_component_server` method when
         # command line options are valid.
         start_component = command(self.__start_component_server)

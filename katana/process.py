@@ -51,6 +51,7 @@ class ComponentProcess(Process):
 
         """
 
+        self.source_file = kwargs.pop('source_file', None)
         super().__init__(*args, **kwargs)
         self.__stop = False
         self.tasks = []
@@ -87,6 +88,7 @@ class ComponentProcess(Process):
             self.callbacks,
             self.channel,
             self.cli_args,
+            self.source_file,
             )
         task = self.loop.create_task(worker())
         self.tasks.append(task)

@@ -52,6 +52,7 @@ class ComponentServer(object):
         self.sock = None
         self.workers_sock = None
         self.debug = kwargs.get('debug', False)
+        self.source_file = kwargs.get('source_file')
 
         var = self.cli_args.get('var') or {}
         self.workers = safe_cast(var.get('workers'), int, self.workers)
@@ -90,6 +91,7 @@ class ComponentServer(object):
                 self.workers,
                 self.callbacks,
                 self.cli_args,
+                source_file=self.source_file,
                 )
             process.daemon = True
             self.__process_list.append(process)

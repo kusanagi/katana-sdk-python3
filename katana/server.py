@@ -20,7 +20,6 @@ from concurrent.futures import CancelledError
 
 import zmq.asyncio
 
-from .utils import ipc
 from .utils import safe_cast
 
 LOG = logging.getLogger(__name__)
@@ -40,11 +39,12 @@ class ComponentServer(object):
     # Default number of worker task per process
     workers = 5
 
-    def __init__(self, channel, callback, cli_args, **kwargs):
+    def __init__(self, channel, callbacks, cli_args, **kwargs):
+        """Constructor."""
 
         self.__process_list = []
 
-        self.callback = callback
+        self.callbacks = callbacks
         self.cli_args = cli_args
         self.channel = channel
         self.poller = zmq.asyncio.Poller()
@@ -52,6 +52,7 @@ class ComponentServer(object):
         self.sock = None
         self.workers_sock = None
         self.debug = kwargs.get('debug', False)
+        self.source_file = kwargs.get('source_file')
 
         var = self.cli_args.get('var') or {}
         self.workers = safe_cast(var.get('workers'), int, self.workers)
@@ -88,8 +89,9 @@ class ComponentServer(object):
             process = self.process_factory(
                 self.workers_channel,
                 self.workers,
-                self.callback,
+                self.callbacks,
                 self.cli_args,
+                source_file=self.source_file,
                 )
             process.daemon = True
             self.__process_list.append(process)
@@ -187,6 +189,9 @@ class ComponentServer(object):
         self.create_child_processes()
         self.start_child_processes()
 
+        LOG.debug('Component action(s): %s', ','.join(
+            sorted(self.callbacks.keys())
+            ))
         try:
             LOG.info('Component initiated...')
             yield from self.proxy(self.sock, self.workers_sock)

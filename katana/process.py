@@ -37,20 +37,21 @@ class ComponentProcess(Process):
 
     """
 
-    def __init__(self, channel, workers, callback, cli_args, *args, **kwargs):
+    def __init__(self, channel, workers, callbacks, cli_args, *args, **kwargs):
         """Constructor.
 
         :param channel: IPC channel to connect to parent process.
-        :type channel: str.
+        :type channel: str
         :param workers: Number of component workers to start.
-        :type workers: int.
-        :param callback: A callable to use a request handler callback.
-        :type callback: callable.
+        :type workers: int
+        :param callbacks: Callbacks by action name.
+        :type callbacks: dict
         :param cli_args: Command line arguments used to run current process.
-        :type cli_args: dict.
+        :type cli_args: dict
 
         """
 
+        self.source_file = kwargs.pop('source_file', None)
         super().__init__(*args, **kwargs)
         self.__stop = False
         self.tasks = []
@@ -58,7 +59,7 @@ class ComponentProcess(Process):
         self.loop = None
         self.channel = channel
         self.workers = workers
-        self.callback = callback
+        self.callbacks = callbacks
         self.cli_args = cli_args
 
     @property
@@ -84,9 +85,10 @@ class ComponentProcess(Process):
         """
 
         worker = self.worker_factory(
-            self.callback,
+            self.callbacks,
             self.channel,
             self.cli_args,
+            self.source_file,
             )
         task = self.loop.create_task(worker())
         self.tasks.append(task)

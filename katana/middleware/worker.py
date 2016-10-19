@@ -27,6 +27,9 @@ from ..worker import ComponentWorker
 
 LOG = logging.getLogger(__name__)
 
+REQUEST_MIDDLEWARE = 1
+RESPONSE_MIDDLEWARE = 2
+
 
 class MiddlewareWorker(ComponentWorker):
     """Middleware worker task class."""
@@ -65,9 +68,11 @@ class MiddlewareWorker(ComponentWorker):
             body=payload.get('response/body', ''),
             )
 
-    def create_component_instance(self, payload):
+    def create_component_instance(self, action, payload):
         """Create a component instance for current command payload.
 
+        :param action: Name of action that must process payload.
+        :type action: str
         :param payload: Command payload.
         :type payload: `CommandPayload`
 
@@ -77,13 +82,10 @@ class MiddlewareWorker(ComponentWorker):
 
         middleware_type = payload.get('command/arguments/type')
         payload = Payload(payload.get('command/arguments'))
-        if middleware_type == 'request':
+        if middleware_type == REQUEST_MIDDLEWARE:
             return self._create_request_component_instance(payload)
-        elif middleware_type == 'response':
+        elif middleware_type == RESPONSE_MIDDLEWARE:
             return self._create_response_component_instance(payload)
-        else:
-            LOG.error('Unknown Middleware type: "%s"', middleware_type)
-            return ErrorPayload.new().entity()
 
     def component_to_payload(self, payload, component):
         """Convert component to a command result payload.

@@ -15,9 +15,9 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import asyncio
 import functools
-import inspect
 import json
 import os
+import re
 import socket
 
 from collections import OrderedDict
@@ -26,6 +26,8 @@ from hashlib import md5
 from uuid import uuid4
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
+
+IPC_RE = re.compile(r'[^a-zA-Z0-9]{1,}')
 
 LOCALHOSTS = ('localhost', '127.0.0.1', '127.0.1.1')
 
@@ -75,8 +77,8 @@ def ipc(*args):
 
     """
 
-    args = [arg.replace('.', '-').replace(':', '-') for arg in args]
-    return "ipc://@katana-{}".format('-'.join(args))
+    name = IPC_RE.sub('-', '-'.join(args))
+    return 'ipc://@katana-{}'.format(name)
 
 
 def guess_channel(local, remote):
@@ -668,21 +670,3 @@ def safe_cast(value, cast_func, default=None):
         return cast_func(value)
     except:
         return default
-
-
-def get_source_file(object):
-    """
-    Get the name of the Python source file in which an object was defined.
-
-    :param object: A Python object (module, function, ..).
-    :type object: object
-
-    :rtype: str
-
-    """
-
-    # When a decorator is used get inner object
-    if hasattr(object, '__wrapped__'):
-        object = object.__wrapped__
-
-    return inspect.getfile(object)

@@ -14,6 +14,7 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import asyncio
+import inspect
 import logging
 import os
 import signal
@@ -26,7 +27,6 @@ import katana.payload
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
-from ..utils import get_source_file
 from ..utils import install_uvevent_loop
 from ..utils import ipc
 from ..utils import tcp
@@ -73,9 +73,10 @@ class ComponentRunner(object):
         self.__stop = False
         self.__server = None
         self._args = {}
+        self.source_file = None
         self.sleep_period = 0.1
         self.loop = None
-        self.callback = None
+        self.callbacks = None
         self.server_factory = server_factory
         self.help = help
 
@@ -83,8 +84,8 @@ class ComponentRunner(object):
     def args(self):
         """Command line arguments.
 
-        Command line arguments are initialized during `run` with the values
-        used to run the component.
+        Command line arguments are initialized during `run`
+        with the values used to run the component.
 
         :rtype: dict
 
@@ -96,7 +97,7 @@ class ComponentRunner(object):
     def socket_name(self):
         """IPC socket name.
 
-        :rtype: str or None
+        :rtype: str
 
         """
 
@@ -123,6 +124,16 @@ class ComponentRunner(object):
         return self._args['name']
 
     @property
+    def version(self):
+        """Component version.
+
+        :rtype: str
+
+        """
+
+        return self._args['version']
+
+    @property
     def component_type(self):
         """Component type.
 
@@ -131,16 +142,6 @@ class ComponentRunner(object):
         """
 
         return self._args['component']
-
-    @property
-    def action_name(self):
-        """Component action name.
-
-        :rtype: str
-
-        """
-
-        return self._args['action']
 
     @property
     def debug(self):
@@ -169,18 +170,8 @@ class ComponentRunner(object):
 
         """
 
-        name = ipc(self.component_type, self.name, self.action_name)
-        return name.replace('ipc://', '')
-
-    def set_callback(self, callback):
-        """Assign a callback to the SDK.
-
-        :param callback: A callback with the bootstrap code.
-        :type callback: callable.
-
-        """
-
-        self.callback = callback
+        # Remove 'ipc://' from string to get socket name
+        return ipc(self.component_type, self.name, self.version)[6:]
 
     def get_argument_options(self):
         """Get command line argument options.
@@ -190,11 +181,6 @@ class ComponentRunner(object):
         """
 
         return [
-            click.option(
-                '-a', '--action',
-                required=True,
-                help='Action name',
-                ),
             click.option(
                 '-c', '--component',
                 type=click.Choice(['service', 'middleware']),
@@ -242,6 +228,16 @@ class ComponentRunner(object):
                 ),
             ]
 
+    def set_callbacks(self, callbacks):
+        """Set callbacks for each component action.
+
+        :params callbacks: Callbacks for each action.
+        :type callbacks: dict
+
+        """
+
+        self.callbacks = callbacks
+
     def __start_component_server(self, **kwargs):
         """Start component server.
 
@@ -282,9 +278,10 @@ class ComponentRunner(object):
         # Create component server and add it as a task
         self.__server = self.server_factory(
             channel,
-            self.callback,
+            self.callbacks,
             self.args,
             debug=self.debug,
+            source_file=self.source_file,
             )
         task = self.loop.create_task(self.__server.listen())
         self.__tasks.append(task)
@@ -361,27 +358,19 @@ class ComponentRunner(object):
         # Wait for tasks to finish
         yield from asyncio.wait(self.__tasks, timeout=timeout)
 
-    def run(self, callback):
+    def run(self):
         """Run SDK component.
-
-        Callback must be a callable that receives a
-        `katana.api.base.Api` argument.
 
         Calling this method checks command line arguments before
         component server starts.
 
-        :param callback: Callable to handle requests.
-        :type callback: A callable.
-
         """
 
-        self.set_callback(callback)
-
         # Create a command object to run the SDK component.
-        # Use callback source file as command name, and the
-        # docstring from the module where callback is defined
-        # as help string for the command.
-        command = click.command(name=get_source_file(callback), help=self.help)
+        # Component caller source file name is used as command name.
+        caller_frame = inspect.getouterframes(inspect.currentframe())[2]
+        self.source_file = caller_frame[1]
+        command = click.command(name=self.source_file, help=self.help)
         # Command must call `__start_component_server` method when
         # command line options are valid.
         start_component = command(self.__start_component_server)

@@ -32,20 +32,6 @@ LOG = logging.getLogger(__name__)
 class ServiceWorker(ComponentWorker):
     """Service worker task class."""
 
-    @property
-    def action(self):
-        """Name of service action this service handles.
-
-        :rtype: str
-
-        """
-
-        return self.cli_args['action']
-
-    @property
-    def component_action_path(self):
-        return '{}/{}'.format(self.component_path, self.action)
-
     def get_response_meta(self, payload):
         meta = super().get_response_meta(payload)
         transport = payload.get('command_reply/result/transport', None)
@@ -83,9 +69,11 @@ class ServiceWorker(ComponentWorker):
 
         return meta
 
-    def create_component_instance(self, payload):
+    def create_component_instance(self, action, payload):
         """Create a component instance for current command payload.
 
+        :param action: Name of action that must process payload.
+        :type action: str
         :param payload: Command payload.
         :type payload: `CommandPayload`
 
@@ -99,7 +87,7 @@ class ServiceWorker(ComponentWorker):
             )
 
         return Action(
-            self.action,
+            action,
             Payload(payload.get('command/arguments/params')),
             self.__transport,
             self.source_file,

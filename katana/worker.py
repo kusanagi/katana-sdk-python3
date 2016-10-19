@@ -15,8 +15,8 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import asyncio
 import logging
-import os
 
+from collections import namedtuple
 from concurrent.futures import CancelledError
 from concurrent.futures import ThreadPoolExecutor
 
@@ -27,7 +27,6 @@ from .errors import HTTPError
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .payload import ErrorPayload
-from .utils import get_source_file
 
 LOG = logging.getLogger(__name__)
 
@@ -40,6 +39,9 @@ DL = DOWNLOAD = b'\x04'
 
 # Allowed response meta values
 META_VALUES = (EMPTY_META, SE, FI, TR, DL)
+
+# Request stream frames
+RequestFrames = namedtuple('RequestFrames', ['action', 'stream'])
 
 
 class ComponentWorker(object):
@@ -54,19 +56,20 @@ class ComponentWorker(object):
 
     pool_size = 15
 
-    def __init__(self, callback, channel, cli_args):
+    def __init__(self, callbacks, channel, cli_args, source_file):
         self.__socket = None
 
-        self.callback = callback
+        self.callbacks = callbacks
         self.channel = channel
         self.cli_args = cli_args
-        self.source_file = os.path.abspath(get_source_file(callback))
+        self.source_file = source_file
         self.loop = asyncio.get_event_loop()
         self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()
 
-        # Only create the executor when callback is not a coroutine
-        if not asyncio.iscoroutinefunction(self.callback):
+        # Only create the executor when callbacks are not coroutines.
+        # Check first callback; The rest must be the same type.
+        if not asyncio.iscoroutinefunction(next(iter(self.callbacks.values()))):
             self.executor = ThreadPoolExecutor(self.pool_size)
         else:
             self.executor = None
@@ -90,6 +93,10 @@ class ComponentWorker(object):
     @property
     def component_path(self):
         return '{}/{}'.format(self.component_name, self.component_version)
+
+    @property
+    def component_title(self):
+        return '"{}" ({})'.format(self.component_name, self.component_version)
 
     def create_error_payload(self, exc, component, **kwargs):
         """Create a payload for the error response.
@@ -139,9 +146,11 @@ class ComponentWorker(object):
         raise NotImplementedError()
 
     @asyncio.coroutine
-    def process_payload(self, payload):
+    def process_payload(self, action, payload):
         """Process a request payload.
 
+        :param action: Name of action that must process payload.
+        :type action: str
         :param payload: A command payload.
         :type payload: `CommandPayload`
 
@@ -158,18 +167,21 @@ class ComponentWorker(object):
 
         # Create a component instance using the command payload and
         # call user land callback to process it and get a response component.
-        component = self.create_component_instance(payload)
+        component = self.create_component_instance(action, payload)
+        if not component:
+            return ErrorPayload.new('Internal communication failed').entity()
+
         try:
             if self.executor:
                 # Call callback in a different thread
                 component = yield from self.loop.run_in_executor(
                     self.executor,
-                    self.callback,
+                    self.callbacks[action],
                     component,
                     )
             else:
                 # Call callback asynchronusly
-                component = yield from self.callback(component)
+                component = yield from self.callbacks[action](component)
         except CancelledError:
             # Avoid logging task cancel errors by catching it here.
             raise
@@ -201,27 +213,38 @@ class ComponentWorker(object):
         return b''
 
     @asyncio.coroutine
-    def process_stream(self, stream):
+    def process_stream(self, action, stream):
+        if action not in self.callbacks:
+            message = 'Action does not exist in component {}: "{}"'.format(
+                self.component_title,
+                action,
+                )
+            # TODO: Implement a better DRY solution for error responses.
+            return [
+                EMPTY_META,
+                serialization.pack(ErrorPayload.new(message).entity()),
+                ]
+
         # Parse stream to get the commnd payload
         try:
             payload = CommandPayload(serialization.unpack(stream))
         except:
             LOG.exception('Invalid message format received')
-            return serialization.pack(
-                ErrorPayload.new('Internal communication failed').entity()
-                )
+            payload = ErrorPayload.new('Internal communication failed')
+            return [
+                EMPTY_META,
+                serialization.pack(payload.entity()),
+                ]
 
         # Process command and return payload response serialized
         try:
-            payload = yield from self.process_payload(payload)
+            payload = yield from self.process_payload(action, payload)
         except CancelledError:
             # Avoid logging task cancel errors by catching it here
             raise
         except HTTPError as err:
-            payload = ErrorPayload.new(
-                status=err.status,
-                message=err.body,
-                ).entity()
+            payload = ErrorPayload.new(status=err.status, message=err.body)
+            payload = payload.entity()
         except:
             LOG.exception('Component failed')
             payload = ErrorPayload.new().entity()
@@ -244,12 +267,22 @@ class ComponentWorker(object):
             events = yield from self.poller.poll()
             if dict(events).get(self.__socket) == zmq.POLLIN:
                 # Get stream data from socket
-                stream = yield from self.__socket.recv()
-                # Call request handler and send response back.
-                # Response stream is a multipart response that contains
-                # extra metadata at the beginning of the stream.
-                response_stream = yield from self.process_stream(stream)
-                yield from self.__socket.send_multipart(response_stream)
+                stream = yield from self.__socket.recv_multipart()
+
+                # Parse multipart stream to get action name
+                try:
+                    frames = RequestFrames(*stream)
+                except TypeError:
+                    LOG.error('Invalid multipart stream received')
+                except:
+                    LOG.error('Invalid multipart stream format received')
+                else:
+                    # Call request handler and send response back
+                    response_stream = yield from self.process_stream(
+                        frames.action.decode('utf8'),
+                        frames.stream,
+                        )
+                    yield from self.__socket.send_multipart(response_stream)
 
     @asyncio.coroutine
     def __call__(self):

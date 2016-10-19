@@ -124,6 +124,16 @@ class ComponentRunner(object):
         return self._args['name']
 
     @property
+    def version(self):
+        """Component version.
+
+        :rtype: str
+
+        """
+
+        return self._args['version']
+
+    @property
     def component_type(self):
         """Component type.
 
@@ -161,7 +171,7 @@ class ComponentRunner(object):
         """
 
         # Remove 'ipc://' from string to get socket name
-        return ipc(self.component_type, self.name)[6:]
+        return ipc(self.component_type, self.name, self.version)[6:]
 
     def get_argument_options(self):
         """Get command line argument options.

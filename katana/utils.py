@@ -17,6 +17,7 @@ import asyncio
 import functools
 import json
 import os
+import re
 import socket
 
 from collections import OrderedDict
@@ -25,6 +26,8 @@ from hashlib import md5
 from uuid import uuid4
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
+
+IPC_RE = re.compile(r'[^a-zA-Z0-9]{1,}')
 
 LOCALHOSTS = ('localhost', '127.0.0.1', '127.0.1.1')
 
@@ -74,8 +77,8 @@ def ipc(*args):
 
     """
 
-    args = [arg.replace('.', '-').replace(':', '-') for arg in args]
-    return "ipc://@katana-{}".format('-'.join(args))
+    name = IPC_RE.sub('-', '-'.join(args))
+    return 'ipc://@katana-{}'.format(name)
 
 
 def guess_channel(local, remote):

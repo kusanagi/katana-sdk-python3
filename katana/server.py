@@ -37,7 +37,7 @@ class ComponentServer(object):
     processes = 1
 
     # Default number of worker task per process
-    workers = 5
+    workers = 1
 
     def __init__(self, channel, callbacks, cli_args, **kwargs):
         """Constructor."""
@@ -57,6 +57,11 @@ class ComponentServer(object):
         var = self.cli_args.get('var') or {}
         self.workers = safe_cast(var.get('workers'), int, self.workers)
         self.processes = safe_cast(var.get('processes'), int, self.processes)
+        LOG.debug(
+            'Using %s processes and %s worker tasks per process',
+            self.processes,
+            self.workers,
+            )
 
     @property
     def workers_channel(self):

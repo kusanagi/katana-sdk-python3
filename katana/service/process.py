@@ -21,4 +21,5 @@ from .worker import ServiceWorker
 class ServiceProcess(ComponentProcess):
     """Service child process class."""
 
+    component_name = 'Service'
     worker_factory = ServiceWorker

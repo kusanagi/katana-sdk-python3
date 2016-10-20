@@ -18,7 +18,6 @@ import logging
 
 from collections import namedtuple
 from concurrent.futures import CancelledError
-from concurrent.futures import ThreadPoolExecutor
 
 import zmq.asyncio
 
@@ -54,25 +53,16 @@ class ComponentWorker(object):
 
     """
 
-    pool_size = 15
-
-    def __init__(self, callbacks, channel, cli_args, source_file):
+    def __init__(self, context, poller, callbacks, channel, **kwargs):
         self.__socket = None
-
+        self.context = context
+        self.poller = poller
         self.callbacks = callbacks
         self.channel = channel
-        self.cli_args = cli_args
-        self.source_file = source_file
+        self.cli_args = kwargs['cli_args']
+        self.source_file = kwargs.get('source_file', '')
+        self.async = kwargs.get('async', False)
         self.loop = asyncio.get_event_loop()
-        self.poller = zmq.asyncio.Poller()
-        self.context = zmq.asyncio.Context()
-
-        # Only create the executor when callbacks are not coroutines.
-        # Check first callback; The rest must be the same type.
-        if not asyncio.iscoroutinefunction(next(iter(self.callbacks.values()))):
-            self.executor = ThreadPoolExecutor(self.pool_size)
-        else:
-            self.executor = None
 
     @property
     def component_name(self):
@@ -172,16 +162,16 @@ class ComponentWorker(object):
             return ErrorPayload.new('Internal communication failed').entity()
 
         try:
-            if self.executor:
+            if self.async:
+                # Call callback asynchronusly
+                component = yield from self.callbacks[action](component)
+            else:
                 # Call callback in a different thread
                 component = yield from self.loop.run_in_executor(
-                    self.executor,
+                    None,  # Use default executor
                     self.callbacks[action],
                     component,
                     )
-            else:
-                # Call callback asynchronusly
-                component = yield from self.callbacks[action](component)
         except CancelledError:
             # Avoid logging task cancel errors by catching it here.
             raise
@@ -312,6 +302,3 @@ class ComponentWorker(object):
                 self.__socket.close()
 
             self.__socket = None
-
-        if self.executor:
-            self.executor.shutdown()

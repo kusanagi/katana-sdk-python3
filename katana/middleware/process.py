@@ -21,4 +21,5 @@ from .worker import MiddlewareWorker
 class MiddlewareProcess(ComponentProcess):
     """Middleware child process class."""
 
+    component_name = 'Middleware'
     worker_factory = MiddlewareWorker

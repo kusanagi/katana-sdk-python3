@@ -20,6 +20,7 @@ import signal
 from multiprocessing import Process
 
 import zmq.asyncio
+from setproctitle import setproctitle
 
 from .utils import install_uvevent_loop
 
@@ -54,6 +55,8 @@ class ComponentProcess(Process):
         self.source_file = kwargs.pop('source_file', None)
         super().__init__(*args, **kwargs)
         self.__stop = False
+        self.context = None
+        self.poller = None
         self.tasks = []
         self.sleep_period = 0.1
         self.loop = None
@@ -61,6 +64,21 @@ class ComponentProcess(Process):
         self.workers = workers
         self.callbacks = callbacks
         self.cli_args = cli_args
+
+    @property
+    def component_name(self):
+        """
+        Process component name.
+
+        Valid component names are: service, middleware.
+
+        This method must be overriden by child classes.
+
+        :rtype: str
+
+        """
+
+        raise NotImplementedError()
 
     @property
     def worker_factory(self):
@@ -75,6 +93,18 @@ class ComponentProcess(Process):
 
         raise NotImplementedError()
 
+    @property
+    def use_async_calls(self):
+        """
+        Check if workers should use asyncio or threads for callbacks.
+
+        :type: bool
+
+        """
+
+        # Check first callback; The rest must be the same type.
+        return asyncio.iscoroutinefunction(next(iter(self.callbacks.values())))
+
     def create_worker_task(self):
         """Create a new worker task to process incoming requests.
 
@@ -85,10 +115,13 @@ class ComponentProcess(Process):
         """
 
         worker = self.worker_factory(
+            self.context,
+            self.poller,
             self.callbacks,
             self.channel,
-            self.cli_args,
-            self.source_file,
+            cli_args=self.cli_args,
+            source_file=self.source_file,
+            async=self.use_async_calls,
             )
         task = self.loop.create_task(worker())
         self.tasks.append(task)
@@ -207,10 +240,16 @@ class ComponentProcess(Process):
         # Ignore CTRL-C (parent process terminates children using SIGTERM)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
+        setproctitle('KATANA: {} worker'.format(self.component_name))
+
         # Create an event loop for current process
         install_uvevent_loop()
         self.loop = zmq.asyncio.ZMQEventLoop()
-        asyncio.set_event_loop(self.loop)
+        policy = asyncio.get_event_loop_policy()
+        policy.set_event_loop(self.loop)
+
+        self.poller = zmq.asyncio.Poller()
+        self.context = zmq.asyncio.Context()
 
         # Create a task for each worker
         for number in range(self.workers):

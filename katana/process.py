@@ -20,7 +20,6 @@ import signal
 from multiprocessing import Process
 
 import zmq.asyncio
-from setproctitle import setproctitle
 
 from .utils import install_uvevent_loop
 
@@ -239,8 +238,6 @@ class ComponentProcess(Process):
 
         # Ignore CTRL-C (parent process terminates children using SIGTERM)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-        setproctitle('KATANA: {} worker'.format(self.component_name))
 
         # Create an event loop for current process
         install_uvevent_loop()

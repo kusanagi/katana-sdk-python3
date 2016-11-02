@@ -84,7 +84,11 @@ class Action(Api):
         """
 
         origin = self.__transport.get('meta/origin')
-        return (origin == [self.get_name(), self.get_version()])
+        return (origin == [
+            self.get_name(),
+            self.get_version(),
+            self.get_action_name()
+            ])
 
     def get_action_name(self):
         """Get the name of the action.

@@ -29,6 +29,7 @@ LOG = logging.getLogger(__name__)
 
 REQUEST_MIDDLEWARE = 1
 RESPONSE_MIDDLEWARE = 2
+BIDIRECTIONAL_MIDDLEWARE = 3
 
 
 class MiddlewareWorker(ComponentWorker):

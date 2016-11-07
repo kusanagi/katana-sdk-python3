@@ -88,7 +88,7 @@ class ServiceWorker(ComponentWorker):
 
         return Action(
             action,
-            Payload(payload.get('command/arguments/params')),
+            payload.get('command/arguments/params'),
             self.__transport,
             self.source_file,
             self.component_name,

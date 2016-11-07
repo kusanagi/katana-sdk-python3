@@ -39,15 +39,6 @@ TYPE_CLASSES = {
     }
 
 
-# Supported parameter locations
-LOC_PATH = 'path'
-LOC_QUERY = 'query'
-LOC_FORM = 'form-data'
-LOC_HEADER = 'header'
-LOC_BODY = 'body'
-LOCATIONS = (LOC_PATH, LOC_QUERY, LOC_FORM, LOC_HEADER, LOC_BODY)
-
-
 class Param(object):
     """Parameter class for API.
 
@@ -56,12 +47,8 @@ class Param(object):
 
     """
 
-    def __init__(self, name, location='query', **kwargs):
-        if location not in LOCATIONS:
-            location = 'query'
-
+    def __init__(self, name, **kwargs):
         self.__value = kwargs.get('value') or ''
-        self.__location = location
         self.__name = name
 
         self.__type = kwargs.get('datatype')
@@ -106,15 +93,6 @@ class Param(object):
         """
 
         return self.__name
-
-    def get_location(self):
-        """Get location where parameter was defined.
-
-        :rtype: str
-
-        """
-
-        return self.__location
 
     def get_type(self):
         """Get parameter data type.
@@ -165,8 +143,6 @@ class Param(object):
     def copy(self, **kwargs):
         """Create a copy of current object.
 
-        :param location: Parameter location.
-        :type location: str
         :param name: Parameter name.
         :type name: str
         :param value: Parameter value.
@@ -179,14 +155,10 @@ class Param(object):
         """
 
         return self.__class__(
-            kwargs.get('location', self.__location),
             kwargs.get('name', self.__name),
             value=kwargs.get('value', self.__value),
             type=kwargs.get('type', self.__type),
             )
-
-    def copy_with_location(self, location):
-        return self.copy(location=location)
 
     def copy_with_name(self, name):
         return self.copy(name=name)

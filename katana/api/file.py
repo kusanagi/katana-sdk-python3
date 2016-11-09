@@ -32,7 +32,7 @@ def file_to_payload(file):
     :param file: A File object.
     :type file: `File`
 
-    :rtype: dict
+    :rtype: Payload
 
     """
 

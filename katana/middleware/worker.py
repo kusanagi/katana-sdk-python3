@@ -15,6 +15,7 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import logging
 
+from ..api.param import param_to_payload
 from ..api.request import Request
 from ..api.response import Response
 from ..api.transport import Transport
@@ -53,6 +54,7 @@ class MiddlewareWorker(ComponentWorker):
             service_name=payload.get('call/service'),
             service_version=payload.get('call/version'),
             action_name=payload.get('call/action'),
+            params=payload.get('call/params', []),
             debug=self.debug,
             )
 
@@ -109,6 +111,9 @@ class MiddlewareWorker(ComponentWorker):
                 service=component.get_service_name(),
                 version=component.get_service_version(),
                 action=component.get_action_name(),
+                params=[
+                    param_to_payload(param) for param in component.get_params()
+                    ]
                 )
         elif isinstance(component, Response):
             # Return a response payload

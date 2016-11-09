@@ -149,7 +149,7 @@ class Action(Api):
         return Param(
             name,
             value=self.__params[name].get('value'),
-            datatype=self.__params[name].get('type'),
+            type=self.__params[name].get('type'),
             exists=True,
             )
 
@@ -165,13 +165,13 @@ class Action(Api):
             params.append(Param(
                 payload.get('name'),
                 value=payload.get('value'),
-                datatype=payload.get('type'),
+                type=payload.get('type'),
                 exists=True,
                 ))
 
         return params
 
-    def new_param(self, name, value=None, datatype=None):
+    def new_param(self, name, value=None, type=None):
         """Creates a new parameter object.
 
         Creates an instance of Param with the given name, and optionally
@@ -186,19 +186,21 @@ class Action(Api):
         :type name: str
         :param value: The parameter value.
         :type value: mixed
-        :param datatype: The data type of the value.
-        :type datatype: str
+        :param type: The data type of the value.
+        :type type: str
 
-        :rtype: `Param`
+        :raises: TypeError
+
+        :rtype: Param
 
         """
 
-        if datatype and Param.resolve_type(value) != datatype:
+        if type and Param.resolve_type(value) != type:
             raise TypeError('Incorrect data type given for parameter value')
         else:
-            datatype = Param.resolve_type(value)
+            type = Param.resolve_type(value)
 
-        return Param(name, value=value, datatype=datatype, exists=True)
+        return Param(name, value=value, type=type, exists=True)
 
     def has_file(self, name):
         """Check if a file was provided for the action.

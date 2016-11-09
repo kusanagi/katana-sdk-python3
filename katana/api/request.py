@@ -20,8 +20,13 @@ from ..utils import MultiDict
 
 from .base import Api
 from .file import File
+from .param import Param
+from .param import param_to_payload
+from .param import payload_to_param
 from .response import Response
 from .transport import Transport
+from ..payload import get_path
+from ..payload import Payload
 
 
 class Request(Api):
@@ -40,6 +45,12 @@ class Request(Api):
 
         # Save parsed URL
         self.__parsed_url = urlparse(self.get_url())
+
+        # Save parameters by name as payloads
+        self.__params = {
+            get_path(param, 'name'): Payload(param)
+            for param in (kwargs.pop('params', None) or [])
+            }
 
         self.set_service_name(kwargs.pop('service_name', None) or '')
         self.set_service_version(kwargs.pop('service_version', None) or '')
@@ -459,6 +470,86 @@ class Request(Api):
         """
 
         self.__action_name = action
+
+    def new_param(self, name, value=None, type=None):
+        """Creates a new parameter object.
+
+        Creates an instance of Param with the given name, and optionally
+        the value and data type. If the value is not provided then
+        an empty string is assumed. If the data type is not defined then
+        "string" is assumed.
+
+        Valid data types are "null", "boolean", "integer", "float", "string",
+        "array" and "object".
+
+        :param name: The parameter name.
+        :type name: str
+        :param value: The parameter value.
+        :type value: mixed
+        :param type: The data type of the value.
+        :type type: str
+
+        :raises: TypeError
+
+        :rtype: Param
+
+        """
+
+        if type and Param.resolve_type(value) != type:
+            raise TypeError('Incorrect data type given for parameter value')
+        else:
+            type = Param.resolve_type(value)
+
+        return Param(name, value=value, type=type, exists=True)
+
+    def set_param(self, param):
+        """Add a new param for current request.
+
+        :param param: The parameter.
+        :type param: Param
+
+        """
+
+        self.__params[param.get_name()] = param_to_payload(param)
+
+    def has_param(self, name):
+        """Check if a parameter exists.
+
+        :param name: The parameter name.
+        :type name: str
+
+        :rtype: bool
+
+        """
+
+        return (name in self.__params)
+
+    def get_param(self, name):
+        """Get a request parameter.
+
+        :param name: The parameter name.
+        :type name: str
+
+        :rtype: Param
+
+        """
+
+        if not self.has_param(name):
+            return Param(name)
+
+        return payload_to_param(self.__params[name])
+
+    def get_params(self):
+        """Get all request parameters.
+
+        :rtype: list
+
+        """
+
+        return [
+            payload_to_param(payload)
+            for payload in self.__params.values()
+            ]
 
     def new_response(self, status_code, status_text):
         """Create a new Response object.

@@ -369,11 +369,12 @@ class ServiceCallPayload(Payload):
     name = 'call'
 
     @classmethod
-    def new(cls, service=None, version=None, action=None):
+    def new(cls, service=None, version=None, action=None, params=None):
         payload = cls()
         payload.set('service', service or '')
         payload.set('version', version or '')
         payload.set('action', action or '')
+        payload.set('params', params or [])
         return payload
 
 

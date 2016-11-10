@@ -19,6 +19,8 @@ from ..payload import Payload
 
 LOG = logging.getLogger(__name__)
 
+EMPTY = object()
+
 # Supported parameter types
 TYPE_NULL = 'null'
 TYPE_BOOLEAN = 'boolean'
@@ -84,11 +86,14 @@ class Param(object):
 
     def __init__(self, name, **kwargs):
         self.__name = name
-        self.__value = kwargs.get('value')
+        self.__value = kwargs.get('value', EMPTY)
         self.__type = kwargs.get('type')
         self.__exists = kwargs.get('exists', False)
 
-        if not self.__type:
+        if self.__value == EMPTY:
+            self.__value = ''
+            self.__type = TYPE_STRING
+        elif not self.__type:
             self.__type = self.resolve_type(self.__value)
         elif self.__type not in TYPE_CLASSES:
             self.__type = TYPE_STRING

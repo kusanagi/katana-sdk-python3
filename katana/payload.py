@@ -172,6 +172,10 @@ def set_path(payload, path, value, mappings=None):
     return utils.set_path(payload, path, value, mappings or FIELD_MAPPINGS)
 
 
+def delete_path(payload, path, mappings=None):
+    return utils.delete_path(payload, path, mappings or FIELD_MAPPINGS)
+
+
 def path_exists(payload, path, default=EMPTY, mappings=None):
     """Check if a path is available.
 

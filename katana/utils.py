@@ -226,6 +226,31 @@ def set_path(item, path, value, mappings=None):
     return item
 
 
+def delete_path(item, path, mappings=None):
+    try:
+        name, *path = path.split('/', 1)
+        # When path name is not available get its mapping
+        if mappings and (name not in item):
+            name = mappings.get(name, name)
+
+        # Delete inner path items
+        if path:
+            # Stop when inner item delete failed
+            if not delete_path(item[name], path[0], mappings=mappings):
+                return False
+
+            # Delete current path when it is empty
+            if not item[name]:
+                del item[name]
+        else:
+            # Item is removed when is the last in the path
+            del item[name]
+    except KeyError:
+        return False
+
+    return True
+
+
 def merge(from_value, to_value, mappings=None, lists=False):
     """Merge two dictionaries.
 

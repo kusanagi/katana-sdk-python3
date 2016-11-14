@@ -66,7 +66,6 @@ FIELD_MAPPINGS = {
     'filename': 'f',
     'files': 'f',
     'format': 'f',
-    'form-data': 'f',  # Maps to parameter location name
     'free': 'f',
     'gateway': 'g',
     'header': 'h',

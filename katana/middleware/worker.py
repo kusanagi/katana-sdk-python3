@@ -74,6 +74,7 @@ class MiddlewareWorker(ComponentWorker):
             service_version=payload.get('call/version'),
             action_name=payload.get('call/action'),
             params=payload.get('call/params', []),
+            gateway_protocol=payload.get('meta/protocol'),
             debug=self.debug,
             http_request=self.http_request_from_payload(payload),
             )
@@ -85,6 +86,7 @@ class MiddlewareWorker(ComponentWorker):
             self.component_name,
             self.component_version,
             self.platform_version,
+            gateway_protocol=payload.get('meta/protocol'),
             http_request=self.http_request_from_payload(payload),
             http_response=self.http_response_from_payload(payload),
             )
@@ -101,8 +103,8 @@ class MiddlewareWorker(ComponentWorker):
 
         """
 
-        middleware_type = payload.get('command/arguments/type')
         payload = Payload(payload.get('command/arguments'))
+        middleware_type = payload.get('meta/type')
         if middleware_type == REQUEST_MIDDLEWARE:
             return self._create_request_component_instance(payload)
         elif middleware_type == RESPONSE_MIDDLEWARE:

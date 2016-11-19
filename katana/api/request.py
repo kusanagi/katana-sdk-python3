@@ -30,6 +30,8 @@ class Request(Api):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.__gateway_protocol = kwargs.get('gateway_protocol')
+
         http_request = kwargs.get('http_request')
         if http_request:
             self.__http_request = HttpRequest(**http_request)
@@ -45,6 +47,15 @@ class Request(Api):
         self.set_service_name(kwargs.get('service_name', ''))
         self.set_service_version(kwargs.get('service_version', ''))
         self.set_action_name(kwargs.get('action_name', ''))
+
+    def get_gateway_protocol(self):
+        """Get the protocol implemented by the Gateway handling current request.
+
+        :rtype: str
+
+        """
+
+        return self.__gateway_protocol
 
     def get_service_name(self):
         """Get the name of the service.

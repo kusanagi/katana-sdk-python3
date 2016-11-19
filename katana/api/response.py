@@ -24,6 +24,8 @@ class Response(Api):
     def __init__(self, transport, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.__gateway_protocol = kwargs.get('gateway_protocol')
+
         http_request = kwargs.get('http_request')
         if http_request:
             self.__http_request = HttpRequest(**http_request)
@@ -37,6 +39,15 @@ class Response(Api):
             self.__http_response = None
 
         self.__transport = transport
+
+    def get_gateway_protocol(self):
+        """Get the protocol implemented by the Gateway handling current request.
+
+        :rtype: str
+
+        """
+
+        return self.__gateway_protocol
 
     def get_http_request(self):
         """Get HTTP request for current request.

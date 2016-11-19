@@ -397,19 +397,64 @@ class Action(Api):
             uri,
             )
 
-    def transaction(self, action, params=None):
-        """Registers a transaction for this service.
+    def commit(self, action, params=None):
+        """Register a transaction to be called when request succeeds.
 
         :param action: The action name.
         :type action: str
-        :param params: The list of Param objects.
+        :param params: Optional list of Param objects.
         :type params: list
 
         """
 
         return self.__transport.push(
-            'transactions/{}/{}'.format(self.get_name(), self.get_version()),
-            Payload.set_many({
+            'transactions/commit',
+            Payload().set_many({
+                'service': self.get_name(),
+                'version': self.get_version(),
+                'action': action,
+                'params': parse_params(params),
+                })
+            )
+
+    def rollback(self, action, params=None):
+        """Register a transaction to be called when request fails.
+
+        :param action: The action name.
+        :type action: str
+        :param params: Optional list of Param objects.
+        :type params: list
+
+        """
+
+        return self.__transport.push(
+            'transactions/rollback',
+            Payload().set_many({
+                'service': self.get_name(),
+                'version': self.get_version(),
+                'action': action,
+                'params': parse_params(params),
+                })
+            )
+
+    def complete(self, action, params=None):
+        """Register a transaction to be called when request finishes.
+
+        This transaction is ALWAYS executed, it doesn't matter if request
+        fails or succeeds.
+
+        :param action: The action name.
+        :type action: str
+        :param params: Optional list of Param objects.
+        :type params: list
+
+        """
+
+        return self.__transport.push(
+            'transactions/complete',
+            Payload().set_many({
+                'service': self.get_name(),
+                'version': self.get_version(),
                 'action': action,
                 'params': parse_params(params),
                 })

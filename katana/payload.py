@@ -44,17 +44,19 @@ FIELD_MAPPINGS = {
     'code': 'c',
     'collection': 'c',
     'command': 'c',
+    'commit': 'c',
     'component': 'c',
     'config': 'c',
     'count': 'c',
     'cpu': 'c',
+    'complete': 'C',
     'command_reply': 'cr',
     'data': 'd',
     'datetime': 'd',
     'default_value': 'd',
-    'deprecated': 'dp',
     'disk': 'd',
     'path_delimiter': 'd',
+    'deprecated': 'dp',
     'allow_empty': 'e',
     'entity_path': 'e',
     'errors': 'e',
@@ -113,6 +115,7 @@ FIELD_MAPPINGS = {
     'required': 'r',
     'relations': 'r',
     'result': 'r',
+    'rollback': 'r',
     'response': 'R',
     'schema': 's',
     'schemes': 's',
@@ -423,6 +426,7 @@ class TransportPayload(Payload):
         payload.set('meta/id', request_id)
         payload.set('meta/datetime', date_to_str(date_time or utcnow()))
         payload.set('meta/origin', origin or [])
+        payload.set('meta/gateway', kwargs.get('gateway'))
         payload.set('meta/level', 1)
         if kwargs.get('properties'):
             payload.set('meta/properties', kwargs['properties'])

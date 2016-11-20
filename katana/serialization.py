@@ -19,6 +19,7 @@ import decimal
 import msgpack
 
 from . import utils
+from .payload import Payload
 
 
 def encode(obj):
@@ -80,3 +81,23 @@ def unpack(stream):
     """
 
     return msgpack.unpackb(stream, object_hook=decode, encoding='utf-8')
+
+
+def stream_to_payload(stream):
+    """Convert a packed stream to a payload.
+
+    :param stream: Packed payload stream.
+    :type stream: bytes
+
+    :raises: TypeError
+
+    :rtype: Payload
+
+    """
+
+    try:
+        return Payload(unpack(stream))
+    except TypeError:
+        raise TypeError('Invalid payload')
+    except Exception:
+        raise TypeError('Invalid payload stream')

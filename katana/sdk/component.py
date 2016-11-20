@@ -25,8 +25,9 @@ class Component(object):
 
     def __init__(self):
         self.__resources = {}
-        self.__startup = None
-        self.__shutdown = None
+        self.__startup_callback = None
+        self.__shutdown_callback = None
+        self.__error_callback = None
         self._callbacks = {}
         self._runner = None
 
@@ -77,24 +78,40 @@ class Component(object):
         return self.__resources[name]
 
     def startup(self, callback):
-        """Register a callback to be run during component startup.
+        """Register a callback to be called during component startup.
+
+        Callback receives a single argument with the Component instance.
 
         :param callback: A callback to execute on startup.
         :type callback: function
 
         """
 
-        self.__startup = callback
+        self.__startup_callback = callback
 
     def shutdown(self, callback):
-        """Register a callback to be run during component shutdown.
+        """Register a callback to be called during component shutdown.
+
+        Callback receives a single argument with the Component instance.
 
         :param callback: A callback to execute on shutdown.
         :type callback: function
 
         """
 
-        self.__shutdown = callback
+        self.__shutdown_callback = callback
+
+    def error(self, callback):
+        """Register a callback to be called on message callback errors.
+
+        Callback receives a single argument with the Exception instance.
+
+        :param callback: A callback to execute a message callback fails.
+        :type callback: function
+
+        """
+
+        self.__error_callback = callback
 
     def run(self):
         """Run SDK component.
@@ -108,11 +125,14 @@ class Component(object):
             # Child classes must create a component runner instance
             raise Exception('No component runner defined')
 
-        if self.__startup:
-            self._runner.set_startup_callback(self.__startup)
+        if self.__startup_callback:
+            self._runner.set_startup_callback(self.__startup_callback)
 
-        if self.__shutdown:
-            self._runner.set_shutdown_callback(self.__shutdown)
+        if self.__shutdown_callback:
+            self._runner.set_shutdown_callback(self.__shutdown_callback)
+
+        if self.__error_callback:
+            self._runner.set_error_callback(self.__error_callback)
 
         self._runner.set_callbacks(self._callbacks)
         self._runner.run()

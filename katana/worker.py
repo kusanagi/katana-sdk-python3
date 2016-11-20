@@ -59,6 +59,7 @@ class ComponentWorker(object):
         self.poller = poller
         self.callbacks = callbacks
         self.channel = channel
+        self.error_callback = kwargs.get('error_callback')
         self.cli_args = kwargs['cli_args']
         self.source_file = kwargs.get('source_file', '')
         self.async = kwargs.get('async', False)
@@ -176,6 +177,13 @@ class ComponentWorker(object):
             # Avoid logging task cancel errors by catching it here.
             raise
         except Exception as exc:
+            if self.error_callback:
+                LOG.debug('Running error callback ...')
+                try:
+                    self.error_callback(exc)
+                except:
+                    LOG.exception('Error callback failed for "%s"', action)
+
             LOG.exception('Component failed')
             payload = self.create_error_payload(
                 exc,

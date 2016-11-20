@@ -75,6 +75,7 @@ class ComponentRunner(object):
         self.__server = None
         self.__startup_callback = None
         self.__shutdown_callback = None
+        self.__error_callback = None
         self._args = {}
         self.source_file = None
         self.sleep_period = 0.1
@@ -251,8 +252,18 @@ class ComponentRunner(object):
 
         self.__shutdown_callback = callback
 
+    def set_error_callback(self, callback):
+        """Set a callback to be run on message callback errors.
+
+        :param callback: A callback to run on message callback errors.
+        :type callback: function
+
+        """
+
+        self.__error_callback = callback
+
     def set_callbacks(self, callbacks):
-        """Set callbacks for each component action.
+        """Set message callbacks for each component action.
 
         :params callbacks: Callbacks for each action.
         :type callbacks: dict
@@ -305,6 +316,7 @@ class ComponentRunner(object):
             self.args,
             debug=self.debug,
             source_file=self.source_file,
+            error_callback=self.__error_callback,
             )
         task = self.loop.create_task(self.__server.listen())
         self.__tasks.append(task)

@@ -25,6 +25,7 @@ from ..worker import ComponentWorker
 from ..worker import DOWNLOAD
 from ..worker import FILES
 from ..worker import SERVICE_CALL
+from ..worker import TRANSACTIONS
 
 LOG = logging.getLogger(__name__)
 
@@ -41,6 +42,10 @@ class ServiceWorker(ComponentWorker):
         # When a download is registered add files flag
         if transport.get('body', None):
             meta += DOWNLOAD
+
+        # Add transactions flag when any transaction is registered
+        if transport.get('transactions', None):
+            meta += TRANSACTIONS
 
         # Add meta for service call when inter service calls are made
         calls = get_path(transport, 'calls/{}'.format(self.component_path), None)
@@ -88,7 +93,7 @@ class ServiceWorker(ComponentWorker):
 
         return Action(
             action,
-            Payload(payload.get('command/arguments/params')),
+            payload.get('command/arguments/params'),
             self.__transport,
             self.source_file,
             self.component_name,

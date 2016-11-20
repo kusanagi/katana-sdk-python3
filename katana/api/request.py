@@ -13,389 +13,49 @@ file that was distributed with this source code.
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
-from itertools import chain
-from urllib.parse import urlparse
-
-from ..utils import MultiDict
-
 from .base import Api
-from .file import File
+from .http.request import HttpRequest
+from .param import Param
+from .param import param_to_payload
+from .param import payload_to_param
 from .response import Response
 from .transport import Transport
+from ..payload import get_path
+from ..payload import Payload
 
 
 class Request(Api):
     """Request API class for Middleware component."""
 
-    def __init__(self, method, url, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__method = method.upper()
-        self.__url = url
-        self.__protocol_version = kwargs.pop('protocol_version', None) or '1.1'
-        self.__query = kwargs.pop('query', None) or MultiDict()
-        self.__headers = kwargs.pop('headers', None) or MultiDict()
-        self.__post_data = kwargs.pop('post_data', None) or MultiDict()
-        self.__body = kwargs.pop('body', None) or ''
-        self.__files = kwargs.pop('files', None) or MultiDict()
 
-        # Save parsed URL
-        self.__parsed_url = urlparse(self.get_url())
+        self.__gateway_protocol = kwargs.get('gateway_protocol')
 
-        self.set_service_name(kwargs.pop('service_name', None) or '')
-        self.set_service_version(kwargs.pop('service_version', None) or '')
-        self.set_action_name(kwargs.pop('action_name', None) or '')
-
-    def is_method(self, method):
-        """Determine if the request used the given HTTP method.
-
-        Returns True if the HTTP method of the request is the same
-        as the specified method, otherwise False.
-
-        :param method: The HTTP method.
-        :type method: str
-
-        :rtype: bool
-
-        """
-
-        return self.__method == method.upper()
-
-    def get_method(self):
-        """Gets the HTTP method.
-
-        Returns the HTTP method used for the request.
-
-        :returns: The HTTP method.
-        :rtype: str
-
-        """
-
-        return self.__method
-
-    def get_url(self):
-        """Get request URL.
-
-        :rtype: str
-
-        """
-
-        return self.__url
-
-    def get_url_scheme(self):
-        """Get request URL scheme.
-
-        :rtype: str
-
-        """
-
-        return self.__parsed_url.scheme
-
-    def get_url_host(self):
-        """Get request URL host.
-
-        When a port is given in the URL it will be added to host.
-
-        :rtype: str
-
-        """
-
-        return self.__parsed_url.netloc
-
-    def get_url_path(self):
-        """Get request URL path.
-
-        :rtype: str
-
-        """
-
-        return self.__parsed_url.path.rstrip('/')
-
-    def has_query_param(self, name):
-        """Determines if the param is defined.
-
-        Returns True if the param is defined in the HTTP query string,
-        otherwise False.
-
-        :param name: The HTTP param.
-        :type name: str
-
-        :rtype: bool
-
-        """
-
-        return name in self.__query
-
-    def get_query_param(self, name, default=''):
-        """Gets a param from the HTTP query string.
-
-        Returns the param from the HTTP query string with the given
-        name, or and empty string if not defined.
-
-        :param name: The param from the HTTP query string.
-        :type name: str
-        :param default: The optional default value.
-        :type name: str
-
-        :returns: The HTTP param value.
-        :rtype: str
-
-        """
-
-        return self.__query.get(name, (default, ))[0]
-
-    def get_query_param_array(self, name, default=None):
-        """Gets a param from the HTTP query string.
-
-        Parameter is returned as a list of values.
-
-        :param name: The param from the HTTP query string.
-        :type name: str
-        :param default: The optional default value.
-        :type default: list
-
-        :returns: The HTTP param values as a list.
-        :rtype: list
-
-        """
-
-        return self.__query.get(name, default or [])
-
-    def get_query_params(self):
-        """Get all HTTP query params.
-
-        :returns: The HTTP params.
-        :rtype: dict
-
-        """
-
-        return {key: value[0] for key, value in self.__query.items()}
-
-    def get_query_params_array(self):
-        """Get all HTTP query params.
-
-        Each parameter value is returned as a list.
-
-        :returns: The HTTP params.
-        :rtype: `MultiDict`
-
-        """
-
-        return self.__query
-
-    def has_post_param(self, name):
-        """Determines if the param is defined.
-
-        Returns True if the param is defined in the HTTP post data,
-        otherwise False.
-
-        :param name: The HTTP param.
-        :type name: str
-
-        :rtype: bool
-
-        """
-
-        return name in self.__post_data
-
-    def get_post_param(self, name, default=''):
-        """Gets a param from the HTTP post data.
-
-        Returns the param from the HTTP post data with the given
-        name, or and empty string if not defined.
-
-        :param name: The param from the HTTP post data.
-        :type name: str
-
-        :param default: The optional default value.
-        :type name: str
-
-        :returns: The HTTP param.
-        :rtype: str
-
-        """
-
-        return self.__post_data.get(name, (default, ))[0]
-
-    def get_post_param_array(self, name, default=None):
-        """Gets a param from the HTTP post data.
-
-        Parameter is returned as a list of values.
-
-        :param name: The param from the HTTP post data.
-        :type name: str
-        :param default: The optional default value.
-        :type default: list
-
-        :returns: The HTTP param values as a list.
-        :rtype: list
-
-        """
-
-        return self.__post_data.get(name, default or [])
-
-    def get_post_params(self):
-        """Get all HTTP post params.
-
-        :returns: The HTTP post params.
-        :rtype: dict
-
-        """
-
-        return {key: value[0] for key, value in self.__post_data.items()}
-
-    def get_post_params_array(self):
-        """Get all HTTP post params.
-
-        Each parameter value is returned as a list.
-
-        :returns: The HTTP post params.
-        :rtype: `MultiDict`
-
-        """
-
-        return self.__post_data
-
-    def is_protocol_version(self, version):
-        """Determine if the request used the given HTTP version.
-
-        Returns True if the HTTP version of the request is the same
-        as the specified protocol version, otherwise False.
-
-        :param version: The HTTP version.
-        :type version: str
-
-        :rtype: bool
-
-        """
-
-        return self.__protocol_version == version
-
-    def get_protocol_version(self):
-        """Gets the HTTP version.
-
-        Returns the HTTP version used for the request.
-
-        :returns: The HTTP version.
-        :rtype: str
-
-        """
-
-        return self.__protocol_version
-
-    def has_header(self, name):
-        """Determines if the HTTP header is defined.
-
-        Returns True if the HTTP header is defined, otherwise False.
-
-        :param name: The HTTP header.
-        :type name: str
-
-        :rtype: bool
-
-        """
-
-        return name in self.__headers
-
-    def get_header(self, name, default=''):
-        """Get an HTTP header.
-
-        Returns the HTTP header with the given name, or and empty
-        string if not defined.
-
-        A comma separated list of values ir returned when header
-        has multiple values.
-
-        :param name: The HTTP header.
-        :type name: str
-
-        :returns: The HTTP header value.
-        :rtype: str
-
-        """
-
-        if not self.has_header(name):
-            return default
-
-        return ', '.join(self.__headers[name])
-
-    def get_headers(self):
-        """Get all HTTP headers.
-
-        :returns: The HTTP headers.
-        :rtype: `MultiDict`
-
-        """
-
-        return self.__headers
-
-    def has_body(self):
-        """Determines if the HTTP request body has content.
-
-        Returns True if the HTTP request body has content, otherwise False.
-
-        :rtype: bool
-
-        """
-
-        return self.__body != ''
-
-    def get_body(self):
-        """Gets the HTTP request body.
-
-        Returns the body of the HTTP request, or and empty string if
-        no content.
-
-        :returns: The HTTP request body.
-        :rtype: str
-
-        """
-
-        return self.__body
-
-    def has_file(self, name):
-        """Check if a file was uploaded in current request.
-
-        :param name: File name.
-        :type name: str
-
-        :rtype: bool
-
-        """
-
-        return name in self.__files
-
-    def get_file(self, name):
-        """Get an uploaded file.
-
-        Returns the file uploaded with the HTTP request, or None.
-
-        :param name: Name of the file.
-        :type name: str
-
-        :returns: The uploaded file.
-        :rtype: `File`
-
-        """
-
-        if name in self.__files:
-            # Get only the first file
-            return self.__files.getone(name)
+        http_request = kwargs.get('http_request')
+        if http_request:
+            self.__http_request = HttpRequest(**http_request)
         else:
-            return File(name, path='')
+            self.__http_request = None
 
-    def get_files(self):
-        """Get uploaded files.
+        # Save parameters by name as payloads
+        self.__params = {
+            get_path(param, 'name'): Payload(param)
+            for param in (kwargs.get('params') or [])
+            }
 
-        Returns the files uploaded with the HTTP request.
+        self.set_service_name(kwargs.get('service_name', ''))
+        self.set_service_version(kwargs.get('service_version', ''))
+        self.set_action_name(kwargs.get('action_name', ''))
 
-        :returns: A list of `File` objects.
-        :rtype: iter
+    def get_gateway_protocol(self):
+        """Get the protocol implemented by the Gateway handling current request.
+
+        :rtype: str
 
         """
 
-        # Fields might have more than one file uploaded for the same name,
-        # there for it can happen that file names are duplicated.
-        return chain.from_iterable(self.__files.values())
+        return self.__gateway_protocol
 
     def get_service_name(self):
         """Get the name of the service.
@@ -416,7 +76,7 @@ class Request(Api):
 
         """
 
-        self.__service_name = service
+        self.__service_name = service or ''
 
     def get_service_version(self):
         """Get the version of the service.
@@ -437,7 +97,7 @@ class Request(Api):
 
         """
 
-        self.__service_version = version
+        self.__service_version = version or ''
 
     def get_action_name(self):
         """Get the name of the action.
@@ -458,7 +118,7 @@ class Request(Api):
 
         """
 
-        self.__action_name = action
+        self.__action_name = action or ''
 
     def new_response(self, status_code, status_text):
         """Create a new Response object.
@@ -482,3 +142,92 @@ class Request(Api):
             self.get_version(),
             self.get_platform_version(),
             )
+
+    def get_http_request(self):
+        """Get HTTP request for current request.
+
+        :rtype: HttpRequest
+
+        """
+
+        return self.__http_request
+
+    def new_param(self, name, value=None, type=None):
+        """Creates a new parameter object.
+
+        Creates an instance of Param with the given name, and optionally
+        the value and data type. If the value is not provided then
+        an empty string is assumed. If the data type is not defined then
+        "string" is assumed.
+
+        Valid data types are "null", "boolean", "integer", "float", "string",
+        "array" and "object".
+
+        :param name: The parameter name.
+        :type name: str
+        :param value: The parameter value.
+        :type value: mixed
+        :param type: The data type of the value.
+        :type type: str
+
+        :raises: TypeError
+
+        :rtype: Param
+
+        """
+
+        if type and Param.resolve_type(value) != type:
+            raise TypeError('Incorrect data type given for parameter value')
+        else:
+            type = Param.resolve_type(value)
+
+        return Param(name, value=value, type=type, exists=True)
+
+    def set_param(self, param):
+        """Add a new param for current request.
+
+        :param param: The parameter.
+        :type param: Param
+
+        """
+
+        self.__params[param.get_name()] = param_to_payload(param)
+
+    def has_param(self, name):
+        """Check if a parameter exists.
+
+        :param name: The parameter name.
+        :type name: str
+
+        :rtype: bool
+
+        """
+
+        return (name in self.__params)
+
+    def get_param(self, name):
+        """Get a request parameter.
+
+        :param name: The parameter name.
+        :type name: str
+
+        :rtype: Param
+
+        """
+
+        if not self.has_param(name):
+            return Param(name)
+
+        return payload_to_param(self.__params[name])
+
+    def get_params(self):
+        """Get all request parameters.
+
+        :rtype: list
+
+        """
+
+        return [
+            payload_to_param(payload)
+            for payload in self.__params.values()
+            ]

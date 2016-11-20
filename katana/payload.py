@@ -34,6 +34,7 @@ FIELD_MAPPINGS = {
     'available': 'a',
     'actions': 'ac',
     'array_format': 'af',
+    'base_path': 'b',
     'body': 'b',
     'buffers': 'b',
     'busy': 'b',
@@ -43,17 +44,19 @@ FIELD_MAPPINGS = {
     'code': 'c',
     'collection': 'c',
     'command': 'c',
+    'commit': 'c',
     'component': 'c',
     'config': 'c',
     'count': 'c',
     'cpu': 'c',
-    'consumes': 'cn',
+    'complete': 'C',
     'command_reply': 'cr',
     'data': 'd',
     'datetime': 'd',
     'default_value': 'd',
     'disk': 'd',
     'path_delimiter': 'd',
+    'deprecated': 'dp',
     'allow_empty': 'e',
     'entity_path': 'e',
     'errors': 'e',
@@ -65,19 +68,24 @@ FIELD_MAPPINGS = {
     'filename': 'f',
     'files': 'f',
     'format': 'f',
-    'form-data': 'f',  # Maps to parameter location name
     'free': 'f',
+    'gateway': 'g',
     'header': 'h',
     'headers': 'h',
+    'http': 'h',
+    'http_body': 'hb',
+    'http_input': 'hi',
+    'http_method': 'hm',
+    'http_security': 'hs',
     'id': 'i',
     'idle': 'i',
     'in': 'i',
+    'input': 'i',
     'items': 'i',
     'primary_key': 'k',
     'laddr': 'l',
     'level': 'l',
     'links': 'l',
-    'location': 'l',
     'memory': 'm',
     'message': 'm',
     'meta': 'm',
@@ -99,6 +107,7 @@ FIELD_MAPPINGS = {
     'pid': 'p',
     'post_data': 'p',
     'properties': 'p',
+    'protocol': 'p',
     'query': 'q',
     'raddr': 'r',
     'reads': 'r',
@@ -106,6 +115,7 @@ FIELD_MAPPINGS = {
     'required': 'r',
     'relations': 'r',
     'result': 'r',
+    'rollback': 'r',
     'response': 'R',
     'schema': 's',
     'schemes': 's',
@@ -162,6 +172,10 @@ def get_path(payload, path, default=EMPTY, mappings=None):
 
 def set_path(payload, path, value, mappings=None):
     return utils.set_path(payload, path, value, mappings or FIELD_MAPPINGS)
+
+
+def delete_path(payload, path, mappings=None):
+    return utils.delete_path(payload, path, mappings or FIELD_MAPPINGS)
 
 
 def path_exists(payload, path, default=EMPTY, mappings=None):
@@ -320,10 +334,11 @@ class MetaPayload(Payload):
     name = 'meta'
 
     @classmethod
-    def new(cls, version, request_id, date_time=None):
+    def new(cls, version, request_id, protocol, date_time=None):
         payload = cls()
         payload.set('version', version)
         payload.set('id', request_id)
+        payload.set('protocol', protocol)
         payload.set('datetime', date_to_str(date_time or utcnow()))
         return payload
 
@@ -361,11 +376,12 @@ class ServiceCallPayload(Payload):
     name = 'call'
 
     @classmethod
-    def new(cls, service=None, version=None, action=None):
+    def new(cls, service=None, version=None, action=None, params=None):
         payload = cls()
         payload.set('service', service or '')
         payload.set('version', version or '')
         payload.set('action', action or '')
+        payload.set('params', params or [])
         return payload
 
 
@@ -411,6 +427,7 @@ class TransportPayload(Payload):
         payload.set('meta/id', request_id)
         payload.set('meta/datetime', date_to_str(date_time or utcnow()))
         payload.set('meta/origin', origin or [])
+        payload.set('meta/gateway', kwargs.get('gateway'))
         payload.set('meta/level', 1)
         if kwargs.get('properties'):
             payload.set('meta/properties', kwargs['properties'])

@@ -16,6 +16,7 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 import os
 
 from ..payload import ErrorPayload
+from ..payload import get_path
 from ..payload import Payload
 
 from .base import Api
@@ -50,7 +51,6 @@ def parse_params(params):
             raise TypeError('Parameter must be an instance of Param class')
         else:
             result.append(Payload().set_many({
-                'location': param.get_location(),
                 'name': param.get_name(),
                 'value': param.get_value(),
                 'type': param.get_type(),
@@ -65,8 +65,11 @@ class Action(Api):
     def __init__(self, action, params, transport, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__action = action
-        self.__params = params
         self.__transport = transport
+        self.__params = {
+            get_path(param, 'name'): Payload(param)
+            for param in params
+            }
 
         # Get files for current service, version and action
         path = 'files/{}/{}/{}'.format(
@@ -84,7 +87,11 @@ class Action(Api):
         """
 
         origin = self.__transport.get('meta/origin')
-        return (origin == [self.get_name(), self.get_version()])
+        return (origin == [
+            self.get_name(),
+            self.get_version(),
+            self.get_action_name()
+            ])
 
     def get_action_name(self):
         """Get the name of the action.
@@ -118,71 +125,86 @@ class Action(Api):
             str(value),
             )
 
-    def get_param(self, name, location='query'):
-        """Gets a parameter passed to the action.
-
-        Returns a Param object containing the parameter for the given location
-        and name.
-
-        Valid location values are "path", "query", "form-data" and "header".
+    def has_param(self, name):
+        """Check if a parameter exists.
 
         :param name: The parameter name.
         :type name: str
-        :param location: The parameter location.
-        :type location: str
+
+        :rtype: bool
+
+        """
+
+        return (name in self.__params)
+
+    def get_param(self, name):
+        """Get an action parameter.
+
+        :param name: The parameter name.
+        :type name: str
 
         :rtype: `Param`
 
         """
 
-        param_path = '{}/{}'.format(location, name)
-        value = self.__params.get(param_path + '/value', None)
+        if not self.has_param(name):
+            return Param(name)
+
         return Param(
             name,
-            location=location,
-            value=value,
-            datatype=self.__params.get(param_path + '/type', None),
-            exists=self.__params.path_exists(param_path),
+            value=self.__params[name].get('value'),
+            type=self.__params[name].get('type'),
+            exists=True,
             )
 
-    def new_param(self, name, location='query', value=None, datatype=None):
+    def get_params(self):
+        """Get all action parameters.
+
+        :rtype: list
+
+        """
+
+        params = []
+        for payload in self.__params.values():
+            params.append(Param(
+                payload.get('name'),
+                value=payload.get('value'),
+                type=payload.get('type'),
+                exists=True,
+                ))
+
+        return params
+
+    def new_param(self, name, value=None, type=None):
         """Creates a new parameter object.
 
-        Creates an instance of Param with the given location and name, and
-        optionally the value and data type. If the value is not provided then
+        Creates an instance of Param with the given name, and optionally
+        the value and data type. If the value is not provided then
         an empty string is assumed. If the data type is not defined then
         "string" is assumed.
-
-        Valid location values are "path", "query", "form-data" and "header".
 
         Valid data types are "null", "boolean", "integer", "float", "string",
         "array" and "object".
 
-        :param location: The parameter location.
-        :type location: str
         :param name: The parameter name.
         :type name: str
         :param value: The parameter value.
         :type value: mixed
-        :param datatype: The data type of the value.
-        :type datatype: str
+        :param type: The data type of the value.
+        :type type: str
 
-        :rtype: `Param`
+        :raises: TypeError
+
+        :rtype: Param
 
         """
 
-        if datatype and Param.resolve_type(value) != datatype:
+        if type and Param.resolve_type(value) != type:
             raise TypeError('Incorrect data type given for parameter value')
         else:
-            datatype = Param.resolve_type(value)
+            type = Param.resolve_type(value)
 
-        return Param(
-            name,
-            location=location,
-            value=value,
-            datatype=datatype,
-            exists=True,
-            )
+        return Param(name, value=value, type=type, exists=True)
 
     def has_file(self, name):
         """Check if a file was provided for the action.
@@ -210,6 +232,19 @@ class Action(Api):
             return payload_to_file(name, self.__files[name])
         else:
             return File(name, path='')
+
+    def get_files(self):
+        """Get all action files.
+
+        :rtype: list
+
+        """
+
+        files = []
+        for name, payload in self.__files.items():
+            files.append(payload_to_file(name, payload))
+
+        return files
 
     def new_file(self, name, path, mime=None):
         """Create a new file.
@@ -362,19 +397,64 @@ class Action(Api):
             uri,
             )
 
-    def transaction(self, action, params=None):
-        """Registers a transaction for this service.
+    def commit(self, action, params=None):
+        """Register a transaction to be called when request succeeds.
 
         :param action: The action name.
         :type action: str
-        :param params: The list of Param objects.
+        :param params: Optional list of Param objects.
         :type params: list
 
         """
 
         return self.__transport.push(
-            'transactions/{}/{}'.format(self.get_name(), self.get_version()),
-            Payload.set_many({
+            'transactions/commit',
+            Payload().set_many({
+                'service': self.get_name(),
+                'version': self.get_version(),
+                'action': action,
+                'params': parse_params(params),
+                })
+            )
+
+    def rollback(self, action, params=None):
+        """Register a transaction to be called when request fails.
+
+        :param action: The action name.
+        :type action: str
+        :param params: Optional list of Param objects.
+        :type params: list
+
+        """
+
+        return self.__transport.push(
+            'transactions/rollback',
+            Payload().set_many({
+                'service': self.get_name(),
+                'version': self.get_version(),
+                'action': action,
+                'params': parse_params(params),
+                })
+            )
+
+    def complete(self, action, params=None):
+        """Register a transaction to be called when request finishes.
+
+        This transaction is ALWAYS executed, it doesn't matter if request
+        fails or succeeds.
+
+        :param action: The action name.
+        :type action: str
+        :param params: Optional list of Param objects.
+        :type params: list
+
+        """
+
+        return self.__transport.push(
+            'transactions/complete',
+            Payload().set_many({
+                'service': self.get_name(),
+                'version': self.get_version(),
                 'action': action,
                 'params': parse_params(params),
                 })

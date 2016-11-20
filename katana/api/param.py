@@ -15,9 +15,11 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import logging
 
-from .. import json
+from ..payload import Payload
 
 LOG = logging.getLogger(__name__)
+
+EMPTY = object()
 
 # Supported parameter types
 TYPE_NULL = 'null'
@@ -39,13 +41,39 @@ TYPE_CLASSES = {
     }
 
 
-# Supported parameter locations
-LOC_PATH = 'path'
-LOC_QUERY = 'query'
-LOC_FORM = 'form-data'
-LOC_HEADER = 'header'
-LOC_BODY = 'body'
-LOCATIONS = (LOC_PATH, LOC_QUERY, LOC_FORM, LOC_HEADER, LOC_BODY)
+def payload_to_param(payload):
+    """Convert a param payload to a Param object.
+
+    :param payload: Parameter payload.
+    :type payload: Payload
+
+    :rtype: Param
+
+    """
+
+    return Param(
+        payload.get('name'),
+        value=payload.get('value'),
+        type=payload.get('type'),
+        exists=True,
+        )
+
+
+def param_to_payload(param):
+    """Convert a Param object to a param payload.
+
+    :param param: Parameter object.
+    :type param: Param
+
+    :rtype: Payload
+
+    """
+
+    return Payload().set_many({
+        'name': param.get_name(),
+        'value': param.get_value(),
+        'type': param.get_type(),
+        })
 
 
 class Param(object):
@@ -56,21 +84,19 @@ class Param(object):
 
     """
 
-    def __init__(self, name, location='query', **kwargs):
-        if location not in LOCATIONS:
-            location = 'query'
-
-        self.__value = kwargs.get('value') or ''
-        self.__location = location
+    def __init__(self, name, **kwargs):
         self.__name = name
+        self.__value = kwargs.get('value', EMPTY)
+        self.__type = kwargs.get('type')
+        self.__exists = kwargs.get('exists', False)
 
-        self.__type = kwargs.get('datatype')
-        if self.__type not in TYPE_CLASSES:
+        if self.__value == EMPTY:
+            self.__value = ''
             self.__type = TYPE_STRING
         elif not self.__type:
             self.__type = self.resolve_type(self.__value)
-
-        self.__exists = kwargs.get('exists', False)
+        elif self.__type not in TYPE_CLASSES:
+            self.__type = TYPE_STRING
 
     @classmethod
     def resolve_type(cls, value):
@@ -87,11 +113,14 @@ class Param(object):
             return TYPE_NULL
 
         value_class = value.__class__
+
+        # Resolve non standard python types
         if value_class == bytes:
             return TYPE_STRING
         elif value_class in (tuple, set):
             return TYPE_ARRAY
 
+        # Resolve standard mapped python types
         for type_name, cls in TYPE_CLASSES.items():
             if value_class == cls:
                 return type_name
@@ -106,15 +135,6 @@ class Param(object):
         """
 
         return self.__name
-
-    def get_location(self):
-        """Get location where parameter was defined.
-
-        :rtype: str
-
-        """
-
-        return self.__location
 
     def get_type(self):
         """Get parameter data type.
@@ -131,27 +151,11 @@ class Param(object):
         Value is returned using the parameter data type for casting.
 
         :returns: The parameter value.
-        :rtype: mixed
+        :rtype: object
 
         """
 
-        name = self.get_name()
-        type_ = self.get_type()
-        error_msg = 'Param "{}" value is not a {}'.format(name, type_)
-        try:
-            value = self.__value
-            if type_ == 'string':
-                value = '"{}"'.format(value)
-
-            value = json.deserialize(value)
-        except:
-            LOG.error('Param "%s" is not %s: %s', name, type_, value)
-            raise TypeError(error_msg)
-
-        if not isinstance(value, TYPE_CLASSES[type_]):
-            raise TypeError(error_msg)
-
-        return value
+        return self.__value
 
     def exists(self):
         """Check if parameter exists.
@@ -165,8 +169,6 @@ class Param(object):
     def copy(self, **kwargs):
         """Create a copy of current object.
 
-        :param location: Parameter location.
-        :type location: str
         :param name: Parameter name.
         :type name: str
         :param value: Parameter value.
@@ -179,14 +181,10 @@ class Param(object):
         """
 
         return self.__class__(
-            kwargs.get('location', self.__location),
             kwargs.get('name', self.__name),
             value=kwargs.get('value', self.__value),
             type=kwargs.get('type', self.__type),
             )
-
-    def copy_with_location(self, location):
-        return self.copy(location=location)
 
     def copy_with_name(self, name):
         return self.copy(name=name)
@@ -194,5 +192,5 @@ class Param(object):
     def copy_with_value(self, value):
         return self.copy(value=value)
 
-    def copy_with_type(self, datatype):
-        return self.copy(type=datatype)
+    def copy_with_type(self, type):
+        return self.copy(type=type)

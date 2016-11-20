@@ -15,6 +15,7 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import logging
 
+from ..api.param import param_to_payload
 from ..api.request import Request
 from ..api.response import Response
 from ..api.transport import Transport
@@ -29,43 +30,65 @@ LOG = logging.getLogger(__name__)
 
 REQUEST_MIDDLEWARE = 1
 RESPONSE_MIDDLEWARE = 2
+BIDIRECTIONAL_MIDDLEWARE = 3
 
 
 class MiddlewareWorker(ComponentWorker):
     """Middleware worker task class."""
 
+    @staticmethod
+    def http_request_from_payload(payload):
+        if not payload.path_exists('request'):
+            return
+
+        return {
+            'method': payload.get('request/method'),
+            'url': payload.get('request/url'),
+            'protocol_version': payload.get('request/version'),
+            'query': MultiDict(payload.get('request/query', {})),
+            'headers': MultiDict(payload.get('request/headers', {})),
+            'post_data': MultiDict(payload.get('request/post_data', {})),
+            'body': payload.get('request/body'),
+            'files': MultiDict(payload.get('request/files', {})),
+            }
+
+    @staticmethod
+    def http_response_from_payload(payload):
+        if not payload.path_exists('response'):
+            return
+
+        code, text = payload.get('response/status').split(' ', 1)
+        return {
+            'status_code': int(code),
+            'status_text': text,
+            'body': payload.get('response/body', ''),
+            }
+
     def _create_request_component_instance(self, payload):
         return Request(
-            payload.get('request/method'),
-            payload.get('request/url'),
             self.source_file,
             self.component_name,
             self.component_version,
             self.platform_version,
-            # Keyword arguments
-            protocol_version=payload.get('request/version'),
-            query=MultiDict(payload.get('request/query', {})),
-            headers=MultiDict(payload.get('request/headers', {})),
-            post_data=MultiDict(payload.get('request/post_data', {})),
-            body=payload.get('request/body'),
-            files=MultiDict(payload.get('request/files', {})),
             service_name=payload.get('call/service'),
             service_version=payload.get('call/version'),
             action_name=payload.get('call/action'),
+            params=payload.get('call/params', []),
+            gateway_protocol=payload.get('meta/protocol'),
             debug=self.debug,
+            http_request=self.http_request_from_payload(payload),
             )
 
     def _create_response_component_instance(self, payload):
-        code, text = payload.get('response/status').split(' ', 1)
         return Response(
-            int(code),
-            text,
             Transport(payload.get('transport')),
             self.source_file,
             self.component_name,
             self.component_version,
             self.platform_version,
-            body=payload.get('response/body', ''),
+            gateway_protocol=payload.get('meta/protocol'),
+            http_request=self.http_request_from_payload(payload),
+            http_response=self.http_response_from_payload(payload),
             )
 
     def create_component_instance(self, action, payload):
@@ -80,8 +103,8 @@ class MiddlewareWorker(ComponentWorker):
 
         """
 
-        middleware_type = payload.get('command/arguments/type')
         payload = Payload(payload.get('command/arguments'))
+        middleware_type = payload.get('meta/type')
         if middleware_type == REQUEST_MIDDLEWARE:
             return self._create_request_component_instance(payload)
         elif middleware_type == RESPONSE_MIDDLEWARE:
@@ -108,14 +131,18 @@ class MiddlewareWorker(ComponentWorker):
                 service=component.get_service_name(),
                 version=component.get_service_version(),
                 action=component.get_action_name(),
+                params=[
+                    param_to_payload(param) for param in component.get_params()
+                    ]
                 )
         elif isinstance(component, Response):
+            http_response = component.get_http_response()
             # Return a response payload
             payload = ResponsePayload.new(
-                version=component.get_protocol_version(),
-                status=component.get_status(),
-                body=component.get_body(),
-                headers=dict(component.get_headers()),
+                version=http_response.get_protocol_version(),
+                status=http_response.get_status(),
+                body=http_response.get_body(),
+                headers=dict(http_response.get_headers()),
                 )
         else:
             LOG.error('Invalid Middleware callback result')
@@ -124,9 +151,14 @@ class MiddlewareWorker(ComponentWorker):
         return payload.entity()
 
     def create_error_payload(self, exc, component, **kwargs):
+        if isinstance(component, Request):
+            http = component.get_http_request()
+        else:
+            http = component.get_http_response()
+
         # Create a response with the error
         return ResponsePayload.new(
-            version=component.get_protocol_version(),
+            version=http.get_protocol_version(),
             status='500 Internal Server Error',
             body=str(exc),
             ).entity()

@@ -66,12 +66,15 @@ class ComponentRunner(object):
 
     """
 
-    def __init__(self, server_factory, help):
+    def __init__(self, component, server_factory, help):
         """Constructor."""
 
+        self.__component = component
         self.__tasks = []
         self.__stop = False
         self.__server = None
+        self.__startup_callback = None
+        self.__shutdown_callback = None
         self._args = {}
         self.source_file = None
         self.sleep_period = 0.1
@@ -228,6 +231,26 @@ class ComponentRunner(object):
                 ),
             ]
 
+    def set_startup_callback(self, callback):
+        """Set a callback to be run during startup.
+
+        :param callback: A callback to run on startup.
+        :type callback: function
+
+        """
+
+        self.__startup_callback = callback
+
+    def set_shutdown_callback(self, callback):
+        """Set a callback to be run during shutdown.
+
+        :param callback: A callback to run on shutdown.
+        :type callback: function
+
+        """
+
+        self.__shutdown_callback = callback
+
     def set_callbacks(self, callbacks):
         """Set callbacks for each component action.
 
@@ -289,24 +312,51 @@ class ComponentRunner(object):
         # Create a task to monitor running tasks
         self.loop.create_task(self.monitor_tasks())
 
-        # Run component server
+        # By default exit successfully
         exit_code = EXIT_OK
-        try:
-            self.loop.run_forever()
-        except Exception as exc:
-            exit_code = EXIT_ERROR
-            if isinstance(exc, zmq.error.ZMQError):
-                if exc.errno == 98:
-                    LOG.error('Address unavailable: "%s"', self.socket_name)
-                else:
-                    LOG.error(exc.strerror)
 
+        # Call startup callback
+        if self.__startup_callback:
+            LOG.info('Running startup callback ...')
+            try:
+                self.__startup_callback(self.__component)
+            except:
+                LOG.exception('Startup callback failed')
                 LOG.error('Component failed')
-            else:
-                LOG.exception('Component failed')
+                exit_code = EXIT_ERROR
 
-        # Finish event loop and exit with an exit code
-        self.loop.close()
+        # Run component server
+        if exit_code != EXIT_ERROR:
+            try:
+                self.loop.run_forever()
+            except Exception as exc:
+                exit_code = EXIT_ERROR
+                if isinstance(exc, zmq.error.ZMQError):
+                    if exc.errno == 98:
+                        LOG.error(
+                            'Address unavailable: "%s"',
+                            self.socket_name,
+                            )
+                    else:
+                        LOG.error(exc.strerror)
+
+                    LOG.error('Component failed')
+                else:
+                    LOG.exception('Component failed')
+
+            # Finish event loop and exit with an exit code
+            self.loop.close()
+
+        # Call shutdown callback
+        if self.__shutdown_callback:
+            LOG.info('Running shutdown callback ...')
+            try:
+                self.__shutdown_callback(self.__component)
+            except:
+                LOG.exception('Shutdown callback failed')
+                LOG.error('Component failed')
+                exit_code = EXIT_ERROR
+
         if exit_code == EXIT_OK:
             LOG.info('Operation complete')
 

@@ -24,6 +24,7 @@ class Service(Component):
     def __init__(self):
         super().__init__()
         self._runner = ComponentRunner(
+            self,
             ServiceServer,
             'Service component action to process application logic',
             )

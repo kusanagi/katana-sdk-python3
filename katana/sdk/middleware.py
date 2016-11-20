@@ -24,6 +24,7 @@ class Middleware(Component):
     def __init__(self):
         super().__init__()
         self._runner = ComponentRunner(
+            self,
             MiddlewareServer,
             'Middleware component to process HTTP requests and responses',
             )

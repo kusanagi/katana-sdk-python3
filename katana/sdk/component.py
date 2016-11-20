@@ -25,6 +25,8 @@ class Component(object):
 
     def __init__(self):
         self.__resources = {}
+        self.__startup = None
+        self.__shutdown = None
         self._callbacks = {}
         self._runner = None
 
@@ -74,6 +76,26 @@ class Component(object):
 
         return self.__resources[name]
 
+    def startup(self, callback):
+        """Register a callback to be run during component startup.
+
+        :param callback: A callback to execute on startup.
+        :type callback: function
+
+        """
+
+        self.__startup = callback
+
+    def shutdown(self, callback):
+        """Register a callback to be run during component shutdown.
+
+        :param callback: A callback to execute on shutdown.
+        :type callback: function
+
+        """
+
+        self.__shutdown = callback
+
     def run(self):
         """Run SDK component.
 
@@ -85,6 +107,12 @@ class Component(object):
         if not self._runner:
             # Child classes must create a component runner instance
             raise Exception('No component runner defined')
+
+        if self.__startup:
+            self._runner.set_startup_callback(self.__startup)
+
+        if self.__shutdown:
+            self._runner.set_shutdown_callback(self.__shutdown)
 
         self._runner.set_callbacks(self._callbacks)
         self._runner.run()

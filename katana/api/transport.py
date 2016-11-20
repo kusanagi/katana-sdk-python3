@@ -73,6 +73,15 @@ class Transport(object):
 
         return self.__transport.get('meta/properties/{}'.format(name), default)
 
+    def get_properties(self):
+        """Get userland properties.
+
+        :rtype: dict
+
+        """
+
+        return self.__transport.get('meta/properties', {})
+
     def has_download(self):
         """Determines if a download has been registered.
 

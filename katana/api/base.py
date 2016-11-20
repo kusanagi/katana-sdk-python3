@@ -13,6 +13,44 @@ file that was distributed with this source code.
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
+import logging
+import types
+
+from .. import json
+
+
+def value_to_log_string(value, max_chars=100000):
+    """Convert a value to a string.
+
+    :param value: A value to log.
+    :type value: object
+    :param max_chars: Optional maximum number of characters to return.
+    :type max_chars: int
+
+    :rtype: str
+
+    """
+
+    if value is None:
+        output = 'NULL'
+    elif isinstance(value, bool):
+        output = 'TRUE' if value else 'FALSE'
+    elif isinstance(value, str):
+        output = value
+    elif isinstance(value, bytes):
+        output = value.decode('utf8')
+    elif isinstance(value, (dict, list, tuple)):
+        output = json.serialize(value, prettify=True).decode('utf8')
+    elif isinstance(value, types.FunctionType):
+        if value.__name__ == '<lambda>':
+            output = 'anonymous'
+        else:
+            output = '[function {}]'.format(value.__name__)
+    else:
+        output = repr(value)
+
+    return output[:max_chars]
+
 
 class Api(object):
     """Base API class for SDK components."""
@@ -24,6 +62,10 @@ class Api(object):
         self.__platform_version = platform_version
         self.__variables = kwargs.get('variables') or {}
         self.__debug = kwargs.get('debug', False)
+
+        # Logging is only enabled when debug is True
+        if self.__debug:
+            self.__logger = logging.getLogger('katana.api')
 
     def is_debug(self):
         """Determine if component is running in debug mode.
@@ -93,3 +135,15 @@ class Api(object):
         """
 
         return self.__variables.get(name, '')
+
+    def log(self, value):
+        """Write a value to KATANA logs.
+
+        Given value is converted to string before being logged.
+
+        Output is truncated to have a maximum of 100000 characters.
+
+        """
+
+        if self.__logger:
+            self.__logger.debug(value_to_log_string(value))

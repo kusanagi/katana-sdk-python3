@@ -51,6 +51,15 @@ def setup_katana_logging(level=logging.INFO):
         logger.addHandler(handler)
         logger.propagate = False
 
+    # Setup katana api logger
+    logger = logging.getLogger('katana.api')
+    logger.setLevel(logging.DEBUG)
+    if not logger.handlers:
+        handler = logging.StreamHandler(stream=sys.stdout)
+        handler.setFormatter(logging.Formatter())  # No format is applied
+        logger.addHandler(handler)
+        logger.propagate = False
+
     # Setup other loggers
     logger = logging.getLogger('asyncio')
     logger.setLevel(logging.ERROR)

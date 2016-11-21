@@ -19,7 +19,6 @@ from ..api.action import Action
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import path_exists
-from ..payload import Payload
 from ..payload import TransportPayload
 from ..worker import ComponentWorker
 from ..worker import DOWNLOAD
@@ -32,6 +31,11 @@ LOG = logging.getLogger(__name__)
 
 class ServiceWorker(ComponentWorker):
     """Service worker task class."""
+
+    def __get_component(self):
+        from ..sdk.service import get_component
+
+        return get_component()
 
     def get_response_meta(self, payload):
         meta = super().get_response_meta(payload)
@@ -95,6 +99,7 @@ class ServiceWorker(ComponentWorker):
             action,
             payload.get('command/arguments/params'),
             self.__transport,
+            self.__get_component(),
             self.source_file,
             self.component_name,
             self.component_version,

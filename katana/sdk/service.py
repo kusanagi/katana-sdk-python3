@@ -31,3 +31,13 @@ class Service(Component):
 
     def action(self, name, callback):
         self._callbacks[name] = callback
+
+
+def get_component():
+    """Get global Service component instance.
+
+    :rtype: Service
+
+    """
+
+    return Service.instance

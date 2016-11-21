@@ -34,3 +34,13 @@ class Middleware(Component):
 
     def response(self, callback):
         self._callbacks['response'] = callback
+
+
+def get_component():
+    """Get global Middleware component instance.
+
+    :rtype: Middleware
+
+    """
+
+    return Middleware.instance

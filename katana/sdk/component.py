@@ -14,13 +14,14 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 from ..errors import KatanaError
+from ..utils import Singleton
 
 
 class ComponentError(KatanaError):
     """Exception calss for component errors."""
 
 
-class Component(object):
+class Component(object, metaclass=Singleton):
     """Base KATANA SDK component class."""
 
     def __init__(self):
@@ -67,6 +68,8 @@ class Component(object):
 
         :param name: Name of the resource.
         :type name: str
+
+        :raises: ComponentError
 
         :rtype: object
 

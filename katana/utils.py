@@ -616,6 +616,27 @@ class MultiDict(dict):
         return items
 
 
+class Singleton(type):
+    """Metaclass to make a class definition a singleton.
+
+    The class definition using this will contain a class property
+    called `instance` with the only instance allowed for that class.
+
+    Instance is, of course, only created the first time the class is called.
+
+    """
+
+    def __init__(cls, name, bases, classdict):
+        super(Singleton, cls).__init__(name, bases, classdict)
+        cls.instance = None
+
+    def __call__(cls, *args, **kw):
+        if cls.instance is None:
+            cls.instance = super().__call__(*args, **kw)
+
+        return cls.instance
+
+
 def install_uvevent_loop():
     """Install uvloop as default event loop when available.
 

@@ -64,8 +64,14 @@ class MiddlewareWorker(ComponentWorker):
             'body': payload.get('response/body', ''),
             }
 
+    def __get_component(self):
+        from ..sdk.middleware import get_component
+
+        return get_component()
+
     def _create_request_component_instance(self, payload):
         return Request(
+            self.__get_component(),
             self.source_file,
             self.component_name,
             self.component_version,
@@ -82,6 +88,7 @@ class MiddlewareWorker(ComponentWorker):
     def _create_response_component_instance(self, payload):
         return Response(
             Transport(payload.get('transport')),
+            self.__get_component(),
             self.source_file,
             self.component_name,
             self.component_version,

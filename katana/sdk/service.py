@@ -24,9 +24,20 @@ class Service(Component):
     def __init__(self):
         super().__init__()
         self._runner = ComponentRunner(
+            self,
             ServiceServer,
             'Service component action to process application logic',
             )
 
     def action(self, name, callback):
         self._callbacks[name] = callback
+
+
+def get_component():
+    """Get global Service component instance.
+
+    :rtype: Service
+
+    """
+
+    return Service.instance

@@ -44,9 +44,10 @@ class ComponentServer(object):
 
         self.__process_list = []
 
+        self.channel = channel
         self.callbacks = callbacks
         self.cli_args = cli_args
-        self.channel = channel
+        self.error_callback = kwargs.get('error_callback')
         self.poller = zmq.asyncio.Poller()
         self.context = zmq.asyncio.Context()
         self.sock = None
@@ -97,6 +98,7 @@ class ComponentServer(object):
                 self.callbacks,
                 self.cli_args,
                 source_file=self.source_file,
+                error_callback=self.error_callback,
                 )
             process.daemon = True
             self.__process_list.append(process)

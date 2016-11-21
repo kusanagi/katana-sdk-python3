@@ -24,6 +24,7 @@ class Middleware(Component):
     def __init__(self):
         super().__init__()
         self._runner = ComponentRunner(
+            self,
             MiddlewareServer,
             'Middleware component to process HTTP requests and responses',
             )
@@ -33,3 +34,13 @@ class Middleware(Component):
 
     def response(self, callback):
         self._callbacks['response'] = callback
+
+
+def get_component():
+    """Get global Middleware component instance.
+
+    :rtype: Middleware
+
+    """
+
+    return Middleware.instance

@@ -55,13 +55,14 @@ def value_to_log_string(value, max_chars=100000):
 class Api(object):
     """Base API class for SDK components."""
 
-    def __init__(self, path, name, version, platform_version, **kwargs):
+    def __init__(self, component, path, name, version, platform_version, **kw):
+        self.__component = component
         self.__path = path
         self.__name = name
         self.__version = version
         self.__platform_version = platform_version
-        self.__variables = kwargs.get('variables') or {}
-        self.__debug = kwargs.get('debug', False)
+        self.__variables = kw.get('variables') or {}
+        self.__debug = kw.get('debug', False)
 
         # Logging is only enabled when debug is True
         if self.__debug:
@@ -135,6 +136,32 @@ class Api(object):
         """
 
         return self.__variables.get(name, '')
+
+    def has_resource(self, name):
+        """Check if a resource name exist.
+
+        :param name: Name of the resource.
+        :type name: str
+
+        :rtype: bool
+
+        """
+
+        return self.__component.has_resource(name)
+
+    def get_resource(self, name):
+        """Get a resource.
+
+        :param name: Name of the resource.
+        :type name: str
+
+        :raises: ComponentError
+
+        :rtype: object
+
+        """
+
+        return self.__component.get_resource(name)
 
     def log(self, value):
         """Write a value to KATANA logs.

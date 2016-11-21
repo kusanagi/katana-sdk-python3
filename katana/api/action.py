@@ -407,15 +407,15 @@ class Action(Api):
 
         """
 
-        return self.__transport.push(
-            'transactions/commit',
-            Payload().set_many({
-                'service': self.get_name(),
-                'version': self.get_version(),
-                'action': action,
-                'params': parse_params(params),
-                })
-            )
+        payload = Payload().set_many({
+            'service': self.get_name(),
+            'version': self.get_version(),
+            'action': action,
+            })
+        if params:
+            payload.set('params', parse_params(params))
+
+        return self.__transport.push('transactions/commit', payload)
 
     def rollback(self, action, params=None):
         """Register a transaction to be called when request fails.
@@ -427,15 +427,15 @@ class Action(Api):
 
         """
 
-        return self.__transport.push(
-            'transactions/rollback',
-            Payload().set_many({
-                'service': self.get_name(),
-                'version': self.get_version(),
-                'action': action,
-                'params': parse_params(params),
-                })
-            )
+        payload = Payload().set_many({
+            'service': self.get_name(),
+            'version': self.get_version(),
+            'action': action,
+            })
+        if params:
+            payload.set('params', parse_params(params))
+
+        return self.__transport.push('transactions/rollback', payload)
 
     def complete(self, action, params=None):
         """Register a transaction to be called when request finishes.
@@ -450,15 +450,15 @@ class Action(Api):
 
         """
 
-        return self.__transport.push(
-            'transactions/complete',
-            Payload().set_many({
-                'service': self.get_name(),
-                'version': self.get_version(),
-                'action': action,
-                'params': parse_params(params),
-                })
-            )
+        payload = Payload().set_many({
+            'service': self.get_name(),
+            'version': self.get_version(),
+            'action': action,
+            })
+        if params:
+            payload.set('params', parse_params(params))
+
+        return self.__transport.push('transactions/complete', payload)
 
     def call(self, service, version, action, params=None, files=None):
         """Register a call to a service.
@@ -483,14 +483,17 @@ class Action(Api):
                 {file.get_name(): file_to_payload(file) for file in files}
                 )
 
+        payload = Payload().set_many({
+            'name': service,
+            'version': version,
+            'action': action,
+            })
+        if params:
+            payload.set('params', parse_params(params))
+
         return self.__transport.push(
             'calls/{}/{}'.format(self.get_name(), self.get_version()),
-            Payload().set_many({
-                'name': service,
-                'version': version,
-                'action': action,
-                'params': parse_params(params),
-                })
+            payload
             )
 
     def error(self, message, code=None, status=None):

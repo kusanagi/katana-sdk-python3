@@ -52,6 +52,7 @@ class ComponentProcess(Process):
         """
 
         self.source_file = kwargs.pop('source_file', None)
+        self.error_callback = kwargs.pop('error_callback', None)
         super().__init__(*args, **kwargs)
         self.__stop = False
         self.context = None
@@ -118,6 +119,7 @@ class ComponentProcess(Process):
             self.poller,
             self.callbacks,
             self.channel,
+            error_callback=self.error_callback,
             cli_args=self.cli_args,
             source_file=self.source_file,
             async=self.use_async_calls,

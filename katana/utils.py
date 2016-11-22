@@ -318,10 +318,23 @@ class LookupDict(dict):
         self.__defaults = {}
         super().__init__(*args, **kwargs)
 
+    @staticmethod
+    def is_empty(value):
+        """Check if a value is the empty value.
+
+        :rtype: bool
+
+        """
+
+        return value is EMPTY
+
     def path_exists(self, path):
         """Check if a path is available.
 
-        :rtype: bool.
+        :param path: Path to a value.
+        :type path: str
+
+        :rtype: bool
 
         """
 

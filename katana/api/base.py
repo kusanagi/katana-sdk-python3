@@ -16,7 +16,14 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 import logging
 import types
 
+from .api.schema.service import ServiceSchema
 from .. import json
+from ..errors import KatanaError
+from ..schema import get_schema_registry
+
+
+class ApiError(KatanaError):
+    """Exception class for API errors."""
 
 
 def value_to_log_string(value, max_chars=100000):
@@ -63,6 +70,7 @@ class Api(object):
         self.__platform_version = platform_version
         self.__variables = kw.get('variables') or {}
         self.__debug = kw.get('debug', False)
+        self.__schema = get_schema_registry()
 
         # Logging is only enabled when debug is True
         if self.__debug:
@@ -162,6 +170,27 @@ class Api(object):
         """
 
         return self.__component.get_resource(name)
+
+    def get_service_schema(self, name, version):
+        """Get service schema.
+
+        :param name: Service name.
+        :type name: str
+        :param version: Service version.
+        :type version: str
+
+        :raises: ApiError
+
+        :rtype: ServiceSchema
+
+        """
+
+        schema = self.__schema.get('{}/{}'.format(name, version), None)
+        if not schema:
+            error = 'Cannot resolve schema for Service: "{}" ({})'
+            raise ApiError(error.format(name, version))
+
+        return ServiceSchema(schema)
 
     def log(self, value):
         """Write a value to KATANA logs.

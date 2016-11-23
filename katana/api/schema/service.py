@@ -1,12 +1,16 @@
 from .action import ActionSchema
 from .error import ServiceSchemaError
+from ... payload import Payload
 
 
 class ServiceSchema(object):
     """Service schema in the platform."""
 
-    def __init__(self):
-        pass
+    def __init__(self, name, version, payload):
+        self.__name = name
+        self.__version = version
+        self.__payload = Payload(payload)
+        self.__actions = self.__payload.get('actions', {})
 
     def get_name(self):
         """Get Service name.
@@ -15,6 +19,8 @@ class ServiceSchema(object):
 
         """
 
+        return self.__name
+
     def get_version(self):
         """Get Service version.
 
@@ -22,14 +28,16 @@ class ServiceSchema(object):
 
         """
 
+        return self.__version
+
     def get_actions(self):
         """Get Service action names.
-
-        Action names are returned in the order in which they are defined.
 
         :rtype: list
 
         """
+
+        return self.__actions.keys()
 
     def has_action(self, name):
         """Check if an action exists for current Service schema.
@@ -40,6 +48,8 @@ class ServiceSchema(object):
         :rtype: bool
 
         """
+
+        return name in self.__actions
 
     def get_action_schema(self, name):
         """Get schema for an action.
@@ -57,7 +67,7 @@ class ServiceSchema(object):
             error = 'Cannot resolve schema for action: {}'.format(name)
             raise ServiceSchemaError(error)
 
-        # TODO: Get action schema
+        return ActionSchema(self.__actions[name])
 
     def get_http_schema(self):
         """Get HTTP Service schema.
@@ -66,12 +76,14 @@ class ServiceSchema(object):
 
         """
 
+        return HttpServiceSchema(self.__payload.get('http', {}))
+
 
 class HttpServiceSchema(object):
     """HTTP semantics of a Service schema in the platform."""
 
-    def __init__(self):
-        pass
+    def __init__(self, payload):
+        self.__payload = Payload(payload)
 
     def is_accessible(self):
         """Check if the Gateway has access to the Service.
@@ -80,9 +92,13 @@ class HttpServiceSchema(object):
 
         """
 
+        return self.__payload.get('gateway', True)
+
     def get_base_path(self):
         """Get base HTTP path for the Service.
 
         :rtype: str
 
         """
+
+        return self.__payload.get('base_path', '')

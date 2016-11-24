@@ -67,7 +67,7 @@ class ServiceSchema(object):
             error = 'Cannot resolve schema for action: {}'.format(name)
             raise ServiceSchemaError(error)
 
-        return ActionSchema(self.__actions[name])
+        return ActionSchema(name, self.__actions[name])
 
     def get_http_schema(self):
         """Get HTTP Service schema.

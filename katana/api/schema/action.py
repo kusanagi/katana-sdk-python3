@@ -1,5 +1,9 @@
+from collections import OrderedDict
+
 from .error import ServiceSchemaError
 from .param import ParamSchema
+from ... payload import get_path
+from ... payload import Payload
 
 
 class ActionSchemaError(ServiceSchemaError):
@@ -9,8 +13,13 @@ class ActionSchemaError(ServiceSchemaError):
 class ActionSchema(object):
     """Action schema in the platform."""
 
-    def __init__(self):
-        pass
+    def __init__(self, name, payload):
+        self.__name = name
+        self.__payload = Payload(payload)
+        self.__params = OrderedDict(
+            (get_path(param, 'name'), param)
+            for param in self.__payload.get('params')
+            )
 
     def is_deprecated(self):
         """Check if action has been deprecated.
@@ -19,8 +28,7 @@ class ActionSchema(object):
 
         """
 
-        # TODO: get value and use false as default
-        return False
+        return self.__payload.get('deprecated', False)
 
     def is_collection(self):
         """Check if the action returns a collection of entities.
@@ -29,8 +37,7 @@ class ActionSchema(object):
 
         """
 
-        # TODO: get value and use false as default
-        return False
+        return self.__payload.get('collection', False)
 
     def get_name(self):
         """Get action name.
@@ -39,6 +46,8 @@ class ActionSchema(object):
 
         """
 
+        return self.__name
+
     def get_entity_path(self):
         """Get path to the entity.
 
@@ -46,8 +55,7 @@ class ActionSchema(object):
 
         """
 
-        # TODO: get value and use '' as default
-        return ''
+        return self.__payload.get('entity_path', '')
 
     def get_path_delimiter(self):
         """Get delimiter to use for the entity path.
@@ -56,8 +64,7 @@ class ActionSchema(object):
 
         """
 
-        # TODO: get value and use '/' as default
-        return '/'
+        return self.__payload.get('path_delimiter', '/')
 
     def get_primary_key(self):
         """Get primary key field name.
@@ -69,8 +76,7 @@ class ActionSchema(object):
 
         """
 
-        # TODO: get value and use 'id' as default
-        return 'id'
+        return self.__payload.get('primary_key', 'id')
 
     def resolve_entity(self, data):
         """Get entity from data.
@@ -90,12 +96,14 @@ class ActionSchema(object):
             error = 'Cannot resolve entity for action: {}'
             raise ActionSchemaError(error.format(self.get_name()))
 
-    def has_entity(self):
+    def has_entity_definition(self):
         """Check if an entity definition exists for the action.
 
         :rtype: bool
 
         """
+
+        return self.__payload.path_exists('entity')
 
     def get_entity(self):
         """Get the entity definition as an object.
@@ -107,8 +115,7 @@ class ActionSchema(object):
 
         """
 
-        # TODO: get value and use {} as default
-        return {}
+        return self.__payload.get('entity', {})
 
     def has_relations(self):
         """Check if any relations exists for the action.
@@ -116,6 +123,8 @@ class ActionSchema(object):
         :rtype: bool
 
         """
+
+        return self.__payload.path_exists('relation')
 
     def get_relations(self):
         """Get action relations.
@@ -128,8 +137,7 @@ class ActionSchema(object):
 
         """
 
-        # TODO: get value and use [] as default
-        return []
+        return self.__payload.get('relation', [])
 
     def get_params(self):
         """Get the parameters names defined for the action.
@@ -137,6 +145,8 @@ class ActionSchema(object):
         :rtype: list
 
         """
+
+        return self.__params.keys()
 
     def has_param(self, name):
         """Check that a parameter schema exists.
@@ -148,6 +158,8 @@ class ActionSchema(object):
 
         """
 
+        return name in self.__params
+
     def get_param_schema(self, name):
         """Get schema for a parameter.
 
@@ -158,10 +170,11 @@ class ActionSchema(object):
 
         """
 
-        # TODO: Implement
         if not self.has_param(name):
             error = 'Cannot resolve schema for parameter: {}'
             raise ActionSchemaError(error.format(name))
+
+        return ParamSchema(name, self.__params[name])
 
     def get_http_schema(self):
         """Get HTTP action schema.
@@ -170,12 +183,14 @@ class ActionSchema(object):
 
         """
 
+        return HttpActionSchema(self.__payload.get('http', {}))
+
 
 class HttpActionSchema(object):
     """HTTP semantics of an action schema in the platform."""
 
-    def __init__(self):
-        pass
+    def __init__(self, payload):
+        self.__payload = Payload(payload)
 
     def is_accessible(self):
         """Check if the Gateway has access to the action.
@@ -184,6 +199,8 @@ class HttpActionSchema(object):
 
         """
 
+        return self.__payload.get('gateway', True)
+
     def get_method(self):
         """Get HTTP method for the action.
 
@@ -191,8 +208,7 @@ class HttpActionSchema(object):
 
         """
 
-        # TODO: get value and use 'get' as default
-        return 'get'
+        return self.__payload.get('method', 'get')
 
     def get_path(self):
         """Get URL path for the action.
@@ -201,8 +217,7 @@ class HttpActionSchema(object):
 
         """
 
-        # TODO: Implement `http-base-path` + `http-path`. Default ''
-        return ''
+        return self.__payload.get('path', '')
 
     def get_input(self):
         """Get default location of parameters for the action.
@@ -211,8 +226,7 @@ class HttpActionSchema(object):
 
         """
 
-        # TODO: Implement. Default 'query'
-        return 'query'
+        return self.__payload.get('input', 'query')
 
     def get_body(self):
         """Get expected MIME type of the HTTP request body.
@@ -223,5 +237,4 @@ class HttpActionSchema(object):
 
         """
 
-        # TODO: Implement. Default 'text/plain'
-        return 'text/plain'
+        return ','.join(self.__payload.get('body', ['text/plain']))

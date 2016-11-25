@@ -16,7 +16,7 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 import logging
 import types
 
-from .api.schema.service import ServiceSchema
+from .schema.service import ServiceSchema
 from .. import json
 from ..errors import KatanaError
 from ..schema import get_schema_registry
@@ -185,12 +185,12 @@ class Api(object):
 
         """
 
-        schema = self.__schema.get('{}/{}'.format(name, version), None)
-        if not schema:
+        payload = self.__schema.get('{}/{}'.format(name, version), None)
+        if not payload:
             error = 'Cannot resolve schema for Service: "{}" ({})'
             raise ApiError(error.format(name, version))
 
-        return ServiceSchema(schema)
+        return ServiceSchema(name, version, payload)
 
     def log(self, value):
         """Write a value to KATANA logs.

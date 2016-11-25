@@ -85,14 +85,20 @@ class ActionSchema(object):
         properties in the action configuration.
 
         :param data: Object to get entity from.
-        :type data: object
+        :type data: dict
 
-        :rtype: object
+        :rtype: dict
 
         """
 
-        # TODO: Implement
-        if False:
+        path = self.get_entity_path()
+        # When there is no path no traversing is done
+        if not path:
+            return data
+
+        try:
+            return get_path(data, path, delimiter=self.get_path_delimiter())
+        except KeyError:
             error = 'Cannot resolve entity for action: {}'
             raise ActionSchemaError(error.format(self.get_name()))
 

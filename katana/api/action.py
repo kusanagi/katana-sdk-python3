@@ -24,6 +24,8 @@ from .file import File
 from .file import file_to_payload
 from .file import payload_to_file
 from .param import Param
+from ..validation import validate_collection
+from ..validation import validate_entity
 
 
 def parse_params(params):
@@ -304,12 +306,18 @@ class Action(Api):
         if not isinstance(entity, dict):
             raise TypeError('Entity must be an dict')
 
+        service = self.get_name()
+        version = self.get_version()
+
+        # Validate entity when entity validation is enabled
+        schema = self.get_service_schema(service, version)
+        action = schema.get_action_schema(self.get_action_name())
+        entity_definition = action.get_entity()
+        if entity_definition and entity_definition.get('validate', True):
+            validate_entity(entity, entity_definition)
+
         return self.__transport.push(
-            'data/{}/{}/{}'.format(
-                self.get_name(),
-                self.get_version(),
-                self.get_action_name(),
-                ),
+            'data/{}/{}/{}'.format(service, version, self.get_action_name()),
             entity,
             )
 
@@ -330,12 +338,18 @@ class Action(Api):
             if not isinstance(entity, dict):
                 raise TypeError('Entity must be an dict')
 
+        service = self.get_name()
+        version = self.get_version()
+
+        # Validate entity when entity validation is enabled
+        schema = self.get_service_schema(service, version)
+        action = schema.get_action_schema(self.get_action_name())
+        entity_definition = action.get_entity()
+        if entity_definition and entity_definition.get('validate', True):
+            validate_collection(collection, entity_definition)
+
         return self.__transport.push(
-            'data/{}/{}/{}'.format(
-                self.get_name(),
-                self.get_version(),
-                self.get_action_name(),
-                ),
+            'data/{}/{}/{}'.format(service, version, self.get_action_name()),
             collection,
             )
 

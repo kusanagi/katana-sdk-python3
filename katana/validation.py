@@ -25,45 +25,55 @@ def traverse_to_initial_error(err, path=''):
     return (err, path)
 
 
-def define_schema_objects(properties, entity_definition):
+def define_schema_objects(schema, entity_definition):
     """Define JSON schema object properties using an entity definition.
 
-    :param properties: JSON schema properties object.
-    :type properties: dict
+    :param schema: JSON schema object.
+    :type schema: dict
     :param entity_definition: Action entity definition.
     :type entity_definition: dict
 
     """
 
+    properties = schema['properties']
     for entity in entity_definition:
-        obj = properties[entity['name']] = {
+        if not entity.get('optional', False):
+            schema['required'].append(entity['name'])
+
+        obj_schema = properties[entity['name']] = {
             'type': 'object',
             'properties': {},
+            'required': [],
             'additionalProperties': False,
             }
 
         if 'field' in entity:
-            define_schema_properties(obj['properties'], entity['field'])
+            define_schema_properties(obj_schema, entity['field'])
 
         if 'fields' in entity:
-            define_schema_objects(obj['properties'], entity['fields'])
+            define_schema_objects(obj_schema, entity['fields'])
 
 
-def define_schema_properties(properties, entity_definition):
+def define_schema_properties(schema, entity_definition):
     """Define JSON schema simple and object properties using an entity definition.
 
-    :param properties: JSON schema properties object.
-    :type properties: dict
+    :param schema: JSON schema object.
+    :type schema: dict
     :param entity_definition: Action entity definition.
     :type entity_definition: dict
 
     """
 
+    properties = schema['properties']
     for entity in entity_definition:
         if 'fields' in entity:
-            define_schema_objects(properties, entity['fields'])
+            define_schema_objects(schema, entity['fields'])
+            if not entity.get('optional', False):
+                schema['required'].append(entity['name'])
         else:
             properties[entity['name']] = {'type': entity.get('type', 'string')}
+            if not entity.get('optional', False):
+                schema['required'].append(entity['name'])
 
 
 def entity_to_jsonschema(entity):
@@ -82,16 +92,17 @@ def entity_to_jsonschema(entity):
         '$schema': 'http://json-schema.org/draft-04/schema#',
         'type': 'object',
         'properties': {},
+        'required': [],
         'additionalProperties': False,
         }
 
     # Add first level properties
     if 'field' in entity:
-        define_schema_properties(schema['properties'], entity['field'])
+        define_schema_properties(schema, entity['field'])
 
     # Add first level objects
     if 'fields' in entity:
-        define_schema_objects(schema['properties'], entity['fields'])
+        define_schema_objects(schema, entity['fields'])
 
     return schema
 

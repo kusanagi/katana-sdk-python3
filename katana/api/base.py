@@ -14,49 +14,15 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import logging
-import types
 
 from .schema.service import ServiceSchema
-from .. import json
 from ..errors import KatanaError
+from ..logging import value_to_log_string
 from ..schema import get_schema_registry
 
 
 class ApiError(KatanaError):
     """Exception class for API errors."""
-
-
-def value_to_log_string(value, max_chars=100000):
-    """Convert a value to a string.
-
-    :param value: A value to log.
-    :type value: object
-    :param max_chars: Optional maximum number of characters to return.
-    :type max_chars: int
-
-    :rtype: str
-
-    """
-
-    if value is None:
-        output = 'NULL'
-    elif isinstance(value, bool):
-        output = 'TRUE' if value else 'FALSE'
-    elif isinstance(value, str):
-        output = value
-    elif isinstance(value, bytes):
-        output = value.decode('utf8')
-    elif isinstance(value, (dict, list, tuple)):
-        output = json.serialize(value, prettify=True).decode('utf8')
-    elif isinstance(value, types.FunctionType):
-        if value.__name__ == '<lambda>':
-            output = 'anonymous'
-        else:
-            output = '[function {}]'.format(value.__name__)
-    else:
-        output = repr(value)
-
-    return output[:max_chars]
 
 
 class Api(object):
@@ -75,6 +41,8 @@ class Api(object):
         # Logging is only enabled when debug is True
         if self.__debug:
             self.__logger = logging.getLogger('katana.api')
+        else:
+            self.__logger = None
 
     def is_debug(self):
         """Determine if component is running in debug mode.

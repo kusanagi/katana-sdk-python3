@@ -29,7 +29,6 @@ class Api(object):
     """Base API class for SDK components."""
 
     def __init__(self, component, path, name, version, platform_version, **kw):
-        self.__component = component
         self.__path = path
         self.__name = name
         self.__version = version
@@ -37,6 +36,7 @@ class Api(object):
         self.__variables = kw.get('variables') or {}
         self.__debug = kw.get('debug', False)
         self.__schema = get_schema_registry()
+        self._component = component
 
         # Logging is only enabled when debug is True
         if self.__debug:
@@ -123,7 +123,7 @@ class Api(object):
 
         """
 
-        return self.__component.has_resource(name)
+        return self._component.has_resource(name)
 
     def get_resource(self, name):
         """Get a resource.
@@ -137,7 +137,7 @@ class Api(object):
 
         """
 
-        return self.__component.get_resource(name)
+        return self._component.get_resource(name)
 
     def get_service_schema(self, name, version):
         """Get service schema.

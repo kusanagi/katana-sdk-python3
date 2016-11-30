@@ -334,11 +334,12 @@ class MetaPayload(Payload):
     name = 'meta'
 
     @classmethod
-    def new(cls, version, request_id, protocol, date_time=None):
+    def new(cls, version, request_id, protocol, gateway, date_time=None):
         payload = cls()
         payload.set('version', version)
         payload.set('id', request_id)
         payload.set('protocol', protocol)
+        payload.set('gateway', gateway)
         payload.set('datetime', date_to_str(date_time or utcnow()))
         return payload
 

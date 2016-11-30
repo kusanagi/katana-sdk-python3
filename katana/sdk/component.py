@@ -13,7 +13,11 @@ file that was distributed with this source code.
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
+import logging
+
 from ..errors import KatanaError
+from ..logging import value_to_log_string
+from ..schema import SchemaRegistry
 from ..utils import Singleton
 
 
@@ -31,6 +35,7 @@ class Component(object, metaclass=Singleton):
         self.__error_callback = None
         self._callbacks = {}
         self._runner = None
+        self.__logger = logging.getLogger('katana.api')
 
     def has_resource(self, name):
         """Check if a resource name exist.
@@ -137,5 +142,19 @@ class Component(object, metaclass=Singleton):
         if self.__error_callback:
             self._runner.set_error_callback(self.__error_callback)
 
+        # Create the global schema registry instance on run
+        SchemaRegistry()
+
         self._runner.set_callbacks(self._callbacks)
         self._runner.run()
+
+    def log(self, value):
+        """Write a value to KATANA logs.
+
+        Given value is converted to string before being logged.
+
+        Output is truncated to have a maximum of 100000 characters.
+
+        """
+
+        self.__logger.debug(value_to_log_string(value))

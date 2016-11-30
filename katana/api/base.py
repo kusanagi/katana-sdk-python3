@@ -14,59 +14,35 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import logging
-import types
 
-from .. import json
+from .schema.service import ServiceSchema
+from ..errors import KatanaError
+from ..logging import value_to_log_string
+from ..schema import get_schema_registry
 
 
-def value_to_log_string(value, max_chars=100000):
-    """Convert a value to a string.
-
-    :param value: A value to log.
-    :type value: object
-    :param max_chars: Optional maximum number of characters to return.
-    :type max_chars: int
-
-    :rtype: str
-
-    """
-
-    if value is None:
-        output = 'NULL'
-    elif isinstance(value, bool):
-        output = 'TRUE' if value else 'FALSE'
-    elif isinstance(value, str):
-        output = value
-    elif isinstance(value, bytes):
-        output = value.decode('utf8')
-    elif isinstance(value, (dict, list, tuple)):
-        output = json.serialize(value, prettify=True).decode('utf8')
-    elif isinstance(value, types.FunctionType):
-        if value.__name__ == '<lambda>':
-            output = 'anonymous'
-        else:
-            output = '[function {}]'.format(value.__name__)
-    else:
-        output = repr(value)
-
-    return output[:max_chars]
+class ApiError(KatanaError):
+    """Exception class for API errors."""
 
 
 class Api(object):
     """Base API class for SDK components."""
 
     def __init__(self, component, path, name, version, platform_version, **kw):
-        self.__component = component
         self.__path = path
         self.__name = name
         self.__version = version
         self.__platform_version = platform_version
         self.__variables = kw.get('variables') or {}
         self.__debug = kw.get('debug', False)
+        self.__schema = get_schema_registry()
+        self._component = component
 
         # Logging is only enabled when debug is True
         if self.__debug:
             self.__logger = logging.getLogger('katana.api')
+        else:
+            self.__logger = None
 
     def is_debug(self):
         """Determine if component is running in debug mode.
@@ -147,7 +123,7 @@ class Api(object):
 
         """
 
-        return self.__component.has_resource(name)
+        return self._component.has_resource(name)
 
     def get_resource(self, name):
         """Get a resource.
@@ -161,7 +137,28 @@ class Api(object):
 
         """
 
-        return self.__component.get_resource(name)
+        return self._component.get_resource(name)
+
+    def get_service_schema(self, name, version):
+        """Get service schema.
+
+        :param name: Service name.
+        :type name: str
+        :param version: Service version.
+        :type version: str
+
+        :raises: ApiError
+
+        :rtype: ServiceSchema
+
+        """
+
+        payload = self.__schema.get('{}/{}'.format(name, version), None)
+        if not payload:
+            error = 'Cannot resolve schema for Service: "{}" ({})'
+            raise ApiError(error.format(name, version))
+
+        return ServiceSchema(name, version, payload)
 
     def log(self, value):
         """Write a value to KATANA logs.

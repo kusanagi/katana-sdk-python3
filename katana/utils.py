@@ -22,7 +22,7 @@ import socket
 
 from collections import OrderedDict
 from datetime import datetime
-from hashlib import md5
+from binascii import crc32
 from uuid import uuid4
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
@@ -30,6 +30,9 @@ DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
 IPC_RE = re.compile(r'[^a-zA-Z0-9]{1,}')
 
 LOCALHOSTS = ('localhost', '127.0.0.1', '127.0.1.1')
+
+# Default path delimiter
+DELIMITER = '/'
 
 # CLI exit status codes
 EXIT_OK = os.EX_OK
@@ -161,7 +164,7 @@ def date_to_str(datetime):
         return datetime.strftime(DATE_FORMAT)
 
 
-def get_path(item, path, default=EMPTY, mappings=None):
+def get_path(item, path, default=EMPTY, mappings=None, delimiter=DELIMITER):
     """Get dictionary value by path.
 
     Path can countain the name for a single or for many keys. In case
@@ -179,6 +182,10 @@ def get_path(item, path, default=EMPTY, mappings=None):
     :type path: str
     :param default: Default value to return when value is not found.
     :type default: object
+    :param mappings: Optional field name mappings.
+    :type mappings: dict
+    :param delimiter: Optional path delimiter.
+    :type delimiter: str
 
     :raises: `KeyError`
 
@@ -188,7 +195,7 @@ def get_path(item, path, default=EMPTY, mappings=None):
     """
 
     try:
-        for part in path.split('/'):
+        for part in path.split(delimiter):
             name = part
             # When path name is not available get its mapping
             if mappings and (name not in item):
@@ -204,8 +211,8 @@ def get_path(item, path, default=EMPTY, mappings=None):
     return item
 
 
-def set_path(item, path, value, mappings=None):
-    parts = path.split('/')
+def set_path(item, path, value, mappings=None, delimiter=DELIMITER):
+    parts = path.split(delimiter)
     last_part_index = len(parts) - 1
     for index, part in enumerate(parts):
         name = mappings.get(part, part) if mappings else part
@@ -226,9 +233,9 @@ def set_path(item, path, value, mappings=None):
     return item
 
 
-def delete_path(item, path, mappings=None):
+def delete_path(item, path, mappings=None, delimiter=DELIMITER):
     try:
-        name, *path = path.split('/', 1)
+        name, *path = path.split(delimiter, 1)
         # When path name is not available get its mapping
         if mappings and (name not in item):
             name = mappings.get(name, name)
@@ -318,10 +325,23 @@ class LookupDict(dict):
         self.__defaults = {}
         super().__init__(*args, **kwargs)
 
+    @staticmethod
+    def is_empty(value):
+        """Check if a value is the empty value.
+
+        :rtype: bool
+
+        """
+
+        return value is EMPTY
+
     def path_exists(self, path):
         """Check if a path is available.
 
-        :rtype: bool.
+        :param path: Path to a value.
+        :type path: str
+
+        :rtype: bool
 
         """
 
@@ -700,7 +720,7 @@ def dict_crc(dict):
 
     """
 
-    return md5(json.dumps(dict, sort_keys=True).encode('utf8')).hexdigest()
+    return str(crc32(json.dumps(dict, sort_keys=True).encode('utf8')))
 
 
 def safe_cast(value, cast_func, default=None):

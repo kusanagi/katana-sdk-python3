@@ -26,6 +26,7 @@ from .errors import HTTPError
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .payload import ErrorPayload
+from .schema import get_schema_registry
 
 LOG = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ DL = DOWNLOAD = b'\x04'
 META_VALUES = (EMPTY_META, SE, FI, TR, DL)
 
 # Request stream frames
-RequestFrames = namedtuple('RequestFrames', ['action', 'stream'])
+RequestFrames = namedtuple('RequestFrames', ['action', 'mappings', 'stream'])
 
 
 class ComponentWorker(object):
@@ -55,6 +56,7 @@ class ComponentWorker(object):
 
     def __init__(self, context, poller, callbacks, channel, **kwargs):
         self.__socket = None
+        self.schema_registry = get_schema_registry()
         self.context = context
         self.poller = poller
         self.callbacks = callbacks
@@ -252,6 +254,17 @@ class ComponentWorker(object):
             serialization.pack(payload),
             ]
 
+    def _update_service_schemas(self, mappings_stream):
+        """Update Service schemas."""
+
+        LOG.debug('Updating schemas for Services ...')
+        try:
+            self.schema_registry.update_registry(
+                serialization.unpack(mappings_stream)
+                )
+        except:
+            LOG.exception('Failed to update schemas')
+
     @asyncio.coroutine
     def _start_handling_requests(self):
         """Start handling incoming component requests and responses.
@@ -275,6 +288,10 @@ class ComponentWorker(object):
                 except:
                     LOG.error('Invalid multipart stream format received')
                 else:
+                    # Update global schema registry when mappings are sent
+                    if frames.mappings:
+                        self._update_service_schemas(frames.mappings)
+
                     # Call request handler and send response back
                     response_stream = yield from self.process_stream(
                         frames.action.decode('utf8'),

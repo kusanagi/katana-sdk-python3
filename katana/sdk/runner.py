@@ -207,6 +207,11 @@ class ComponentRunner(object):
                 help='KATANA platform version',
                 ),
             click.option(
+                '-q', '--quiet',
+                is_flag=True,
+                help='Disable all logs',
+                ),
+            click.option(
                 '-s', '--socket',
                 help='IPC socket name',
                 ),
@@ -284,8 +289,9 @@ class ComponentRunner(object):
 
         self._args = kwargs
 
-        # Initialize component logging
-        setup_katana_logging(logging.DEBUG if self.debug else logging.INFO)
+        # Initialize component logging only when `quiet` argument is False
+        if not kwargs.get('quiet'):
+            setup_katana_logging(logging.DEBUG if self.debug else logging.INFO)
 
         LOG.debug('Using PID: "%s"', os.getpid())
 

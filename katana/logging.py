@@ -14,9 +14,12 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import logging
+import types
 import sys
 
 from datetime import datetime
+
+from . import json
 
 
 class KatanaFormatter(logging.Formatter):
@@ -24,6 +27,39 @@ class KatanaFormatter(logging.Formatter):
 
     def formatTime(self, record, *args, **kwargs):
         return datetime.fromtimestamp(record.created).isoformat()[:-3]
+
+
+def value_to_log_string(value, max_chars=100000):
+    """Convert a value to a string.
+
+    :param value: A value to log.
+    :type value: object
+    :param max_chars: Optional maximum number of characters to return.
+    :type max_chars: int
+
+    :rtype: str
+
+    """
+
+    if value is None:
+        output = 'NULL'
+    elif isinstance(value, bool):
+        output = 'TRUE' if value else 'FALSE'
+    elif isinstance(value, str):
+        output = value
+    elif isinstance(value, bytes):
+        output = value.decode('utf8')
+    elif isinstance(value, (dict, list, tuple)):
+        output = json.serialize(value, prettify=True).decode('utf8')
+    elif isinstance(value, types.FunctionType):
+        if value.__name__ == '<lambda>':
+            output = 'anonymous'
+        else:
+            output = '[function {}]'.format(value.__name__)
+    else:
+        output = repr(value)
+
+    return output[:max_chars]
 
 
 def setup_katana_logging(level=logging.INFO):

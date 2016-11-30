@@ -134,13 +134,16 @@ class Request(Api):
         """
 
         return Response(
-            status_code,
-            status_text,
+            self._component,
             Transport({}),
             self.get_path(),
             self.get_name(),
             self.get_version(),
             self.get_platform_version(),
+            http_response={
+                'status_code': status_code,
+                'status_text': status_text,
+                },
             )
 
     def get_http_request(self):

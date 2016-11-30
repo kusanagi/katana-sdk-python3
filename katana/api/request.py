@@ -20,6 +20,7 @@ from .param import param_to_payload
 from .param import payload_to_param
 from .response import Response
 from .transport import Transport
+from .. import urn
 from ..payload import get_path
 from ..payload import Payload
 
@@ -120,18 +121,28 @@ class Request(Api):
 
         self.__action_name = action or ''
 
-    def new_response(self, status_code, status_text):
+    def new_response(self, status_code=None, status_text=None):
         """Create a new Response object.
 
-        :param status_code: The HTTP status code.
+        Arguments `status_code` and `status_text` are used when Gateway
+        protocol is `urn:katana:protocol:http`.
+
+        :param status_code: Optional HTTP status code.
         :type status_code: int
-        :param status_text: The HTTP status text.
+        :param status_text: Optional HTTP status text.
         :type status_text: str
 
         :returns: The response object.
         :rtype: `Response`
 
         """
+
+        http_response = None
+        if self.get_gateway_protocol() == urn.HTTP:
+            http_response = {
+                'status_code': status_code or 200,
+                'status_text': status_text or '200 OK',
+                }
 
         return Response(
             self._component,
@@ -140,10 +151,7 @@ class Request(Api):
             self.get_name(),
             self.get_version(),
             self.get_platform_version(),
-            http_response={
-                'status_code': status_code,
-                'status_text': status_text,
-                },
+            http_response=http_response,
             )
 
     def get_http_request(self):

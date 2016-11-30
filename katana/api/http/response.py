@@ -66,9 +66,12 @@ class HttpResponse(object):
         :param version: The HTTP version.
         :type version: str
 
+        :rtype: HttpResponse
+
         """
 
         self.__protocol_version = version or '1.1'
+        return self
 
     def is_status(self, status):
         """Determine if the response uses the given status.
@@ -120,11 +123,14 @@ class HttpResponse(object):
         :param text: The HTTP status text.
         :type text: str
 
+        :rtype: HttpResponse
+
         """
 
         self.__status_code = code
         self.__status_text = text
         self.__status = '{} {}'.format(code, text)
+        return self
 
     def has_header(self, name):
         """Determines if the HTTP header is defined.
@@ -169,9 +175,12 @@ class HttpResponse(object):
         :param value: The header value.
         :type value: str
 
+        :rtype: HttpResponse
+
         """
 
         self.__headers[name] = value
+        return self
 
     def has_body(self):
         """Determines if the response has content.
@@ -203,6 +212,9 @@ class HttpResponse(object):
         :param content: The content for the HTTP response body.
         :type content: str
 
+        :rtype: HttpResponse
+
         """
 
         self.__body = content or ''
+        return self

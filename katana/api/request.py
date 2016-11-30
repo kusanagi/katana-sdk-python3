@@ -75,9 +75,12 @@ class Request(Api):
         :param service: The service name.
         :type service: str
 
+        :rtype: Request
+
         """
 
         self.__service_name = service or ''
+        return self
 
     def get_service_version(self):
         """Get the version of the service.
@@ -96,9 +99,12 @@ class Request(Api):
         :param version: The service version.
         :type version: str
 
+        :rtype: Request
+
         """
 
         self.__service_version = version or ''
+        return self
 
     def get_action_name(self):
         """Get the name of the action.
@@ -117,9 +123,12 @@ class Request(Api):
         :param action: The action name.
         :type action: str
 
+        :rtype: Request
+
         """
 
         self.__action_name = action or ''
+        return self
 
     def new_response(self, status_code=None, status_text=None):
         """Create a new Response object.
@@ -200,9 +209,12 @@ class Request(Api):
         :param param: The parameter.
         :type param: Param
 
+        :rtype: Request
+
         """
 
         self.__params[param.get_name()] = param_to_payload(param)
+        return self
 
     def has_param(self, name):
         """Check if a parameter exists.

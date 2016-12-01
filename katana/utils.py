@@ -211,7 +211,7 @@ def get_path(item, path, default=EMPTY, mappings=None, delimiter=DELIMITER):
     try:
         for part in path.split(delimiter):
             # Skip mappings for names starting with "!"
-            if part[0] == '!':
+            if part and part[0] == '!':
                 name = part[1:]
             else:
                 name = part
@@ -234,7 +234,7 @@ def set_path(item, path, value, mappings=None, delimiter=DELIMITER):
     last_part_index = len(parts) - 1
     for index, part in enumerate(parts):
         # Skip mappings for names starting with "!"
-        if part[0] == '!':
+        if part and part[0] == '!':
             name = part[1:]
         else:
             name = mappings.get(part, part) if mappings else part
@@ -260,7 +260,7 @@ def delete_path(item, path, mappings=None, delimiter=DELIMITER):
     try:
         name, *path = path.split(delimiter, 1)
         # Skip mappings for names starting with "!"
-        if name[0] == '!':
+        if name and name[0] == '!':
             name = name[1:]
         else:
             # When path name is not in item get its mapping
@@ -526,7 +526,7 @@ class LookupDict(dict):
         last_part_index = len(parts) - 1
         for index, part in enumerate(parts):
             # Skip mappings for names starting with "!"
-            if part[0] == '!':
+            if part and part[0] == '!':
                 name = part[1:]
             else:
                 name = self.__mappings.get(part, part)

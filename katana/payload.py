@@ -140,7 +140,7 @@ FIELD_MAPPINGS = {
     'version': 'v',
     'iowait': 'w',
     'writes': 'w',
-    'execution_timeout': 'x',
+    'timeout': 'x',
     'maximum_items': 'xi',
     'maximum_length': 'xl',
 }

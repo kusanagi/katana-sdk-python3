@@ -25,6 +25,7 @@ class Response(Api):
         super().__init__(*args, **kwargs)
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
+        self.__gateway_addresses = kwargs.get('gateway_addresses')
 
         http_request = kwargs.get('http_request')
         if http_request:
@@ -48,6 +49,15 @@ class Response(Api):
         """
 
         return self.__gateway_protocol
+
+    def get_gateway_address(self):
+        """Get public gateway address.
+
+        :rtype: str
+
+        """
+
+        return self.__gateway_addresses[1]
 
     def get_http_request(self):
         """Get HTTP request for current request.

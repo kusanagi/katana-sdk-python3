@@ -32,6 +32,7 @@ class Request(Api):
         super().__init__(*args, **kwargs)
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
+        self.__gateway_addresses = kwargs.get('gateway_addresses')
 
         http_request = kwargs.get('http_request')
         if http_request:
@@ -57,6 +58,15 @@ class Request(Api):
         """
 
         return self.__gateway_protocol
+
+    def get_gateway_address(self):
+        """Get public gateway address.
+
+        :rtype: str
+
+        """
+
+        return self.__gateway_addresses[1]
 
     def get_service_name(self):
         """Get the name of the service.

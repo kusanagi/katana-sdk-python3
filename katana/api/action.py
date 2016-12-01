@@ -71,6 +71,7 @@ class Action(Api):
             get_path(param, 'name'): Payload(param)
             for param in params
             }
+        self.__gateway_addresses = transport.get('meta/gateway')
 
         # Get files for current service, version and action
         path = 'files/{}/{}/{}'.format(

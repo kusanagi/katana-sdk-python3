@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 from .error import ServiceSchemaError
 from .param import ParamSchema
+from .file import FileSchema
 from ... payload import get_path
 from ... payload import Payload
 
@@ -16,10 +17,8 @@ class ActionSchema(object):
     def __init__(self, name, payload):
         self.__name = name
         self.__payload = Payload(payload)
-        self.__params = OrderedDict(
-            (get_path(param, 'name'), param)
-            for param in self.__payload.get('params')
-            )
+        self.__params = self.__payload.get('params', {})
+        self.__files = self.__payload.get('files', {})
 
     def is_deprecated(self):
         """Check if action has been deprecated.
@@ -181,6 +180,43 @@ class ActionSchema(object):
             raise ActionSchemaError(error.format(name))
 
         return ParamSchema(name, self.__params[name])
+
+    def get_files(self):
+        """Get the file parameter names defined for the action.
+
+        :rtype: list
+
+        """
+
+        return self.__files.keys()
+
+    def has_file(self, name):
+        """Check that a file parameter schema exists.
+
+        :param name: File parameter name.
+        :type name: str
+
+        :rtype: bool
+
+        """
+
+        return name in self.__files
+
+    def get_file_schema(self, name):
+        """Get schema for a file parameter.
+
+        :param name: File parameter name.
+        :type name: str
+
+        :rtype: FileSchema
+
+        """
+
+        if not self.has_file(name):
+            error = 'Cannot resolve schema for file parameter: {}'
+            raise ActionSchemaError(error.format(name))
+
+        return FileSchema(name, self.__files[name])
 
     def get_http_schema(self):
         """Get HTTP action schema.

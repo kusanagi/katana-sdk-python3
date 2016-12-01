@@ -18,6 +18,7 @@ import os
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import Payload
+from ..utils import nomap
 
 from .base import Api
 from .base import ApiError
@@ -75,9 +76,9 @@ class Action(Api):
 
         # Get files for current service, version and action
         path = 'files/{}/{}/{}'.format(
-            self.get_name(),
+            nomap(self.get_name()),
             self.get_version(),
-            self.get_action_name(),
+            nomap(self.get_action_name()),
             )
         self.__files = transport.get(path, default={})
 
@@ -122,7 +123,10 @@ class Action(Api):
         if not isinstance(value, str):
             raise TypeError('Value is not a string')
 
-        self.__transport.set('meta/properties/{}'.format(name), str(value))
+        self.__transport.set(
+            'meta/properties/{}'.format(nomap(name)),
+            str(value),
+            )
         return self
 
     def has_param(self, name):
@@ -319,9 +323,9 @@ class Action(Api):
 
         self.__transport.push(
             'data/{}/{}/{}'.format(
-                self.get_name(),
+                nomap(self.get_name()),
                 self.get_version(),
-                self.get_action_name(),
+                nomap(self.get_action_name()),
                 ),
             entity,
             )
@@ -348,9 +352,9 @@ class Action(Api):
 
         self.__transport.push(
             'data/{}/{}/{}'.format(
-                self.get_name(),
+                nomap(self.get_name()),
                 self.get_version(),
-                self.get_action_name(),
+                nomap(self.get_action_name()),
                 ),
             collection,
             )
@@ -516,7 +520,10 @@ class Action(Api):
 
         """
 
-        self.__transport.set('links/{}/{}'.format(self.get_name(), link), uri)
+        self.__transport.set(
+            'links/{}/{}'.format(nomap(self.get_name()), link),
+            uri,
+            )
         return self
 
     def commit(self, action, params=None):
@@ -612,7 +619,11 @@ class Action(Api):
         # Add files to transport
         if files:
             self.__transport.set(
-                'files/{}/{}/{}'.format(service, version, action),
+                'files/{}/{}/{}'.format(
+                    nomap(service),
+                    version,
+                    nomap(action),
+                    ),
                 {file.get_name(): file_to_payload(file) for file in files}
                 )
 
@@ -625,7 +636,7 @@ class Action(Api):
             payload.set('params', parse_params(params))
 
         self.__transport.push(
-            'calls/{}/{}'.format(self.get_name(), self.get_version()),
+            'calls/{}/{}'.format(nomap(self.get_name()), self.get_version()),
             payload
             )
         return self
@@ -649,7 +660,7 @@ class Action(Api):
         """
 
         self.__transport.push(
-            'errors/{}/{}'.format(self.get_name(), self.get_version()),
+            'errors/{}/{}'.format(nomap(self.get_name()), self.get_version()),
             ErrorPayload.new(message, code, status),
             )
         return self

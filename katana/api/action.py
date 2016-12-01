@@ -363,20 +363,31 @@ class Action(Api):
         primary key and service with the foreign key.
 
         :param primery_key: The primary key.
-        :type primary_key: mixed
+        :type primary_key: str, int
         :param service: The foreign service.
         :type service: str
         :param foreign_key: The foreign key.
-        :type foreign_key: mixed
+        :type foreign_key: str, int
 
         :rtype: Action
 
         """
 
-        self.__transport.set(
-            'relations/{}/{}/{}'.format(self.get_name(), primary_key, service),
-            foreign_key
+        public_address = self.__gateway_addresses[1]
+        key_chain = (
+            public_address,
+            self.get_name(),
+            primary_key,
+            public_address,
             )
+
+        item = relations = self.__transport.get('relations')
+        for value in key_chain:
+            item = item.setdefault(value, {})
+
+        item[service] = foreign_key
+
+        self.__transport.set('relations', relations)
         return self
 
     def relate_many(self, primary_key, service, foreign_keys):
@@ -386,7 +397,7 @@ class Action(Api):
         primary key and service with the foreign keys.
 
         :param primery_key: The primary key.
-        :type primary_key: mixed
+        :type primary_key: str, int
         :param service: The foreign service.
         :type service: str
         :param foreign_key: The foreign keys.
@@ -399,10 +410,98 @@ class Action(Api):
         if not isinstance(foreign_keys, list):
             raise TypeError('Foreign keys must be a list')
 
-        self.__transport.set(
-            'relations/{}/{}/{}'.format(self.get_name(), primary_key, service),
-            foreign_keys
+        public_address = self.__gateway_addresses[1]
+        key_chain = (
+            public_address,
+            self.get_name(),
+            primary_key,
+            public_address,
             )
+
+        item = relations = self.__transport.get('relations')
+        for value in key_chain:
+            item = item.setdefault(value, {})
+
+        item[service] = foreign_keys
+
+        self.__transport.set('relations', relations)
+        return self
+
+    def relate_one_remote(self, primary_key, address, service, foreign_key):
+        """Creates a "one-to-one" relation between two entities.
+
+        Creates a "one-to-one" relation between the entity with the given
+        primary key and service with the foreign key.
+
+        This type of relation is done between entities in different realms.
+
+        :param primery_key: The primary key.
+        :type primary_key: str, int
+        :param address: Foreign service public address.
+        :type address: str
+        :param service: The foreign service.
+        :type service: str
+        :param foreign_key: The foreign key.
+        :type foreign_key: str, int
+
+        :rtype: Action
+
+        """
+
+        key_chain = (
+            self.__gateway_addresses[1],
+            self.get_name(),
+            primary_key,
+            address,
+            )
+
+        item = relations = self.__transport.get('relations')
+        for value in key_chain:
+            item = item.setdefault(value, {})
+
+        item[service] = foreign_key
+
+        self.__transport.set('relations', relations)
+        return self
+
+    def relate_many_remote(self, primary_key, address, service, foreign_keys):
+        """Creates a "one-to-many" relation between entities.
+
+        Creates a "one-to-many" relation between the entity with the given
+        primary key and service with the foreign keys.
+
+        This type of relation is done between entities in different realms.
+
+        :param primery_key: The primary key.
+        :type primary_key: str, int
+        :param address: Foreign service public address.
+        :type address: str
+        :param service: The foreign service.
+        :type service: str
+        :param foreign_key: The foreign keys.
+        :type foreign_key: list
+
+        :rtype: Action
+
+        """
+
+        if not isinstance(foreign_keys, list):
+            raise TypeError('Foreign keys must be a list')
+
+        key_chain = (
+            self.__gateway_addresses[1],
+            self.get_name(),
+            primary_key,
+            address,
+            )
+
+        item = relations = self.__transport.get('relations')
+        for value in key_chain:
+            item = item.setdefault(value, {})
+
+        item[service] = foreign_keys
+
+        self.__transport.set('relations', relations)
         return self
 
     def set_link(self, link, uri):

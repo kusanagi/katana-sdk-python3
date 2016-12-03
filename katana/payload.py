@@ -40,6 +40,7 @@ FIELD_MAPPINGS = {
     'busy': 'b',
     'cached': 'c',
     'call': 'c',
+    'callback': 'c',
     'calls': 'c',
     'code': 'c',
     'collection': 'c',

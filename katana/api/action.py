@@ -15,6 +15,7 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import os
 
+from ..errors import KatanaError
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import Payload
@@ -607,9 +608,9 @@ class Action(Api):
         :type version: str
         :param action: The action name.
         :type action: str
-        :param params: The list of Param objects.
+        :param params: Optative list of Param objects.
         :type params: list
-        :param files: The list of File objects.
+        :param files: Optative list of File objects.
         :type files: list
 
         :rtype: Action
@@ -632,6 +633,66 @@ class Action(Api):
             'version': version,
             'action': action,
             })
+        if params:
+            payload.set('params', parse_params(params))
+
+        self.__transport.push(
+            'calls/{}/{}'.format(nomap(self.get_name()), self.get_version()),
+            payload
+            )
+        return self
+
+    def call_remote(self, address, service, version, action, **kwargs):
+        """Register a call to a remote service.
+
+        :param address: Public address of a Gateway from another Realm.
+        :type address: str
+        :param service: The service name.
+        :type service: str
+        :param version: The service version.
+        :type version: str
+        :param action: The action name.
+        :type action: str
+        :param params: Optative list of Param objects.
+        :type params: list
+        :param files: Optative list of File objects.
+        :type files: list
+        :param callback: Optative action to call after remote call succeeds.
+        :type callback: str
+
+        :raises: KatanaError
+
+        :rtype: Action
+
+        """
+
+        if address[:3] != 'ktp':
+            raise KatanaError('Address protocol is not KTP: {}'.format(address))
+
+        # Add files to transport
+        files = kwargs.get('files')
+        if files:
+            self.__transport.set(
+                'files/{}/{}/{}'.format(
+                    nomap(service),
+                    version,
+                    nomap(action),
+                    ),
+                {file.get_name(): file_to_payload(file) for file in files}
+                )
+
+        payload = Payload().set_many({
+            'gateway': address,
+            'name': service,
+            'version': version,
+            'action': action,
+            })
+
+        callback = kwargs.get('callback')
+        if callback:
+            payload.set('callback', callback)
+
+        params = kwargs.get('params')
         if params:
             payload.set('params', parse_params(params))
 

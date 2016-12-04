@@ -35,7 +35,7 @@ class Api(object):
         self.__platform_version = platform_version
         self.__variables = kw.get('variables') or {}
         self.__debug = kw.get('debug', False)
-        self.__schema = get_schema_registry()
+        self._schema = get_schema_registry()
         self._component = component
 
         # Logging is only enabled when debug is True
@@ -153,7 +153,7 @@ class Api(object):
 
         """
 
-        payload = self.__schema.get('{}/{}'.format(name, version), None)
+        payload = self._schema.get('{}/{}'.format(name, version), None)
         if not payload:
             error = 'Cannot resolve schema for Service: "{}" ({})'
             raise ApiError(error.format(name, version))

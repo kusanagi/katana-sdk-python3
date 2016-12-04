@@ -164,6 +164,20 @@ def date_to_str(datetime):
         return datetime.strftime(DATE_FORMAT)
 
 
+def nomap(value):
+    """Disable name mapping in paths for a value.
+
+    This is used to avoid mapping path item names.
+
+    This just adds a '!' as value prefix.
+
+    :rtype: str
+
+    """
+
+    return '!{}'.format(value)
+
+
 def get_path(item, path, default=EMPTY, mappings=None, delimiter=DELIMITER):
     """Get dictionary value by path.
 
@@ -196,10 +210,14 @@ def get_path(item, path, default=EMPTY, mappings=None, delimiter=DELIMITER):
 
     try:
         for part in path.split(delimiter):
-            name = part
-            # When path name is not available get its mapping
-            if mappings and (name not in item):
-                name = mappings.get(part, part)
+            # Skip mappings for names starting with "!"
+            if part[0] == '!':
+                name = part[1:]
+            else:
+                name = part
+                # When path name is not available get its mapping
+                if mappings and (name not in item):
+                    name = mappings.get(part, part)
 
             item = item[name]
     except KeyError:
@@ -215,7 +233,12 @@ def set_path(item, path, value, mappings=None, delimiter=DELIMITER):
     parts = path.split(delimiter)
     last_part_index = len(parts) - 1
     for index, part in enumerate(parts):
-        name = mappings.get(part, part) if mappings else part
+        # Skip mappings for names starting with "!"
+        if part[0] == '!':
+            name = part[1:]
+        else:
+            name = mappings.get(part, part) if mappings else part
+
         # Current part is the last item in path
         if index == last_part_index:
             item[name] = value
@@ -236,9 +259,13 @@ def set_path(item, path, value, mappings=None, delimiter=DELIMITER):
 def delete_path(item, path, mappings=None, delimiter=DELIMITER):
     try:
         name, *path = path.split(delimiter, 1)
-        # When path name is not available get its mapping
-        if mappings and (name not in item):
-            name = mappings.get(name, name)
+        # Skip mappings for names starting with "!"
+        if name[0] == '!':
+            name = name[1:]
+        else:
+            # When path name is not in item get its mapping
+            if mappings and (name not in item):
+                name = mappings.get(name, name)
 
         # Delete inner path items
         if path:
@@ -392,24 +419,10 @@ class LookupDict(dict):
 
         """
 
-        item = self
-        try:
-            for part in path.split('/'):
-                name = part
-                # When path name is not available get its mapping
-                if name not in item:
-                    name = self.__mappings.get(part, part)
+        if default == EMPTY:
+            default = self.__defaults.get(path, EMPTY)
 
-                item = item[name]
-        except KeyError:
-            if default != EMPTY:
-                return default
-            elif path in self.__defaults:
-                return self.__defaults[path]
-            else:
-                raise
-
-        return item
+        return get_path(self, path, default, self.__mappings)
 
     def get_many(self, *paths):
         """Get multiple values by key path.
@@ -426,8 +439,7 @@ class LookupDict(dict):
 
         result = []
         for path in paths:
-            default = self.__defaults.get(path, EMPTY)
-            result.append(self.get(path, default=default))
+            result.append(self.get(path))
 
         return result
 
@@ -457,25 +469,7 @@ class LookupDict(dict):
 
         """
 
-        item = self
-        parts = path.split('/')
-        last_part_index = len(parts) - 1
-        for index, part in enumerate(parts):
-            name = self.__mappings.get(part, part)
-            # Current part is the last item in path
-            if index == last_part_index:
-                item[name] = value
-                break
-
-            if name not in item:
-                item[name] = {}
-                item = item[name]
-            elif isinstance(item[name], dict):
-                # Only keep traversing dictionaries
-                item = item[name]
-            else:
-                raise TypeError(part)
-
+        set_path(self, path, value, self.__mappings)
         return self
 
     def set_many(self, values):
@@ -528,10 +522,15 @@ class LookupDict(dict):
         """
 
         item = self
-        parts = path.split('/')
+        parts = path.split(DELIMITER)
         last_part_index = len(parts) - 1
         for index, part in enumerate(parts):
-            name = self.__mappings.get(part, part)
+            # Skip mappings for names starting with "!"
+            if part[0] == '!':
+                name = part[1:]
+            else:
+                name = self.__mappings.get(part, part)
+
             # Current part is the last item in path
             if index == last_part_index:
                 if name not in item:

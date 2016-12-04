@@ -18,8 +18,10 @@ import os
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import Payload
+from ..utils import nomap
 
 from .base import Api
+from .base import ApiError
 from .file import File
 from .file import file_to_payload
 from .file import payload_to_file
@@ -73,9 +75,9 @@ class Action(Api):
 
         # Get files for current service, version and action
         path = 'files/{}/{}/{}'.format(
-            self.get_name(),
+            nomap(self.get_name()),
             self.get_version(),
-            self.get_action_name(),
+            nomap(self.get_action_name()),
             )
         self.__files = transport.get(path, default={})
 
@@ -113,17 +115,18 @@ class Action(Api):
         :param value: The property value.
         :type value: str
 
-        :rtype: bool
+        :rtype: Action
 
         """
 
         if not isinstance(value, str):
             raise TypeError('Value is not a string')
 
-        return self.__transport.set(
-            'meta/properties/{}'.format(name),
+        self.__transport.set(
+            'meta/properties/{}'.format(nomap(name)),
             str(value),
             )
+        return self
 
     def has_param(self, name):
         """Check if a parameter exists.
@@ -282,14 +285,25 @@ class Action(Api):
         :param file: The file object.
         :type file: `File`
 
-        :rtype: bool
+        :raises: ApiError
+
+        :rtype: Action
 
         """
 
         if not isinstance(file, File):
             raise TypeError('File must be an instance of File class')
 
-        return self.__transport.set('body', file_to_payload(file))
+        # Check that files server is enabled
+        service = self.get_name()
+        version = self.get_version()
+        path = '{}/{}'.format(service, version)
+        if not get_path(self._schema.get(path), 'files', False):
+            error = 'File server not configured: "{}" ({})'
+            raise ApiError(error.format(service, version))
+
+        self.__transport.set('body', file_to_payload(file))
+        return self
 
     def set_entity(self, entity):
         """Sets the entity data.
@@ -299,19 +313,22 @@ class Action(Api):
         :param entity: The entity object.
         :type entity: dict
 
+        :rtype: Action
+
         """
 
         if not isinstance(entity, dict):
             raise TypeError('Entity must be an dict')
 
-        return self.__transport.push(
+        self.__transport.push(
             'data/{}/{}/{}'.format(
-                self.get_name(),
+                nomap(self.get_name()),
                 self.get_version(),
-                self.get_action_name(),
+                nomap(self.get_action_name()),
                 ),
             entity,
             )
+        return self
 
     def set_collection(self, collection):
         """Sets the collection data.
@@ -320,6 +337,8 @@ class Action(Api):
 
         :param collection: The collection list.
         :type collection: list
+
+        :rtype: Action
 
         """
 
@@ -330,14 +349,15 @@ class Action(Api):
             if not isinstance(entity, dict):
                 raise TypeError('Entity must be an dict')
 
-        return self.__transport.push(
+        self.__transport.push(
             'data/{}/{}/{}'.format(
-                self.get_name(),
+                nomap(self.get_name()),
                 self.get_version(),
-                self.get_action_name(),
+                nomap(self.get_action_name()),
                 ),
             collection,
             )
+        return self
 
     def relate_one(self, primary_key, service, foreign_key):
         """Creates a "one-to-one" relation between two entities.
@@ -352,12 +372,15 @@ class Action(Api):
         :param foreign_key: The foreign key.
         :type foreign_key: mixed
 
+        :rtype: Action
+
         """
 
-        return self.__transport.set(
+        self.__transport.set(
             'relations/{}/{}/{}'.format(self.get_name(), primary_key, service),
             foreign_key
             )
+        return self
 
     def relate_many(self, primary_key, service, foreign_keys):
         """Creates a "one-to-many" relation between entities.
@@ -372,15 +395,18 @@ class Action(Api):
         :param foreign_key: The foreign keys.
         :type foreign_key: list
 
+        :rtype: Action
+
         """
 
         if not isinstance(foreign_keys, list):
             raise TypeError('Foreign keys must be a list')
 
-        return self.__transport.set(
+        self.__transport.set(
             'relations/{}/{}/{}'.format(self.get_name(), primary_key, service),
             foreign_keys
             )
+        return self
 
     def set_link(self, link, uri):
         """Sets a link for the given URI.
@@ -390,12 +416,15 @@ class Action(Api):
         :param uri: The link URI.
         :type uri: str
 
+        :rtype: Action
+
         """
 
-        return self.__transport.set(
-            'links/{}/{}'.format(self.get_name(), link),
+        self.__transport.set(
+            'links/{}/{}'.format(nomap(self.get_name()), link),
             uri,
             )
+        return self
 
     def commit(self, action, params=None):
         """Register a transaction to be called when request succeeds.
@@ -405,6 +434,8 @@ class Action(Api):
         :param params: Optional list of Param objects.
         :type params: list
 
+        :rtype: Action
+
         """
 
         payload = Payload().set_many({
@@ -415,7 +446,8 @@ class Action(Api):
         if params:
             payload.set('params', parse_params(params))
 
-        return self.__transport.push('transactions/commit', payload)
+        self.__transport.push('transactions/commit', payload)
+        return self
 
     def rollback(self, action, params=None):
         """Register a transaction to be called when request fails.
@@ -425,6 +457,8 @@ class Action(Api):
         :param params: Optional list of Param objects.
         :type params: list
 
+        :rtype: Action
+
         """
 
         payload = Payload().set_many({
@@ -435,7 +469,8 @@ class Action(Api):
         if params:
             payload.set('params', parse_params(params))
 
-        return self.__transport.push('transactions/rollback', payload)
+        self.__transport.push('transactions/rollback', payload)
+        return self
 
     def complete(self, action, params=None):
         """Register a transaction to be called when request finishes.
@@ -448,6 +483,8 @@ class Action(Api):
         :param params: Optional list of Param objects.
         :type params: list
 
+        :rtype: Action
+
         """
 
         payload = Payload().set_many({
@@ -458,7 +495,8 @@ class Action(Api):
         if params:
             payload.set('params', parse_params(params))
 
-        return self.__transport.push('transactions/complete', payload)
+        self.__transport.push('transactions/complete', payload)
+        return self
 
     def call(self, service, version, action, params=None, files=None):
         """Register a call to a service.
@@ -474,12 +512,18 @@ class Action(Api):
         :param files: The list of File objects.
         :type files: list
 
+        :rtype: Action
+
         """
 
         # Add files to transport
         if files:
             self.__transport.set(
-                'files/{}/{}/{}'.format(service, version, action),
+                'files/{}/{}/{}'.format(
+                    nomap(service),
+                    version,
+                    nomap(action),
+                    ),
                 {file.get_name(): file_to_payload(file) for file in files}
                 )
 
@@ -491,10 +535,11 @@ class Action(Api):
         if params:
             payload.set('params', parse_params(params))
 
-        return self.__transport.push(
-            'calls/{}/{}'.format(self.get_name(), self.get_version()),
+        self.__transport.push(
+            'calls/{}/{}'.format(nomap(self.get_name()), self.get_version()),
             payload
             )
+        return self
 
     def error(self, message, code=None, status=None):
         """Adds an error for the current Service.
@@ -510,9 +555,12 @@ class Action(Api):
         :param status: The HTTP status message.
         :type status: str
 
+        :rtype: Action
+
         """
 
-        return self.__transport.push(
-            'errors/{}/{}'.format(self.get_name(), self.get_version()),
+        self.__transport.push(
+            'errors/{}/{}'.format(nomap(self.get_name()), self.get_version()),
             ErrorPayload.new(message, code, status),
             )
+        return self

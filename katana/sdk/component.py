@@ -93,9 +93,12 @@ class Component(object, metaclass=Singleton):
         :param callback: A callback to execute on startup.
         :type callback: function
 
+        :rtype: Component
+
         """
 
         self.__startup_callback = callback
+        return self
 
     def shutdown(self, callback):
         """Register a callback to be called during component shutdown.
@@ -105,9 +108,12 @@ class Component(object, metaclass=Singleton):
         :param callback: A callback to execute on shutdown.
         :type callback: function
 
+        :rtype: Component
+
         """
 
         self.__shutdown_callback = callback
+        return self
 
     def error(self, callback):
         """Register a callback to be called on message callback errors.
@@ -117,9 +123,12 @@ class Component(object, metaclass=Singleton):
         :param callback: A callback to execute a message callback fails.
         :type callback: function
 
+        :rtype: Component
+
         """
 
         self.__error_callback = callback
+        return self
 
     def run(self):
         """Run SDK component.

@@ -345,8 +345,8 @@ class MetaPayload(Payload):
         return payload
 
 
-class RequestPayload(Payload):
-    """Class definition for request payloads."""
+class HttpRequestPayload(Payload):
+    """Class definition for HTTP request payloads."""
 
     name = 'request'
 

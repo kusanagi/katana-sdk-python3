@@ -22,7 +22,7 @@ from concurrent.futures import CancelledError
 import zmq.asyncio
 
 from . import serialization
-from .errors import HTTPError
+from .errors import KatanaError
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .payload import ErrorPayload
@@ -113,8 +113,6 @@ class ComponentWorker(object):
 
         :param payload: A payload.
         :type payload: Payload.
-
-        :raises: HTTPError
 
         :returns: A component instance for the type of payload.
         :rtype: `Component`.
@@ -242,9 +240,8 @@ class ComponentWorker(object):
         except CancelledError:
             # Avoid logging task cancel errors by catching it here
             raise
-        except HTTPError as err:
-            payload = ErrorPayload.new(status=err.status, message=err.body)
-            payload = payload.entity()
+        except KatanaError as err:
+            payload = ErrorPayload.new(message=err.message).entity()
         except:
             LOG.exception('Component failed')
             payload = ErrorPayload.new().entity()

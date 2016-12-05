@@ -132,7 +132,7 @@ class ParamSchema(object):
 
         """
 
-        return self.__payload.get('maximum', sys.maxint)
+        return self.__payload.get('maximum', sys.maxsize)
 
     def is_exclusive_max(self):
         """Check if max value is inclusive.
@@ -155,7 +155,7 @@ class ParamSchema(object):
 
         """
 
-        return self.__payload.get('maximum', -sys.maxint - 1)
+        return self.__payload.get('maximum', -sys.maxsize - 1)
 
     def is_exclusive_min(self):
         """Check if minimum value is inclusive.

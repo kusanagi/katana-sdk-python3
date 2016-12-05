@@ -20,6 +20,7 @@ from .param import param_to_payload
 from .param import payload_to_param
 from .response import Response
 from .transport import Transport
+from .. import urn
 from ..payload import get_path
 from ..payload import Payload
 
@@ -74,9 +75,12 @@ class Request(Api):
         :param service: The service name.
         :type service: str
 
+        :rtype: Request
+
         """
 
         self.__service_name = service or ''
+        return self
 
     def get_service_version(self):
         """Get the version of the service.
@@ -95,9 +99,12 @@ class Request(Api):
         :param version: The service version.
         :type version: str
 
+        :rtype: Request
+
         """
 
         self.__service_version = version or ''
+        return self
 
     def get_action_name(self):
         """Get the name of the action.
@@ -116,22 +123,35 @@ class Request(Api):
         :param action: The action name.
         :type action: str
 
+        :rtype: Request
+
         """
 
         self.__action_name = action or ''
+        return self
 
-    def new_response(self, status_code, status_text):
+    def new_response(self, status_code=None, status_text=None):
         """Create a new Response object.
 
-        :param status_code: The HTTP status code.
+        Arguments `status_code` and `status_text` are used when Gateway
+        protocol is `urn:katana:protocol:http`.
+
+        :param status_code: Optional HTTP status code.
         :type status_code: int
-        :param status_text: The HTTP status text.
+        :param status_text: Optional HTTP status text.
         :type status_text: str
 
         :returns: The response object.
         :rtype: `Response`
 
         """
+
+        http_response = None
+        if self.get_gateway_protocol() == urn.HTTP:
+            http_response = {
+                'status_code': status_code or 200,
+                'status_text': status_text or '200 OK',
+                }
 
         return Response(
             self._component,
@@ -140,10 +160,7 @@ class Request(Api):
             self.get_name(),
             self.get_version(),
             self.get_platform_version(),
-            http_response={
-                'status_code': status_code,
-                'status_text': status_text,
-                },
+            http_response=http_response,
             )
 
     def get_http_request(self):
@@ -192,9 +209,12 @@ class Request(Api):
         :param param: The parameter.
         :type param: Param
 
+        :rtype: Request
+
         """
 
         self.__params[param.get_name()] = param_to_payload(param)
+        return self
 
     def has_param(self, name):
         """Check if a parameter exists.

@@ -298,9 +298,13 @@ class Action(Api):
         service = self.get_name()
         version = self.get_version()
         path = '{}/{}'.format(service, version)
-        if not get_path(self._schema.get(path), 'files', False):
-            error = 'File server not configured: "{}" ({})'
-            raise ApiError(error.format(service, version))
+
+        # Check if there are mappings to validate.
+        # Note: When action is run from CLI mappings will be ampty.
+        if self._schema.has_mappings:
+            if not get_path(self._schema.get(path), 'files', False):
+                error = 'File server not configured: "{}" ({})'
+                raise ApiError(error.format(service, version))
 
         self.__transport.set('body', file_to_payload(file))
         return self

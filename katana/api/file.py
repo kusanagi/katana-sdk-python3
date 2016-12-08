@@ -76,9 +76,16 @@ class File(object):
     """
 
     def __init__(self, name, path, **kwargs):
-        # When a path is given check protocol
-        if path and path[:7] not in ('file://', 'http://'):
-            raise TypeError('Path must begin with file:// or http://')
+        if not (name or '').strip():
+            raise TypeError('Invalid file name')
+
+        if not (path or '').strip():
+            raise TypeError('Invalid file path')
+        elif path[0] == '/' or path[:2] == './':
+            # Use file protocol in relative and absolute paths
+            path = 'file://{}'.format(path)
+        elif path[:7] not in ('file://', 'http://'):
+            raise TypeError('Invalid file protocol: {}'.format(path[:7]))
 
         self.__name = name
         self.__path = path
@@ -86,6 +93,9 @@ class File(object):
         self.__filename = kwargs.get('filename')
         self.__size = kwargs.get('size') or 0
         self.__token = kwargs.get('token') or ''
+        # Token is required for remote file paths
+        if path and path[:7] == 'http://' and not self.__token:
+            raise TypeError('Token is required for remote file paths')
 
     def get_name(self):
         """Get parameter name.

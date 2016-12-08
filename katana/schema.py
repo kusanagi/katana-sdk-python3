@@ -20,6 +20,16 @@ class SchemaRegistry(object, metaclass=Singleton):
 
         return Payload.is_empty(value)
 
+    @property
+    def has_mappings(self):
+        """Check if registry contains mappings.
+
+        :rtype: bool
+
+        """
+
+        return len(self.__mappings) > 0
+
     def update_registry(self, mappings):
         """Update schema registry with mappings info.
 

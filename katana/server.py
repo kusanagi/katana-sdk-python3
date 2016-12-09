@@ -158,7 +158,9 @@ class ComponentServer(object):
         """
 
         while 1:
-            events = dict((yield from self.poller.poll()))
+            events = yield from self.poller.poll()
+            events = dict(events)
+
             if events.get(frontend_sock) == zmq.POLLIN:
                 stream = yield from frontend_sock.recv_multipart()
                 yield from backend_sock.send_multipart(stream)

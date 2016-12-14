@@ -14,6 +14,7 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 import logging
+import mimetypes
 import os
 import urllib.request
 
@@ -76,25 +77,43 @@ class File(object):
     """
 
     def __init__(self, name, path, **kwargs):
+        # Validate and set file name
         if not (name or '').strip():
             raise TypeError('Invalid file name')
+        else:
+            self.__name = name
 
+        # Validate and set file path
+        protocol = path[:7]
         if not (path or '').strip():
             raise TypeError('Invalid file path')
-        elif path[0] == '/' or path[:2] == './':
-            # Use file protocol in relative and absolute paths
-            path = 'file://{}'.format(path)
-        elif path[:7] not in ('file://', 'http://'):
-            raise TypeError('Invalid file protocol: {}'.format(path[:7]))
+        elif protocol not in ('file://', 'http://'):
+            self.__path = 'file://{}'.format(path)
+        else:
+            self.__path = path
 
-        self.__name = name
-        self.__path = path
-        self.__mime = kwargs.get('mime') or 'text/plain'
-        self.__filename = kwargs.get('filename')
-        self.__size = kwargs.get('size') or 0
-        self.__token = kwargs.get('token') or ''
+        # set mime type, or guess it from path
+        self.__mime = kwargs.get('mime')
+        if not self.__mime:
+            self.__mime = mimetypes.guess_type(path)[0] or 'text/plain'
+
+        # Set file name, or get it from path
+        self.__filename = kwargs.get('filename') or os.path.basename(path)
+
+        # Set file size
+        self.__size = kwargs.get('size')
+        if self.__size is None and protocol == 'file://':
+            try:
+                # Get file size from file
+                self.__size = os.path.getsize(path[7:])
+            except OSError:
+                self.__size = 0
+        else:
+            self._size = 0
+
         # Token is required for remote file paths
-        if path and path[:7] == 'http://' and not self.__token:
+        self.__token = kwargs.get('token') or ''
+        if protocol == 'http://' and not self.__token:
             raise TypeError('Token is required for remote file paths')
 
     def get_name(self):

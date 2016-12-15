@@ -19,6 +19,10 @@ from .schema.service import ServiceSchema
 from ..errors import KatanaError
 from ..logging import value_to_log_string
 from ..schema import get_schema_registry
+from ..versions import find_version
+from ..versions import VersionNotFound
+from ..versions import VersionParser
+from ..versions import VersionPattern
 
 
 class ApiError(KatanaError):
@@ -142,9 +146,12 @@ class Api(object):
     def get_service_schema(self, name, version):
         """Get service schema.
 
+        Service version string may contain many `*` that will be
+        resolved to the higher version available. For example: `1.*.*`.
+
         :param name: Service name.
         :type name: str
-        :param version: Service version.
+        :param version: Service version string.
         :type version: str
 
         :raises: ApiError
@@ -153,7 +160,20 @@ class Api(object):
 
         """
 
-        payload = self._schema.get('{}/{}'.format(name, version), None)
+        # Resolve service version when wildcards are used
+        if '*' in version:
+            try:
+                version = find_version(VersionPattern(version), [
+                    VersionParser(value)
+                    # Get versions for current service
+                    for value in self._schema.get(name, {}).keys()
+                    ])
+                payload = self._schema.get('{}/{}'.format(name, version), None)
+            except VersionNotFound:
+                payload = None
+        else:
+            payload = self._schema.get('{}/{}'.format(name, version), None)
+
         if not payload:
             error = 'Cannot resolve schema for Service: "{}" ({})'
             raise ApiError(error.format(name, version))

@@ -265,19 +265,7 @@ class Action(Api):
 
         """
 
-        if not path.startswith('file://'):
-            path = 'file://{}'.format(path)
-
-        # Initialize dynamic file values
-        extra = {'filename': os.path.basename(path)}
-        try:
-            extra['size'] = os.path.getsize(path[7:])
-            extra['exists'] = True
-        except OSError:
-            extra['size'] = None
-            extra['exists'] = False
-
-        return File(name, path, mime=mime, **extra)
+        return File(name, path, mime=mime)
 
     def set_download(self, file):
         """Set a file as the download.

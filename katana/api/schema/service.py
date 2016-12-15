@@ -30,6 +30,15 @@ class ServiceSchema(object):
 
         return self.__version
 
+    def has_file_server(self):
+        """Check if service has a file server.
+
+        :rtype: bool
+
+        """
+
+        return self.__payload.get('files', False)
+
     def get_actions(self):
         """Get Service action names.
 

@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 

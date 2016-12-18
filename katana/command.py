@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import asyncio
 import functools
 import logging
@@ -25,6 +21,9 @@ from .errors import KatanaError
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .serialization import unpack
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 

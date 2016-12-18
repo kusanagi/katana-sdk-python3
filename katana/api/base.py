@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import logging
 
 from .schema.service import ServiceSchema
@@ -23,6 +19,9 @@ from ..versions import find_version
 from ..versions import VersionNotFound
 from ..versions import VersionParser
 from ..versions import VersionPattern
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 
 class ApiError(KatanaError):

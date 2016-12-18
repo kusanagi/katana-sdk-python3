@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import os
 
 from ..errors import KatanaError
@@ -27,6 +23,9 @@ from .file import File
 from .file import file_to_payload
 from .file import payload_to_file
 from .param import Param
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 
 def parse_params(params):

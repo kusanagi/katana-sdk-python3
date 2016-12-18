@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 from time import time
 
 from . import utils
@@ -22,6 +18,9 @@ from .utils import date_to_str
 from .utils import EMPTY
 from .utils import LookupDict
 from .utils import utcnow
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 # Disable field mappings in all payloads
 DISABLE_FIELD_MAPPINGS = False

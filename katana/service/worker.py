@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import logging
 
 from ..api.action import Action
@@ -25,6 +21,9 @@ from ..worker import DOWNLOAD
 from ..worker import FILES
 from ..worker import SERVICE_CALL
 from ..worker import TRANSACTIONS
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 

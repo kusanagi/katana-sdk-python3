@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import logging
 
 from ..api.param import param_to_payload
@@ -25,6 +21,9 @@ from ..payload import ResponsePayload
 from ..payload import ServiceCallPayload
 from ..utils import MultiDict
 from ..worker import ComponentWorker
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 

@@ -9,11 +9,10 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+from ...utils import MultiDict
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
-from ...utils import MultiDict
 
 
 class HttpResponse(object):

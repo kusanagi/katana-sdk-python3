@@ -17,6 +17,7 @@ from time import time
 
 from . import utils
 from .errors import PayloadExpired
+from .utils import DELIMITER as SEP
 from .utils import date_to_str
 from .utils import EMPTY
 from .utils import LookupDict
@@ -147,7 +148,7 @@ FIELD_MAPPINGS = {
 }
 
 
-def get_path(payload, path, default=EMPTY, mappings=None):
+def get_path(payload, path, default=EMPTY, mappings=None, delimiter=SEP):
     """Get payload dictionary value by path.
 
     Global payload field mappings are used when no mappings are given.
@@ -160,6 +161,10 @@ def get_path(payload, path, default=EMPTY, mappings=None):
     :type path: str
     :param default: Default value to return when value is not found.
     :type default: object
+    :param mappings: Optional field name mappings.
+    :type mappings: dict
+    :param delimiter: Optional path delimiter.
+    :type delimiter: str
 
     :raises: `KeyError`
 
@@ -168,18 +173,35 @@ def get_path(payload, path, default=EMPTY, mappings=None):
 
     """
 
-    return utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
+    return utils.get_path(
+        payload,
+        path,
+        default,
+        mappings or FIELD_MAPPINGS,
+        delimiter=delimiter,
+        )
 
 
-def set_path(payload, path, value, mappings=None):
-    return utils.set_path(payload, path, value, mappings or FIELD_MAPPINGS)
+def set_path(payload, path, value, mappings=None, delimiter=SEP):
+    return utils.set_path(
+        payload,
+        path,
+        value,
+        mappings or FIELD_MAPPINGS,
+        delimiter=delimiter,
+        )
 
 
-def delete_path(payload, path, mappings=None):
-    return utils.delete_path(payload, path, mappings or FIELD_MAPPINGS)
+def delete_path(payload, path, mappings=None, delimiter=SEP):
+    return utils.delete_path(
+        payload,
+        path,
+        mappings or FIELD_MAPPINGS,
+        delimiter=delimiter,
+        )
 
 
-def path_exists(payload, path, default=EMPTY, mappings=None):
+def path_exists(payload, path, default=EMPTY, mappings=None, delimiter=SEP):
     """Check if a path is available.
 
     :rtype: bool.
@@ -187,7 +209,13 @@ def path_exists(payload, path, default=EMPTY, mappings=None):
     """
 
     try:
-        utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
+        utils.get_path(
+            payload,
+            path,
+            default,
+            mappings or FIELD_MAPPINGS,
+            delimiter=delimiter,
+            )
     except KeyError:
         return False
     else:

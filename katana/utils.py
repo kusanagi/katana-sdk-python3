@@ -362,18 +362,20 @@ class LookupDict(dict):
 
         return value is EMPTY
 
-    def path_exists(self, path):
+    def path_exists(self, path, delimiter=DELIMITER):
         """Check if a path is available.
 
         :param path: Path to a value.
         :type path: str
+        :param delimiter: Optional path delimiter.
+        :type delimiter: str
 
         :rtype: bool
 
         """
 
         try:
-            self.get(path)
+            self.get(path, delimiter=delimiter)
         except KeyError:
             return False
         else:
@@ -399,7 +401,7 @@ class LookupDict(dict):
 
         self.__defaults = defaults
 
-    def get(self, path, default=EMPTY):
+    def get(self, path, default=EMPTY, delimiter=DELIMITER):
         """Get value by key path.
 
         Path can countain the name for a single or for many keys. In case
@@ -412,6 +414,9 @@ class LookupDict(dict):
         :param path: Path to a value.
         :type path: str.
         :param default: Default value to return when value is not found.
+        :type default: object
+        :param delimiter: Optional path delimiter.
+        :type delimiter: str
 
         :raises: KeyError.
 
@@ -422,13 +427,16 @@ class LookupDict(dict):
         if default == EMPTY:
             default = self.__defaults.get(path, EMPTY)
 
-        return get_path(self, path, default, self.__mappings)
+        return get_path(self, path, default, self.__mappings, delimiter)
 
-    def get_many(self, *paths):
+    def get_many(self, *paths, delimiter=DELIMITER):
         """Get multiple values by key path.
 
         KeyError is raised when no default value is given.
         Default values can be assigned using `set_defaults`.
+
+        :param delimiter: Optional path delimiter.
+        :type delimiter: str
 
         :raises: KeyError.
 
@@ -439,11 +447,11 @@ class LookupDict(dict):
 
         result = []
         for path in paths:
-            result.append(self.get(path))
+            result.append(self.get(path, delimiter=delimiter))
 
         return result
 
-    def set(self, path, value):
+    def set(self, path, value, delimiter=DELIMITER):
         """Set value by key path.
 
         Path traversing is only done for dictionary like values.
@@ -461,6 +469,9 @@ class LookupDict(dict):
         :param path: Path to a value.
         :type path: str.
         :param value: Value to set in the give path.
+        :type value: object
+        :param delimiter: Optional path delimiter.
+        :type delimiter: str
 
         :raises: TypeError.
 
@@ -469,14 +480,16 @@ class LookupDict(dict):
 
         """
 
-        set_path(self, path, value, self.__mappings)
+        set_path(self, path, value, self.__mappings, delimiter)
         return self
 
-    def set_many(self, values):
+    def set_many(self, values, delimiter=DELIMITER):
         """Set set multiple values by key path.
 
         :param values: A dictionary with paths and values.
-        :type values: dict.
+        :type values: dict
+        :param delimiter: Optional path delimiter.
+        :type delimiter: str
 
         :raises: TypeError.
 
@@ -486,11 +499,11 @@ class LookupDict(dict):
         """
 
         for path, value in values.items():
-            self.set(path, value)
+            self.set(path, value, delimiter=delimiter)
 
         return self
 
-    def push(self, path, value):
+    def push(self, path, value, delimiter=DELIMITER):
         """Push value by key path.
 
         Path traversing is only done for dictionary like values.
@@ -513,6 +526,8 @@ class LookupDict(dict):
         :type path: str
         :param value: Value to set in the give path.
         :type value: object
+        :param delimiter: Optional path delimiter.
+        :type delimiter: str
 
         :raises: TypeError
 
@@ -522,7 +537,7 @@ class LookupDict(dict):
         """
 
         item = self
-        parts = path.split(DELIMITER)
+        parts = path.split(delimiter)
         last_part_index = len(parts) - 1
         for index, part in enumerate(parts):
             # Skip mappings for names starting with "!"
@@ -554,7 +569,7 @@ class LookupDict(dict):
 
         return self
 
-    def merge(self, path, value):
+    def merge(self, path, value, delimiter=DELIMITER):
         """Merge a dictionary value into a location.
 
         Value must be a dictionary. Location given by path must
@@ -564,6 +579,8 @@ class LookupDict(dict):
         :type path: str
         :param value: Value to set in the give path.
         :type value: object
+        :param delimiter: Optional path delimiter.
+        :type delimiter: str
 
         :raises: `TypeError`
 
@@ -575,13 +592,13 @@ class LookupDict(dict):
         if not isinstance(value, dict):
             raise TypeError('Merge value is not a dict')
 
-        if self.path_exists(path):
-            item = self.get(path)
+        if self.path_exists(path, delimiter=delimiter):
+            item = self.get(path, delimiter=delimiter)
             if not isinstance(item, dict):
                 raise TypeError('Value in path "{}" is not dict'.format(path))
         else:
             item = {}
-            self.set(path, item)
+            self.set(path, item, delimiter=delimiter)
 
         merge(value, item, mappings=self.__mappings, lists=True)
         return self

@@ -68,19 +68,20 @@ class Action(Api):
         super().__init__(*args, **kwargs)
         self.__action = action
         self.__transport = transport
+        self.__public_address = transport.get('meta/gateway')[1]
         self.__params = {
             get_path(param, 'name'): Payload(param)
             for param in params
             }
-        self.__gateway_addresses = transport.get('meta/gateway')
 
         # Get files for current service, version and action
-        path = 'files/{}/{}/{}'.format(
+        path = 'files|{}|{}|{}|{}'.format(
+            self.__public_address,
             nomap(self.get_name()),
             self.get_version(),
             nomap(self.get_action_name()),
             )
-        self.__files = transport.get(path, default={})
+        self.__files = transport.get(path, default={}, delimiter='|')
 
     def is_origin(self):
         """Determines if the current service is the origin of the request.
@@ -314,12 +315,14 @@ class Action(Api):
             raise TypeError('Entity must be an dict')
 
         self.__transport.push(
-            'data/{}/{}/{}'.format(
+            'data|{}|{}|{}|{}'.format(
+                self.__public_address,
                 nomap(self.get_name()),
                 self.get_version(),
                 nomap(self.get_action_name()),
                 ),
             entity,
+            delimiter='|',
             )
         return self
 
@@ -343,12 +346,14 @@ class Action(Api):
                 raise TypeError('Entity must be an dict')
 
         self.__transport.push(
-            'data/{}/{}/{}'.format(
+            'data|{}|{}|{}|{}'.format(
+                self.__public_address,
                 nomap(self.get_name()),
                 self.get_version(),
                 nomap(self.get_action_name()),
                 ),
             collection,
+            delimiter='|',
             )
         return self
 
@@ -369,21 +374,17 @@ class Action(Api):
 
         """
 
-        public_address = self.__gateway_addresses[1]
-        key_chain = (
-            public_address,
-            self.get_name(),
-            primary_key,
-            public_address,
+        self.__transport.set(
+            'relations|{}|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(primary_key),
+                self.__public_address,
+                nomap(service),
+                ),
+            foreign_key,
+            delimiter='|',
             )
-
-        item = relations = self.__transport.get('relations')
-        for value in key_chain:
-            item = item.setdefault(value, {})
-
-        item[service] = foreign_key
-
-        self.__transport.set('relations', relations)
         return self
 
     def relate_many(self, primary_key, service, foreign_keys):
@@ -406,21 +407,17 @@ class Action(Api):
         if not isinstance(foreign_keys, list):
             raise TypeError('Foreign keys must be a list')
 
-        public_address = self.__gateway_addresses[1]
-        key_chain = (
-            public_address,
-            self.get_name(),
-            primary_key,
-            public_address,
+        self.__transport.set(
+            'relations|{}|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(primary_key),
+                self.__public_address,
+                nomap(service),
+                ),
+            foreign_keys,
+            delimiter='|',
             )
-
-        item = relations = self.__transport.get('relations')
-        for value in key_chain:
-            item = item.setdefault(value, {})
-
-        item[service] = foreign_keys
-
-        self.__transport.set('relations', relations)
         return self
 
     def relate_one_remote(self, primary_key, address, service, foreign_key):
@@ -444,20 +441,17 @@ class Action(Api):
 
         """
 
-        key_chain = (
-            self.__gateway_addresses[1],
-            self.get_name(),
-            primary_key,
-            address,
+        self.__transport.set(
+            'relations|{}|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(primary_key),
+                address,
+                nomap(service),
+                ),
+            foreign_key,
+            delimiter='|',
             )
-
-        item = relations = self.__transport.get('relations')
-        for value in key_chain:
-            item = item.setdefault(value, {})
-
-        item[service] = foreign_key
-
-        self.__transport.set('relations', relations)
         return self
 
     def relate_many_remote(self, primary_key, address, service, foreign_keys):
@@ -484,20 +478,17 @@ class Action(Api):
         if not isinstance(foreign_keys, list):
             raise TypeError('Foreign keys must be a list')
 
-        key_chain = (
-            self.__gateway_addresses[1],
-            self.get_name(),
-            primary_key,
-            address,
+        self.__transport.set(
+            'relations|{}|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(primary_key),
+                address,
+                nomap(service),
+                ),
+            foreign_keys,
+            delimiter='|',
             )
-
-        item = relations = self.__transport.get('relations')
-        for value in key_chain:
-            item = item.setdefault(value, {})
-
-        item[service] = foreign_keys
-
-        self.__transport.set('relations', relations)
         return self
 
     def set_link(self, link, uri):
@@ -513,8 +504,13 @@ class Action(Api):
         """
 
         self.__transport.set(
-            'links/{}/{}'.format(nomap(self.get_name()), link),
+            'links|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(link),
+                ),
             uri,
+            delimiter='|',
             )
         return self
 
@@ -714,7 +710,12 @@ class Action(Api):
         """
 
         self.__transport.push(
-            'errors/{}/{}'.format(nomap(self.get_name()), self.get_version()),
+            'errors|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                self.get_version(),
+                ),
             ErrorPayload.new(message, code, status),
+            delimiter='|',
             )
         return self

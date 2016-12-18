@@ -128,7 +128,12 @@ class ServiceWorker(ComponentWorker):
             payload.get('command/arguments/transport')
             )
         transport.push(
-            'errors/{}/{}'.format(action.get_name(), action.get_version()),
-            ErrorPayload.new(str(exc))
+            'errors|{}|{}|{}'.format(
+                transport.get('meta/gateway')[1],  # Public gateway address
+                action.get_name(),
+                action.get_version(),
+                ),
+            ErrorPayload.new(str(exc)),
+            delimiter='|',
             )
         return transport.entity()

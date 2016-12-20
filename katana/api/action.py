@@ -654,9 +654,7 @@ class Action(Api):
         """
 
         if address[:3] != 'ktp':
-            raise KatanaError(
-                'Address protocol is not KTP: {}'.format(address)
-                )
+            address = 'ktp://{}'.format(address)
 
         # Add files to transport
         files = kwargs.get('files')

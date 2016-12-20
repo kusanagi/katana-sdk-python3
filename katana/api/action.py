@@ -644,8 +644,6 @@ class Action(Api):
         :type params: list
         :param files: Optative list of File objects.
         :type files: list
-        :param callback: Optative action to call after remote call succeeds.
-        :type callback: str
 
         :raises: KatanaError
 
@@ -675,9 +673,9 @@ class Action(Api):
             'action': action,
             })
 
-        callback = kwargs.get('callback')
-        if callback:
-            payload.set('callback', callback)
+        # callback = kwargs.get('callback')
+        # if callback:
+        #     payload.set('callback', callback)
 
         params = kwargs.get('params')
         if params:

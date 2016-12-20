@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import logging
 
 from ..api.param import param_to_payload
@@ -25,6 +21,9 @@ from ..payload import ResponsePayload
 from ..payload import ServiceCallPayload
 from ..utils import MultiDict
 from ..worker import ComponentWorker
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 
@@ -76,11 +75,13 @@ class MiddlewareWorker(ComponentWorker):
             self.component_name,
             self.component_version,
             self.platform_version,
+            # TODO: Use meta and call as arguments instead these many kwargs
             service_name=payload.get('call/service'),
             service_version=payload.get('call/version'),
             action_name=payload.get('call/action'),
             params=payload.get('call/params', []),
             gateway_protocol=payload.get('meta/protocol'),
+            gateway_addresses=payload.get('meta/gateway'),
             debug=self.debug,
             http_request=self.http_request_from_payload(payload),
             )
@@ -93,7 +94,9 @@ class MiddlewareWorker(ComponentWorker):
             self.component_name,
             self.component_version,
             self.platform_version,
+            # TODO: Use meta and argument
             gateway_protocol=payload.get('meta/protocol'),
+            gateway_addresses=payload.get('meta/gateway'),
             http_request=self.http_request_from_payload(payload),
             http_response=self.http_response_from_payload(payload),
             )

@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,18 +9,18 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 from time import time
 
 from . import utils
 from .errors import PayloadExpired
+from .utils import DELIMITER as SEP
 from .utils import date_to_str
 from .utils import EMPTY
 from .utils import LookupDict
 from .utils import utcnow
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 # Disable field mappings in all payloads
 DISABLE_FIELD_MAPPINGS = False
@@ -40,6 +40,7 @@ FIELD_MAPPINGS = {
     'busy': 'b',
     'cached': 'c',
     'call': 'c',
+    'callback': 'c',
     'calls': 'c',
     'code': 'c',
     'collection': 'c',
@@ -146,7 +147,7 @@ FIELD_MAPPINGS = {
 }
 
 
-def get_path(payload, path, default=EMPTY, mappings=None):
+def get_path(payload, path, default=EMPTY, mappings=None, delimiter=SEP):
     """Get payload dictionary value by path.
 
     Global payload field mappings are used when no mappings are given.
@@ -159,6 +160,10 @@ def get_path(payload, path, default=EMPTY, mappings=None):
     :type path: str
     :param default: Default value to return when value is not found.
     :type default: object
+    :param mappings: Optional field name mappings.
+    :type mappings: dict
+    :param delimiter: Optional path delimiter.
+    :type delimiter: str
 
     :raises: `KeyError`
 
@@ -167,18 +172,35 @@ def get_path(payload, path, default=EMPTY, mappings=None):
 
     """
 
-    return utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
+    return utils.get_path(
+        payload,
+        path,
+        default,
+        mappings or FIELD_MAPPINGS,
+        delimiter=delimiter,
+        )
 
 
-def set_path(payload, path, value, mappings=None):
-    return utils.set_path(payload, path, value, mappings or FIELD_MAPPINGS)
+def set_path(payload, path, value, mappings=None, delimiter=SEP):
+    return utils.set_path(
+        payload,
+        path,
+        value,
+        mappings or FIELD_MAPPINGS,
+        delimiter=delimiter,
+        )
 
 
-def delete_path(payload, path, mappings=None):
-    return utils.delete_path(payload, path, mappings or FIELD_MAPPINGS)
+def delete_path(payload, path, mappings=None, delimiter=SEP):
+    return utils.delete_path(
+        payload,
+        path,
+        mappings or FIELD_MAPPINGS,
+        delimiter=delimiter,
+        )
 
 
-def path_exists(payload, path, default=EMPTY, mappings=None):
+def path_exists(payload, path, default=EMPTY, mappings=None, delimiter=SEP):
     """Check if a path is available.
 
     :rtype: bool.
@@ -186,7 +208,13 @@ def path_exists(payload, path, default=EMPTY, mappings=None):
     """
 
     try:
-        utils.get_path(payload, path, default, mappings or FIELD_MAPPINGS)
+        utils.get_path(
+            payload,
+            path,
+            default,
+            mappings or FIELD_MAPPINGS,
+            delimiter=delimiter,
+            )
     except KeyError:
         return False
     else:
@@ -334,17 +362,18 @@ class MetaPayload(Payload):
     name = 'meta'
 
     @classmethod
-    def new(cls, version, request_id, protocol, date_time=None):
+    def new(cls, version, request_id, protocol, gateway, date_time=None):
         payload = cls()
         payload.set('version', version)
         payload.set('id', request_id)
         payload.set('protocol', protocol)
+        payload.set('gateway', gateway)
         payload.set('datetime', date_to_str(date_time or utcnow()))
         return payload
 
 
-class RequestPayload(Payload):
-    """Class definition for request payloads."""
+class HttpRequestPayload(Payload):
+    """Class definition for HTTP request payloads."""
 
     name = 'request'
 

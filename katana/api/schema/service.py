@@ -1,6 +1,20 @@
+"""
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
 from .action import ActionSchema
 from .error import ServiceSchemaError
 from ... payload import Payload
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 
 class ServiceSchema(object):
@@ -29,6 +43,15 @@ class ServiceSchema(object):
         """
 
         return self.__version
+
+    def has_file_server(self):
+        """Check if service has a file server.
+
+        :rtype: bool
+
+        """
+
+        return self.__payload.get('files', False)
 
     def get_actions(self):
         """Get Service action names.

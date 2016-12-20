@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 from .base import Api
 from .http.request import HttpRequest
 from .param import Param
@@ -24,6 +20,9 @@ from .. import urn
 from ..payload import get_path
 from ..payload import Payload
 
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
 
 class Request(Api):
     """Request API class for Middleware component."""
@@ -32,6 +31,7 @@ class Request(Api):
         super().__init__(*args, **kwargs)
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
+        self.__gateway_addresses = kwargs.get('gateway_addresses')
 
         http_request = kwargs.get('http_request')
         if http_request:
@@ -57,6 +57,15 @@ class Request(Api):
         """
 
         return self.__gateway_protocol
+
+    def get_gateway_address(self):
+        """Get public gateway address.
+
+        :rtype: str
+
+        """
+
+        return self.__gateway_addresses[1]
 
     def get_service_name(self):
         """Get the name of the service.

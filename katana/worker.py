@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import asyncio
 import logging
 
@@ -22,11 +18,14 @@ from concurrent.futures import CancelledError
 import zmq.asyncio
 
 from . import serialization
-from .errors import HTTPError
+from .errors import KatanaError
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .payload import ErrorPayload
 from .schema import get_schema_registry
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 
@@ -113,8 +112,6 @@ class ComponentWorker(object):
 
         :param payload: A payload.
         :type payload: Payload.
-
-        :raises: HTTPError
 
         :returns: A component instance for the type of payload.
         :rtype: `Component`.
@@ -242,9 +239,8 @@ class ComponentWorker(object):
         except CancelledError:
             # Avoid logging task cancel errors by catching it here
             raise
-        except HTTPError as err:
-            payload = ErrorPayload.new(status=err.status, message=err.body)
-            payload = payload.entity()
+        except KatanaError as err:
+            payload = ErrorPayload.new(message=err.message).entity()
         except:
             LOG.exception('Component failed')
             payload = ErrorPayload.new().entity()

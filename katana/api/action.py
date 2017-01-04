@@ -607,12 +607,14 @@ class Action(Api):
         # Add files to transport
         if files:
             self.__transport.set(
-                'files/{}/{}/{}'.format(
+                'files|{}|{}|{}|{}'.format(
+                    self.__public_address,
                     nomap(service),
                     version,
                     nomap(action),
                     ),
-                {file.get_name(): file_to_payload(file) for file in files}
+                {file.get_name(): file_to_payload(file) for file in files},
+                delimiter='|',
                 )
 
         payload = Payload().set_many({
@@ -658,12 +660,14 @@ class Action(Api):
         files = kwargs.get('files')
         if files:
             self.__transport.set(
-                'files/{}/{}/{}'.format(
+                'files|{}|{}|{}|{}'.format(
+                    self.__public_address,
                     nomap(service),
                     version,
                     nomap(action),
                     ),
-                {file.get_name(): file_to_payload(file) for file in files}
+                {file.get_name(): file_to_payload(file) for file in files},
+                delimiter='|',
                 )
 
         payload = Payload().set_many({

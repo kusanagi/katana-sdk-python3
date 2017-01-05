@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import asyncio
 import logging
 
@@ -21,6 +17,9 @@ from concurrent.futures import CancelledError
 import zmq.asyncio
 
 from .utils import safe_cast
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 
@@ -158,7 +157,9 @@ class ComponentServer(object):
         """
 
         while 1:
-            events = dict((yield from self.poller.poll()))
+            events = yield from self.poller.poll()
+            events = dict(events)
+
             if events.get(frontend_sock) == zmq.POLLIN:
                 stream = yield from frontend_sock.recv_multipart()
                 yield from backend_sock.send_multipart(stream)

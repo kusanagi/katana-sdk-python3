@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,12 +9,9 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import os
 
+from ..errors import KatanaError
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import Payload
@@ -28,6 +25,9 @@ from .file import payload_to_file
 from .param import Param
 from ..validation import validate_collection
 from ..validation import validate_entity
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 
 def parse_params(params):
@@ -70,18 +70,20 @@ class Action(Api):
         super().__init__(*args, **kwargs)
         self.__action = action
         self.__transport = transport
+        self.__public_address = transport.get('meta/gateway')[1]
         self.__params = {
             get_path(param, 'name'): Payload(param)
             for param in params
             }
 
         # Get files for current service, version and action
-        path = 'files/{}/{}/{}'.format(
+        path = 'files|{}|{}|{}|{}'.format(
+            self.__public_address,
             nomap(self.get_name()),
             self.get_version(),
             nomap(self.get_action_name()),
             )
-        self.__files = transport.get(path, default={})
+        self.__files = transport.get(path, default={}, delimiter='|')
 
     def is_origin(self):
         """Determines if the current service is the origin of the request.
@@ -265,19 +267,7 @@ class Action(Api):
 
         """
 
-        if not path.startswith('file://'):
-            path = 'file://{}'.format(path)
-
-        # Initialize dynamic file values
-        extra = {'filename': os.path.basename(path)}
-        try:
-            extra['size'] = os.path.getsize(path[7:])
-            extra['exists'] = True
-        except OSError:
-            extra['size'] = None
-            extra['exists'] = False
-
-        return File(name, path, mime=mime, **extra)
+        return File(name, path, mime=mime)
 
     def set_download(self, file):
         """Set a file as the download.
@@ -300,9 +290,13 @@ class Action(Api):
         service = self.get_name()
         version = self.get_version()
         path = '{}/{}'.format(service, version)
-        if not get_path(self._schema.get(path), 'files', False):
-            error = 'File server not configured: "{}" ({})'
-            raise ApiError(error.format(service, version))
+
+        # Check if there are mappings to validate.
+        # Note: When action is run from CLI mappings will be ampty.
+        if self._schema.has_mappings:
+            if not get_path(self._schema.get(path), 'files', False):
+                error = 'File server not configured: "{}" ({})'
+                raise ApiError(error.format(service, version))
 
         self.__transport.set('body', file_to_payload(file))
         return self
@@ -333,12 +327,14 @@ class Action(Api):
             validate_entity(entity, entity_definition)
 
         self.__transport.push(
-            'data/{}/{}/{}'.format(
-                nomap(service),
-                version,
+            'data|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                self.get_version(),
                 nomap(self.get_action_name()),
                 ),
             entity,
+            delimiter='|',
             )
         return self
 
@@ -372,12 +368,14 @@ class Action(Api):
             validate_collection(collection, entity_definition)
 
         self.__transport.push(
-            'data/{}/{}/{}'.format(
-                nomap(service),
-                version,
+            'data|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                self.get_version(),
                 nomap(self.get_action_name()),
                 ),
             collection,
+            delimiter='|',
             )
         return self
 
@@ -388,19 +386,26 @@ class Action(Api):
         primary key and service with the foreign key.
 
         :param primery_key: The primary key.
-        :type primary_key: mixed
+        :type primary_key: str, int
         :param service: The foreign service.
         :type service: str
         :param foreign_key: The foreign key.
-        :type foreign_key: mixed
+        :type foreign_key: str, int
 
         :rtype: Action
 
         """
 
         self.__transport.set(
-            'relations/{}/{}/{}'.format(self.get_name(), primary_key, service),
-            foreign_key
+            'relations|{}|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(primary_key),
+                self.__public_address,
+                nomap(service),
+                ),
+            foreign_key,
+            delimiter='|',
             )
         return self
 
@@ -411,7 +416,7 @@ class Action(Api):
         primary key and service with the foreign keys.
 
         :param primery_key: The primary key.
-        :type primary_key: mixed
+        :type primary_key: str, int
         :param service: The foreign service.
         :type service: str
         :param foreign_key: The foreign keys.
@@ -425,8 +430,86 @@ class Action(Api):
             raise TypeError('Foreign keys must be a list')
 
         self.__transport.set(
-            'relations/{}/{}/{}'.format(self.get_name(), primary_key, service),
-            foreign_keys
+            'relations|{}|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(primary_key),
+                self.__public_address,
+                nomap(service),
+                ),
+            foreign_keys,
+            delimiter='|',
+            )
+        return self
+
+    def relate_one_remote(self, primary_key, address, service, foreign_key):
+        """Creates a "one-to-one" relation between two entities.
+
+        Creates a "one-to-one" relation between the entity with the given
+        primary key and service with the foreign key.
+
+        This type of relation is done between entities in different realms.
+
+        :param primery_key: The primary key.
+        :type primary_key: str, int
+        :param address: Foreign service public address.
+        :type address: str
+        :param service: The foreign service.
+        :type service: str
+        :param foreign_key: The foreign key.
+        :type foreign_key: str, int
+
+        :rtype: Action
+
+        """
+
+        self.__transport.set(
+            'relations|{}|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(primary_key),
+                address,
+                nomap(service),
+                ),
+            foreign_key,
+            delimiter='|',
+            )
+        return self
+
+    def relate_many_remote(self, primary_key, address, service, foreign_keys):
+        """Creates a "one-to-many" relation between entities.
+
+        Creates a "one-to-many" relation between the entity with the given
+        primary key and service with the foreign keys.
+
+        This type of relation is done between entities in different realms.
+
+        :param primery_key: The primary key.
+        :type primary_key: str, int
+        :param address: Foreign service public address.
+        :type address: str
+        :param service: The foreign service.
+        :type service: str
+        :param foreign_key: The foreign keys.
+        :type foreign_key: list
+
+        :rtype: Action
+
+        """
+
+        if not isinstance(foreign_keys, list):
+            raise TypeError('Foreign keys must be a list')
+
+        self.__transport.set(
+            'relations|{}|{}|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(primary_key),
+                address,
+                nomap(service),
+                ),
+            foreign_keys,
+            delimiter='|',
             )
         return self
 
@@ -443,8 +526,13 @@ class Action(Api):
         """
 
         self.__transport.set(
-            'links/{}/{}'.format(nomap(self.get_name()), link),
+            'links|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                nomap(link),
+                ),
             uri,
+            delimiter='|',
             )
         return self
 
@@ -529,9 +617,9 @@ class Action(Api):
         :type version: str
         :param action: The action name.
         :type action: str
-        :param params: The list of Param objects.
+        :param params: Optative list of Param objects.
         :type params: list
-        :param files: The list of File objects.
+        :param files: Optative list of File objects.
         :type files: list
 
         :rtype: Action
@@ -541,12 +629,14 @@ class Action(Api):
         # Add files to transport
         if files:
             self.__transport.set(
-                'files/{}/{}/{}'.format(
+                'files|{}|{}|{}|{}'.format(
+                    self.__public_address,
                     nomap(service),
                     version,
                     nomap(action),
                     ),
-                {file.get_name(): file_to_payload(file) for file in files}
+                {file.get_name(): file_to_payload(file) for file in files},
+                delimiter='|',
                 )
 
         payload = Payload().set_many({
@@ -554,6 +644,66 @@ class Action(Api):
             'version': version,
             'action': action,
             })
+        if params:
+            payload.set('params', parse_params(params))
+
+        self.__transport.push(
+            'calls/{}/{}'.format(nomap(self.get_name()), self.get_version()),
+            payload
+            )
+        return self
+
+    def call_remote(self, address, service, version, action, **kwargs):
+        """Register a call to a remote service.
+
+        :param address: Public address of a Gateway from another Realm.
+        :type address: str
+        :param service: The service name.
+        :type service: str
+        :param version: The service version.
+        :type version: str
+        :param action: The action name.
+        :type action: str
+        :param params: Optative list of Param objects.
+        :type params: list
+        :param files: Optative list of File objects.
+        :type files: list
+
+        :raises: KatanaError
+
+        :rtype: Action
+
+        """
+
+        if address[:3] != 'ktp':
+            address = 'ktp://{}'.format(address)
+
+        # Add files to transport
+        files = kwargs.get('files')
+        if files:
+            self.__transport.set(
+                'files|{}|{}|{}|{}'.format(
+                    self.__public_address,
+                    nomap(service),
+                    version,
+                    nomap(action),
+                    ),
+                {file.get_name(): file_to_payload(file) for file in files},
+                delimiter='|',
+                )
+
+        payload = Payload().set_many({
+            'gateway': address,
+            'name': service,
+            'version': version,
+            'action': action,
+            })
+
+        # callback = kwargs.get('callback')
+        # if callback:
+        #     payload.set('callback', callback)
+
+        params = kwargs.get('params')
         if params:
             payload.set('params', parse_params(params))
 
@@ -582,7 +732,12 @@ class Action(Api):
         """
 
         self.__transport.push(
-            'errors/{}/{}'.format(nomap(self.get_name()), self.get_version()),
+            'errors|{}|{}|{}'.format(
+                self.__public_address,
+                nomap(self.get_name()),
+                self.get_version(),
+                ),
             ErrorPayload.new(message, code, status),
+            delimiter='|',
             )
         return self

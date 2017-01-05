@@ -1,6 +1,20 @@
+"""
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
+
+Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+
+Distributed under the MIT license.
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+
+"""
 from .errors import KatanaError
 from .payload import Payload
 from .utils import Singleton
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 
 class SchemaRegistry(object, metaclass=Singleton):
@@ -19,6 +33,16 @@ class SchemaRegistry(object, metaclass=Singleton):
         """
 
         return Payload.is_empty(value)
+
+    @property
+    def has_mappings(self):
+        """Check if registry contains mappings.
+
+        :rtype: bool
+
+        """
+
+        return len(self.__mappings) > 0
 
     def update_registry(self, mappings):
         """Update schema registry with mappings info.

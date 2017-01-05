@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,10 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import logging
 
 from ..api.action import Action
@@ -25,6 +21,9 @@ from ..worker import DOWNLOAD
 from ..worker import FILES
 from ..worker import SERVICE_CALL
 from ..worker import TRANSACTIONS
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 
@@ -129,7 +128,12 @@ class ServiceWorker(ComponentWorker):
             payload.get('command/arguments/transport')
             )
         transport.push(
-            'errors/{}/{}'.format(action.get_name(), action.get_version()),
-            ErrorPayload.new(str(exc))
+            'errors|{}|{}|{}'.format(
+                transport.get('meta/gateway')[1],  # Public gateway address
+                action.get_name(),
+                action.get_version(),
+                ),
+            ErrorPayload.new(str(exc)),
+            delimiter='|',
             )
         return transport.entity()

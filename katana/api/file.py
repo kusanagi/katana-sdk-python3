@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,11 +9,8 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 import logging
+import mimetypes
 import os
 import urllib.request
 
@@ -22,6 +19,9 @@ from urllib.parse import urlparse
 
 from ..payload import get_path
 from ..payload import Payload
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 
@@ -76,16 +76,45 @@ class File(object):
     """
 
     def __init__(self, name, path, **kwargs):
-        # When a path is given check protocol
-        if path and path[:7] not in ('file://', 'http://'):
-            raise TypeError('Path must begin with file:// or http://')
+        # Validate and set file name
+        if not (name or '').strip():
+            raise TypeError('Invalid file name')
+        else:
+            self.__name = name
 
-        self.__name = name
-        self.__path = path
-        self.__mime = kwargs.get('mime') or 'text/plain'
-        self.__filename = kwargs.get('filename')
-        self.__size = kwargs.get('size') or 0
+        # Validate and set file path
+        protocol = path[:7]
+        if not (path or '').strip():
+            raise TypeError('Invalid file path')
+        elif protocol not in ('file://', 'http://'):
+            self.__path = 'file://{}'.format(path)
+            protocol = 'file://'
+        else:
+            self.__path = path
+
+        # set mime type, or guess it from path
+        self.__mime = kwargs.get('mime')
+        if not self.__mime:
+            self.__mime = mimetypes.guess_type(path)[0] or 'text/plain'
+
+        # Set file name, or get it from path
+        self.__filename = kwargs.get('filename') or os.path.basename(path)
+
+        # Set file size
+        self.__size = kwargs.get('size')
+        if self.__size is None and protocol == 'file://':
+            try:
+                # Get file size from file
+                self.__size = os.path.getsize(self.__path[7:])
+            except OSError:
+                self.__size = 0
+        else:
+            self.__size = 0
+
+        # Token is required for remote file paths
         self.__token = kwargs.get('token') or ''
+        if protocol == 'http://' and not self.__token:
+            raise TypeError('Token is required for remote file paths')
 
     def get_name(self):
         """Get parameter name.

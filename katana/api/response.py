@@ -1,5 +1,5 @@
 """
-Python 3 SDK for the KATANA(tm) Platform (http://katana.kusanagi.io)
+Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
 Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
 
@@ -9,13 +9,12 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
-__license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
-
 from .base import Api
 from .http.request import HttpRequest
 from .http.response import HttpResponse
+
+__license__ = "MIT"
+__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 
 class Response(Api):
@@ -25,6 +24,7 @@ class Response(Api):
         super().__init__(*args, **kwargs)
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
+        self.__gateway_addresses = kwargs.get('gateway_addresses')
 
         http_request = kwargs.get('http_request')
         if http_request:
@@ -48,6 +48,15 @@ class Response(Api):
         """
 
         return self.__gateway_protocol
+
+    def get_gateway_address(self):
+        """Get public gateway address.
+
+        :rtype: str
+
+        """
+
+        return self.__gateway_addresses[1]
 
     def get_http_request(self):
         """Get HTTP request for current request.

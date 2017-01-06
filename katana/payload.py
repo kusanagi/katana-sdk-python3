@@ -85,6 +85,7 @@ FIELD_MAPPINGS = {
     'idle': 'i',
     'in': 'i',
     'input': 'i',
+    'interval': 'i',
     'items': 'i',
     'primary_key': 'k',
     'laddr': 'l',

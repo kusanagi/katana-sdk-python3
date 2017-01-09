@@ -9,9 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-import os
-
-from ..errors import KatanaError
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import Payload
@@ -23,6 +20,8 @@ from .file import File
 from .file import file_to_payload
 from .file import payload_to_file
 from .param import Param
+from ..validation import validate_collection
+from ..validation import validate_entity
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
@@ -304,8 +303,13 @@ class Action(Api):
 
         Sets an object as the entity to be returned by the action.
 
+        Entity is validated when validation is enabled for an entity
+        in the Service config file.
+
         :param entity: The entity object.
         :type entity: dict
+
+        :raises: DataValidationError
 
         :rtype: Action
 
@@ -313,6 +317,16 @@ class Action(Api):
 
         if not isinstance(entity, dict):
             raise TypeError('Entity must be an dict')
+
+        service = self.get_name()
+        version = self.get_version()
+
+        # Validate entity when entity validation is enabled
+        schema = self.get_service_schema(service, version)
+        action = schema.get_action_schema(self.get_action_name())
+        entity_definition = action.get_entity()
+        if entity_definition and entity_definition.get('validate', False):
+            validate_entity(entity, entity_definition)
 
         self.__transport.push(
             'data|{}|{}|{}|{}'.format(
@@ -331,8 +345,13 @@ class Action(Api):
 
         Sets a list as the collection of entities to be returned by the action.
 
+        Collextion is validated when validation is enabled for an entity
+        in the Service config file.
+
         :param collection: The collection list.
         :type collection: list
+
+        :raises: DataValidationError
 
         :rtype: Action
 
@@ -344,6 +363,16 @@ class Action(Api):
         for entity in collection:
             if not isinstance(entity, dict):
                 raise TypeError('Entity must be an dict')
+
+        service = self.get_name()
+        version = self.get_version()
+
+        # Validate entity when entity validation is enabled
+        schema = self.get_service_schema(service, version)
+        action = schema.get_action_schema(self.get_action_name())
+        entity_definition = action.get_entity()
+        if entity_definition and entity_definition.get('validate', False):
+            validate_collection(collection, entity_definition)
 
         self.__transport.push(
             'data|{}|{}|{}|{}'.format(

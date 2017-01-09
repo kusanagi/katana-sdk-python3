@@ -75,6 +75,7 @@ class MiddlewareWorker(ComponentWorker):
             self.component_name,
             self.component_version,
             self.platform_version,
+            debug=self.debug,
             # TODO: Use meta and call as arguments instead these many kwargs
             service_name=payload.get('call/service'),
             service_version=payload.get('call/version'),
@@ -82,7 +83,6 @@ class MiddlewareWorker(ComponentWorker):
             params=payload.get('call/params', []),
             gateway_protocol=payload.get('meta/protocol'),
             gateway_addresses=payload.get('meta/gateway'),
-            debug=self.debug,
             http_request=self.http_request_from_payload(payload),
             )
 
@@ -94,6 +94,7 @@ class MiddlewareWorker(ComponentWorker):
             self.component_name,
             self.component_version,
             self.platform_version,
+            debug=self.debug,
             # TODO: Use meta and argument
             gateway_protocol=payload.get('meta/protocol'),
             gateway_addresses=payload.get('meta/gateway'),

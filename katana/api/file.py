@@ -83,10 +83,9 @@ class File(object):
             self.__name = name
 
         # Validate and set file path
+        path = (path or '').strip()
         protocol = path[:7]
-        if not (path or '').strip():
-            raise TypeError('Invalid file path')
-        elif protocol not in ('file://', 'http://'):
+        if path and protocol not in ('file://', 'http://'):
             self.__path = 'file://{}'.format(path)
             protocol = 'file://'
         else:
@@ -102,14 +101,15 @@ class File(object):
 
         # Set file size
         self.__size = kwargs.get('size')
-        if self.__size is None and protocol == 'file://':
-            try:
-                # Get file size from file
-                self.__size = os.path.getsize(self.__path[7:])
-            except OSError:
+        if self.__size is None:
+            if protocol == 'file://':
+                try:
+                    # Get file size from file
+                    self.__size = os.path.getsize(self.__path[7:])
+                except OSError:
+                    self.__size = 0
+            else:
                 self.__size = 0
-        else:
-            self.__size = 0
 
         # Token is required for remote file paths
         self.__token = kwargs.get('token') or ''

@@ -9,16 +9,87 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-from collections import OrderedDict
-
 from .error import ServiceSchemaError
 from .param import ParamSchema
 from .file import FileSchema
 from ... payload import get_path
+from ... payload import path_exists
 from ... payload import Payload
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
+
+def entity_from_payload(entity_payload, entity=None):
+    """Create a new entity definition object from a payload.
+
+    :param entity_payload: Entity definition payload.
+    :type entity_payload: dict
+
+    :rtype: dict
+
+    """
+
+    entity = entity or {}
+    if not entity_payload:
+        return entity
+
+    # Add validate field only to top level entity
+    if not entity:
+        entity['validate'] = get_path(entity_payload, 'validate', False)
+
+    # Add fields to entity
+    if path_exists(entity_payload, 'field'):
+        entity['field'] = []
+        for payload in get_path(entity_payload, 'field'):
+            entity['field'].append({
+                'name': get_path(payload, 'name'),
+                'type': get_path(payload, 'type', 'string'),
+                'optional': get_path(payload, 'optional', False),
+                })
+
+    # Add field sets to entity
+    if path_exists(entity_payload, 'fields'):
+        entity['fields'] = []
+        for payload in get_path(entity_payload, 'fields'):
+            fieldset = {
+                'name': get_path(payload, 'name'),
+                'optional': get_path(payload, 'optional', False),
+                }
+
+            # Add inner field and fieldsets
+            if path_exists(payload, 'field') or path_exists(payload, 'fields'):
+                fieldset = entity_from_payload(payload, fieldset)
+
+        entity['fields'].append(fieldset)
+
+    return entity
+
+
+def relations_from_payload(relations_payload):
+    """Create a new relations definition list from a payload.
+
+    :param relations_payload: Relation definitions from payload.
+    :type relations_payload: list
+
+    :rtype: list
+
+    """
+
+    relations = []
+    if not relations_payload:
+        return relations
+
+    for relation in relations_payload:
+        relations.append([
+            get_path(relation, 'type', 'one'),
+            get_path(relation, 'name'),
+            get_path(relation, 'version'),
+            get_path(relation, 'action', ''),
+            get_path(relation, 'validate', False),
+            ])
+
+    return relations
 
 
 class ActionSchemaError(ServiceSchemaError):
@@ -127,14 +198,11 @@ class ActionSchema(object):
     def get_entity(self):
         """Get the entity definition as an object.
 
-        Each entity property is a field name, and the value either the data
-        type as a string or an object with fields.
-
-        :rtype: object
+        :rtype: dict
 
         """
 
-        return self.__payload.get('entity', {})
+        return entity_from_payload(self.__payload.get('entity', None))
 
     def has_relations(self):
         """Check if any relations exists for the action.
@@ -143,7 +211,7 @@ class ActionSchema(object):
 
         """
 
-        return self.__payload.path_exists('relation')
+        return self.__payload.path_exists('relations')
 
     def get_relations(self):
         """Get action relations.
@@ -156,7 +224,7 @@ class ActionSchema(object):
 
         """
 
-        return self.__payload.get('relation', [])
+        return relations_from_payload(self.__payload.get('relations', None))
 
     def get_params(self):
         """Get the parameters names defined for the action.

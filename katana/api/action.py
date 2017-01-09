@@ -20,8 +20,6 @@ from .file import File
 from .file import file_to_payload
 from .file import payload_to_file
 from .param import Param
-from ..validation import validate_collection
-from ..validation import validate_entity
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
@@ -318,16 +316,6 @@ class Action(Api):
         if not isinstance(entity, dict):
             raise TypeError('Entity must be an dict')
 
-        service = self.get_name()
-        version = self.get_version()
-
-        # Validate entity when entity validation is enabled
-        schema = self.get_service_schema(service, version)
-        action = schema.get_action_schema(self.get_action_name())
-        entity_definition = action.get_entity()
-        if entity_definition and entity_definition.get('validate', False):
-            validate_entity(entity, entity_definition)
-
         self.__transport.push(
             'data|{}|{}|{}|{}'.format(
                 self.__public_address,
@@ -363,16 +351,6 @@ class Action(Api):
         for entity in collection:
             if not isinstance(entity, dict):
                 raise TypeError('Entity must be an dict')
-
-        service = self.get_name()
-        version = self.get_version()
-
-        # Validate entity when entity validation is enabled
-        schema = self.get_service_schema(service, version)
-        action = schema.get_action_schema(self.get_action_name())
-        entity_definition = action.get_entity()
-        if entity_definition and entity_definition.get('validate', False):
-            validate_collection(collection, entity_definition)
 
         self.__transport.push(
             'data|{}|{}|{}|{}'.format(

@@ -84,9 +84,6 @@ def relations_from_payload(relations_payload):
         relations.append([
             get_path(relation, 'type', 'one'),
             get_path(relation, 'name'),
-            get_path(relation, 'version'),
-            get_path(relation, 'action', ''),
-            get_path(relation, 'validate', False),
             ])
 
     return relations
@@ -216,9 +213,8 @@ class ActionSchema(object):
     def get_relations(self):
         """Get action relations.
 
-        Each item is an array containins the relation type, the Service name,
-        the Service version and the action name as a string, and the validation
-        setting as a boolean value.
+        Each item is an array containins the relation type
+        and the Service name.
 
         :rtype: list
 

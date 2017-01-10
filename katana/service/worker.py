@@ -19,6 +19,7 @@ from ..payload import TransportPayload
 from ..worker import ComponentWorker
 from ..worker import DOWNLOAD
 from ..worker import FILES
+from ..worker import RELATIONS
 from ..worker import SERVICE_CALL
 from ..worker import TRANSACTIONS
 
@@ -45,6 +46,10 @@ class ServiceWorker(ComponentWorker):
         # When a download is registered add files flag
         if transport.get('body', None):
             meta += DOWNLOAD
+
+        # Add relations flag
+        if transport.get('relations', None):
+            meta += RELATIONS
 
         # Add transactions flag when any transaction is registered
         if transport.get('transactions', None):

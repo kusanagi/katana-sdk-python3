@@ -35,9 +35,10 @@ SE = SERVICE_CALL = b'\x01'
 FI = FILES = b'\x02'
 TR = TRANSACTIONS = b'\x03'
 DL = DOWNLOAD = b'\x04'
+RL = RELATIONS = b'\x05'
 
 # Allowed response meta values
-META_VALUES = (EMPTY_META, SE, FI, TR, DL)
+META_VALUES = (EMPTY_META, SE, FI, TR, DL, RL)
 
 # Request stream frames
 RequestFrames = namedtuple('RequestFrames', ['action', 'mappings', 'stream'])

@@ -19,7 +19,6 @@ setup(
         'click==6.4',
         'pyzmq==15.2.0',
         'msgpack-python==0.4.7',
-        'jsonschema==2.5.1',
     ],
     classifiers=[
         'Intended Audience :: Developers',

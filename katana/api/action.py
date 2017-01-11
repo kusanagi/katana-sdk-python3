@@ -25,6 +25,17 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 
+class NoFileServerError(ApiError):
+    """Error raised when file server is not configured."""
+
+    message = 'File server not configured: "{service}" ({version})'
+
+    def __init__(self, service, version):
+        self.service = service
+        self.version = version
+        super().__init__(self.message.format(service=service, version=version))
+
+
 def parse_params(params):
     """Parse a list of parameters to be used in payloads.
 
@@ -80,6 +91,21 @@ class Action(Api):
             )
         self.__files = transport.get(path, default={}, delimiter='|')
 
+    def __files_to_payload(self, files):
+        current_service = self.get_name()
+        current_version = self.get_version()
+        schema = self.get_service_schema(current_service, current_version)
+        has_file_server = schema.has_file_server()
+
+        files_payload = {}
+        for file in files:
+            if file.is_local() and not has_file_server:
+                raise NoFileServerError(current_service, current_version)
+
+            files_payload[file.get_name()] = file_to_payload(file)
+
+        return files_payload
+
     def is_origin(self):
         """Determines if the current service is the origin of the request.
 
@@ -113,6 +139,8 @@ class Action(Api):
         :type name: str
         :param value: The property value.
         :type value: str
+
+        :raises: TypeError
 
         :rtype: Action
 
@@ -272,7 +300,8 @@ class Action(Api):
         :param file: The file object.
         :type file: `File`
 
-        :raises: ApiError
+        :raises: TypeError
+        :raises: NoFileServerError
 
         :rtype: Action
 
@@ -290,8 +319,7 @@ class Action(Api):
         # Note: When action is run from CLI mappings will be ampty.
         if self._schema.has_mappings:
             if not get_path(self._schema.get(path), 'files', False):
-                error = 'File server not configured: "{}" ({})'
-                raise ApiError(error.format(service, version))
+                raise NoFileServerError(service, version)
 
         self.__transport.set('body', file_to_payload(file))
         return self
@@ -307,7 +335,7 @@ class Action(Api):
         :param entity: The entity object.
         :type entity: dict
 
-        :raises: DataValidationError
+        :raises: TypeError
 
         :rtype: Action
 
@@ -339,7 +367,7 @@ class Action(Api):
         :param collection: The collection list.
         :type collection: list
 
-        :raises: DataValidationError
+        :raises: TypeError
 
         :rtype: Action
 
@@ -406,6 +434,8 @@ class Action(Api):
         :type service: str
         :param foreign_key: The foreign keys.
         :type foreign_key: list
+
+        :raises: TypeError
 
         :rtype: Action
 
@@ -477,6 +507,8 @@ class Action(Api):
         :type service: str
         :param foreign_key: The foreign keys.
         :type foreign_key: list
+
+        :raises: TypeError
 
         :rtype: Action
 
@@ -607,6 +639,8 @@ class Action(Api):
         :param files: Optative list of File objects.
         :type files: list
 
+        :raises: NoFileServerError
+
         :rtype: Action
 
         """
@@ -620,7 +654,7 @@ class Action(Api):
                     version,
                     nomap(action),
                     ),
-                {file.get_name(): file_to_payload(file) for file in files},
+                self.__files_to_payload(files),
                 delimiter='|',
                 )
 
@@ -632,6 +666,7 @@ class Action(Api):
         if params:
             payload.set('params', parse_params(params))
 
+        # Calls are aggregated to transport calls
         self.__transport.push(
             'calls/{}/{}'.format(nomap(self.get_name()), self.get_version()),
             payload
@@ -654,7 +689,7 @@ class Action(Api):
         :param files: Optative list of File objects.
         :type files: list
 
-        :raises: KatanaError
+        :raises: NoFileServerError
 
         :rtype: Action
 
@@ -673,7 +708,7 @@ class Action(Api):
                     version,
                     nomap(action),
                     ),
-                {file.get_name(): file_to_payload(file) for file in files},
+                self.__files_to_payload(files),
                 delimiter='|',
                 )
 
@@ -692,6 +727,7 @@ class Action(Api):
         if params:
             payload.set('params', parse_params(params))
 
+        # Calls are aggregated to transport calls
         self.__transport.push(
             'calls/{}/{}'.format(nomap(self.get_name()), self.get_version()),
             payload

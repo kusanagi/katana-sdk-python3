@@ -29,6 +29,7 @@ class Request(Api):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.__client_address = kwargs['client_address']
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
         self.__gateway_addresses = kwargs.get('gateway_addresses')
@@ -66,6 +67,15 @@ class Request(Api):
         """
 
         return self.__gateway_addresses[1]
+
+    def get_client_address(self):
+        """Get IP address and port of the client which sent the request.
+
+        :rtype: str
+
+        """
+
+        return self.__client_address
 
     def get_service_name(self):
         """Get the name of the service.

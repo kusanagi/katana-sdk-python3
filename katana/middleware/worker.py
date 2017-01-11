@@ -83,6 +83,7 @@ class MiddlewareWorker(ComponentWorker):
             params=payload.get('call/params', []),
             gateway_protocol=payload.get('meta/protocol'),
             gateway_addresses=payload.get('meta/gateway'),
+            client_address=payload.get('meta/client'),
             http_request=self.http_request_from_payload(payload),
             )
 

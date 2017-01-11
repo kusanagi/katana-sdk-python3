@@ -42,6 +42,7 @@ FIELD_MAPPINGS = {
     'call': 'c',
     'callback': 'c',
     'calls': 'c',
+    'client': 'c',
     'code': 'c',
     'collection': 'c',
     'command': 'c',
@@ -368,13 +369,14 @@ class MetaPayload(Payload):
     name = 'meta'
 
     @classmethod
-    def new(cls, version, request_id, protocol, gateway, date_time=None):
+    def new(cls, version, request_id, protocol, gateway, client):
         payload = cls()
         payload.set('version', version)
         payload.set('id', request_id)
         payload.set('protocol', protocol)
         payload.set('gateway', gateway)
-        payload.set('datetime', date_to_str(date_time or utcnow()))
+        payload.set('datetime', date_to_str(utcnow()))
+        payload.set('client', client)
         return payload
 
 

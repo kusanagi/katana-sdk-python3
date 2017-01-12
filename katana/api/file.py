@@ -91,7 +91,7 @@ class File(object):
         else:
             self.__path = path
 
-        # set mime type, or guess it from path
+        # Set mime type, or guess it from path
         self.__mime = kwargs.get('mime')
         if not self.__mime:
             self.__mime = mimetypes.guess_type(path)[0] or 'text/plain'
@@ -211,6 +211,15 @@ class File(object):
         else:
             # Check file existence locally
             return os.path.isfile(self.__path[7:])
+
+    def is_local(self):
+        """Check if file is a local file.
+
+        :rtype: bool
+
+        """
+
+        return self.__path[:7] == 'file://'
 
     def read(self):
         """Get file data.

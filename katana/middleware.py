@@ -11,16 +11,16 @@ file that was distributed with this source code.
 """
 import logging
 
-from ..api.param import param_to_payload
-from ..api.request import Request
-from ..api.response import Response
-from ..api.transport import Transport
-from ..payload import ErrorPayload
-from ..payload import Payload
-from ..payload import ResponsePayload
-from ..payload import ServiceCallPayload
-from ..utils import MultiDict
-from ..worker import ComponentWorker
+from .api.param import param_to_payload
+from .api.request import Request
+from .api.response import Response
+from .api.transport import Transport
+from .payload import ErrorPayload
+from .payload import Payload
+from .payload import ResponsePayload
+from .payload import ServiceCallPayload
+from .server import ComponentServer
+from .utils import MultiDict
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
@@ -32,8 +32,14 @@ RESPONSE_MIDDLEWARE = 2
 BIDIRECTIONAL_MIDDLEWARE = 3
 
 
-class MiddlewareWorker(ComponentWorker):
-    """Middleware worker task class."""
+class MiddlewareServer(ComponentServer):
+    """Server class for middleware component."""
+
+    def __init__(self, *args, **kwargs):
+        from .sdk.middleware import get_component
+
+        super().__init__(*args, **kwargs)
+        self.__component = get_component()
 
     @staticmethod
     def http_request_from_payload(payload):
@@ -63,14 +69,9 @@ class MiddlewareWorker(ComponentWorker):
             'body': payload.get('response/body', ''),
             }
 
-    def __get_component(self):
-        from ..sdk.middleware import get_component
-
-        return get_component()
-
     def _create_request_component_instance(self, payload):
         return Request(
-            self.__get_component(),
+            self.__component,
             self.source_file,
             self.component_name,
             self.component_version,
@@ -90,7 +91,7 @@ class MiddlewareWorker(ComponentWorker):
     def _create_response_component_instance(self, payload):
         return Response(
             Transport(payload.get('transport')),
-            self.__get_component(),
+            self.__component,
             self.source_file,
             self.component_name,
             self.component_version,

@@ -11,7 +11,7 @@ file that was distributed with this source code.
 """
 from .component import Component
 from .runner import ComponentRunner
-from ..middleware.server import MiddlewareServer
+from ..middleware import MiddlewareServer
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"

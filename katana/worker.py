@@ -83,10 +83,6 @@ class ComponentWorker(object):
         return self.cli_args['debug']
 
     @property
-    def component_path(self):
-        return '{}/{}'.format(self.component_name, self.component_version)
-
-    @property
     def component_title(self):
         return '"{}" ({})'.format(self.component_name, self.component_version)
 

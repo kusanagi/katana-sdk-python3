@@ -332,9 +332,7 @@ class ComponentServer(object):
         """Stop server."""
 
         LOG.debug('Stopping Component...')
-        if not self.__socket:
-            return
-
-        self.poller.unregister(self.__socket)
-        self.__socket.close()
-        self.__socket = None
+        if self.__socket:
+            self.poller.unregister(self.__socket)
+            self.__socket.close()
+            self.__socket = None

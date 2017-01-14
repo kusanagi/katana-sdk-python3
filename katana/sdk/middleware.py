@@ -9,9 +9,10 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+
 from .component import Component
 from .runner import ComponentRunner
-from ..middleware.server import MiddlewareServer
+from ..middleware import MiddlewareServer
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
@@ -22,16 +23,28 @@ class Middleware(Component):
 
     def __init__(self):
         super().__init__()
-        self._runner = ComponentRunner(
-            self,
-            MiddlewareServer,
-            'Middleware component to process HTTP requests and responses',
-            )
+        # Create a component runner for the middleware server
+        help = 'Middleware component to process HTTP requests and responses'
+        self._runner = ComponentRunner(self, MiddlewareServer, help)
 
     def request(self, callback):
+        """Set a callback for requests.
+
+        :param callback: Callback to handle requests.
+        :type callback: callable
+
+        """
+
         self._callbacks['request'] = callback
 
     def response(self, callback):
+        """Set callback for response.
+
+        :param callback: Callback to handle responses.
+        :type callback: callable
+
+        """
+
         self._callbacks['response'] = callback
 
 

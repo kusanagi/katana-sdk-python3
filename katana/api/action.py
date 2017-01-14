@@ -94,8 +94,16 @@ class Action(Api):
     def __files_to_payload(self, files):
         current_service = self.get_name()
         current_version = self.get_version()
-        schema = self.get_service_schema(current_service, current_version)
-        has_file_server = schema.has_file_server()
+        try:
+            schema = self.get_service_schema(current_service, current_version)
+        except ApiError:
+            # When schema for current service can't be resolved it means action
+            # is run from CLI and because of that there are no mappings to
+            # resolve schemas. In this case is valid to set has_file_server to
+            # true.
+            has_file_server = True
+        else:
+            has_file_server = schema.has_file_server()
 
         files_payload = {}
         for file in files:

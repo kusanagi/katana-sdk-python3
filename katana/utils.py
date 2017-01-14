@@ -9,11 +9,13 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+
 import asyncio
 import functools
 import json
 import os
 import re
+import signal
 import socket
 
 from collections import OrderedDict
@@ -670,6 +672,120 @@ class Singleton(type):
             cls.instance = super().__call__(*args, **kw)
 
         return cls.instance
+
+
+class RunContext(object):
+    """Handles graceful async process termination.
+
+    All keyword arguments passed to context during creation are used as
+    properties for the context object. Aditionally context contains a
+    'loop' property with the main event loop.
+
+    On run context hooks to SIGTERM and SIGINT signals to handle graceful
+    process termination when process is killed or when CTRL-C is pressed
+    if process is run from console.
+
+    Async callbacks can be registered to perform application cleanup tasks.
+    These callbacks are executed right after termination signal is received.
+    Callback must be a coroutine that receives a single 'context' argument
+    with an instance of this class.
+
+    """
+
+    def __init__(self, loop, **kwargs):
+        self.__dict__.update(kwargs)
+        self.__terminate = False
+        self.__cleaned = False
+        self.__callbacks = []
+        self.tasks = []
+        self.loop = loop
+
+    def hook_signals(self):
+        self.loop.add_signal_handler(signal.SIGTERM, self.terminate)
+        self.loop.add_signal_handler(signal.SIGINT, self.terminate)
+
+    def terminate(self, *args, **kwargs):
+        self.__terminate = True
+
+    def register_callback(self, callback):
+        if not asyncio.iscoroutinefunction(callback):
+            raise TypeError('Callback is not a coroutine function')
+
+        # Append callback as a task
+        self.__callbacks.append(callback(self))
+
+    @asyncio.coroutine
+    def cleanup(self):
+        if self.__cleaned:
+            return
+
+        # Execute all registered callbacks
+        if self.__callbacks:
+            yield from asyncio.wait(self.__callbacks, timeout=1.5)
+
+        # Finish all pending tasks
+        yield from self.finish_pending_tasks()
+
+        self.__cleaned = True
+
+    @asyncio.coroutine
+    def finish_pending_tasks(self):
+        """Finish all tasks that are still running.
+
+        When an exception is found it is raised after all tasks are finished.
+        Only the first exception that is found is raised.
+
+        """
+
+        if not self.tasks:
+            return
+
+        exc = None
+        for task in self.tasks:
+            if task.done():
+                # When an exception is found save it
+                if task.exception() and not exc:
+                    exc = task.exception()
+
+                # This task is finished, continue with next one
+                continue
+
+            task.cancel()
+
+        # Wait for all task to finish
+        yield from asyncio.wait(self.tasks, timeout=2)
+
+        # When an exception is found raise it
+        if exc:
+            raise exc
+
+    def check_tasks_exceptions(self):
+        """Check for task exceptions.
+
+        Run context terminates when an exception is found.
+
+        """
+
+        for task in self.tasks:
+            if not task.done():
+                continue
+
+            # Task is done, check for exceptions
+            if task.exception():
+                self.__terminate = True
+                break
+
+    @asyncio.coroutine
+    def run(self):
+        """Hook to termination signals and run until terminate is called."""
+
+        self.__cleaned = False
+        self.hook_signals()
+        while not self.__terminate:
+            yield from asyncio.sleep(0.2)
+            self.check_tasks_exceptions()
+
+        yield from self.cleanup()
 
 
 def install_uvevent_loop():

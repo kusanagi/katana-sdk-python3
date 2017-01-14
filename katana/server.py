@@ -9,202 +9,330 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+
 import asyncio
 import logging
 
-from concurrent.futures import CancelledError
+from collections import namedtuple
 
 import zmq.asyncio
 
-from .utils import safe_cast
+from .errors import KatanaError
+from .payload import CommandPayload
+from .payload import CommandResultPayload
+from .payload import ErrorPayload
+from .schema import get_schema_registry
+from .serialization import pack
+from .serialization import unpack
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 
+# Constants for response meta
+EMPTY_META = b'\x00'
+SE = SERVICE_CALL = b'\x01'
+FI = FILES = b'\x02'
+TR = TRANSACTIONS = b'\x03'
+DL = DOWNLOAD = b'\x04'
 
-class ComponentServer(object):
-    """Server class for component services.
+# Allowed response meta values
+META_VALUES = (EMPTY_META, SE, FI, TR, DL)
 
-    Server creates a number of child processes to handle command requests.
-    Each child process uses asyncio internally to handle concurrent requests.
+# Multipart request frames
+Frames = namedtuple('Frames', ['action', 'mappings', 'stream'])
+
+
+def create_error_stream(message, *args, **kwargs):
+    """Create a new multipart error stream.
+
+    :param message: Error message.
+    :type message: str
+
+    :rtype: list
 
     """
 
-    # Default number of child processes
-    processes = 1
+    if args or kwargs:
+        message = message.format(*args, **kwargs)
 
-    # Default number of worker task per process
-    workers = 1
+    return [EMPTY_META, pack(ErrorPayload.new(message).entity())]
 
-    def __init__(self, channel, callbacks, cli_args, **kwargs):
-        """Constructor."""
 
-        self.__process_list = []
+class ComponentServer(object):
+    """Server class for components."""
 
-        self.channel = channel
-        self.callbacks = callbacks
-        self.cli_args = cli_args
-        self.error_callback = kwargs.get('error_callback')
-        self.poller = zmq.asyncio.Poller()
-        self.context = zmq.asyncio.Context()
-        self.sock = None
-        self.workers_sock = None
-        self.debug = kwargs.get('debug', False)
-        self.source_file = kwargs.get('source_file')
+    def __init__(self, channel, callbacks, args, **kwargs):
+        """Constructor.
 
-        var = self.cli_args.get('var') or {}
-        self.workers = safe_cast(var.get('workers'), int, self.workers)
-        self.processes = safe_cast(var.get('processes'), int, self.processes)
-        LOG.debug(
-            'Using %s processes and %s worker tasks per process',
-            self.processes,
-            self.workers,
-            )
-
-    @property
-    def workers_channel(self):
-        """Component workers IPC connection channel.
-
-        :rtype: str.
+        :param channel: Channel to listen for incoming requests.
+        :type channel: str
+        :param callbacks: Callbacks for registered action handlers.
+        :type callbacks: dict
+        :param args: CLI arguments.
+        :type args: dict
+        :param error_callback: Callback to use when errors occur.
+        :type error_callback: function
+        :param source_file: Full path to component source file.
+        :type source_file: str
 
         """
 
-        # Strip protocol from channel, in case channel is TCP
-        return 'ipc://{}-workers'.format(self.channel[6:])
+        self.__args = args
+        self.__socket = None
+        self.__schema_registry = get_schema_registry()
+
+        # Check the first callback to see if asyncio is being used,
+        # otherwise callbacks are standard python callables.
+        first_callback = next(iter(callbacks.values()))
+        self.__use_async = asyncio.iscoroutinefunction(first_callback)
+
+        self.loop = asyncio.get_event_loop()
+        self.channel = channel
+        self.callbacks = callbacks
+        self.error_callback = kwargs.get('error_callback')
+        self.source_file = kwargs.get('source_file')
+        self.context = zmq.asyncio.Context()
+        self.poller = zmq.asyncio.Poller()
 
     @property
-    def process_factory(self):
-        """Process class or factory.
+    def component_name(self):
+        return self.__args['name']
 
-        When factory is a callable it must return a
-        `ComponentProcess` instance.
+    @property
+    def component_version(self):
+        return self.__args['version']
 
-        :rtype: `ComponentProcess` or callable.
+    @property
+    def platform_version(self):
+        return self.__args['platform_version']
+
+    @property
+    def debug(self):
+        return self.__args['debug']
+
+    @property
+    def variables(self):
+        return self.__args.get('var')
+
+    @property
+    def component_title(self):
+        return '"{}" ({})'.format(self.component_name, self.component_version)
+
+    def create_error_payload(self, exc, component, **kwargs):
+        """Create a payload for the error response.
+
+        :params exc: The exception raised in user land callback.
+        :type exc: Exception
+        :params component: The component being used.
+        :type component: Component
+
+        :returns: A result payload.
+        :rtype: Payload
 
         """
 
         raise NotImplementedError()
 
-    def create_child_processes(self):
-        """Create child processes."""
+    def create_component_instance(self, payload):
+        """Create a component instance for a payload.
 
-        for number in range(self.processes):
-            process = self.process_factory(
-                self.workers_channel,
-                self.workers,
-                self.callbacks,
-                self.cli_args,
-                source_file=self.source_file,
-                error_callback=self.error_callback,
-                )
-            process.daemon = True
-            self.__process_list.append(process)
+        The type of component created depends on the payload type.
 
-    def start_child_processes(self):
-        """Start all previously created child processes.
+        :param payload: A payload.
+        :type payload: Payload.
 
-        Child processes has to be created before by calling
-        `create_child_processes` method.
+        :returns: A component instance for the type of payload.
+        :rtype: Component.
 
         """
 
-        LOG.debug('Starting %s child process(es)', self.processes)
-        for process in self.__process_list:
-            process.start()
+        raise NotImplementedError()
 
-    def terminate_child_processes(self):
-        """Terminate all child processes."""
+    def component_to_payload(self, command_name, component):
+        """Convert callback result to a command result payload.
 
-        for process in self.__process_list:
-            process.terminate()
-            # TODO: Use wait to terminate children ?
-            process.join()
+        :params command_name: Name of command being executed.
+        :type command_name: str
+        :params component: The component being used.
+        :type component: Component
 
-    def stop(self, *args):
-        """Stop service discovery.
-
-        This terminate all child processes and closes all sockets.
-
-        :note: This method can be called from a signal like SIGTERM.
+        :returns: A command result payload.
+        :rtype: CommandResultPayload
 
         """
 
-        LOG.debug('Stopping Component...')
-        if not self.sock:
-            return
+        raise NotImplementedError()
 
-        if self.sock:
-            self.sock.close()
-            self.sock = None
+    def get_response_meta(self, payload):
+        """Get metadata for multipart response.
 
-        if self.workers_sock:
-            self.workers_sock.close()
-            self.workers_sock = None
+        By default no metadata is added to response.
 
-        self.terminate_child_processes()
+        :param payload: Response payload.
+        :type payload: Payload
+
+        :rtype: bytes
+
+        """
+
+        return b''
+
+    def __update_schema_registry(self, stream):
+        """Update schema registry with new service schemas.
+
+        :param stream: Mappings stream.
+        :type stream: bytes
+
+        """
+
+        LOG.debug('Updating schemas for Services ...')
+        try:
+            self.__schema_registry.update_registry(unpack(stream))
+        except:
+            LOG.exception('Failed to update schemas')
 
     @asyncio.coroutine
-    def proxy(self, frontend_sock, backend_sock):
-        """Proxy requests between two sockets.
+    def __process_request(self, stream):
+        try:
+            frames = Frames(*stream)
+        except:
+            LOG.error('Received an invalid multipart stream')
+            return
 
-        :param frontend_sock: `zmq.Socket`.
-        :param backend_sock: `zmq.Socket`.
+        # Update global schema registry when mappings are sent
+        if frames.mappings:
+            self.__update_schema_registry(frames.mappings)
 
+        # Get action name
+        action = frames.action.decode('utf8')
+        if action not in self.callbacks:
+            # Return an error when action doesn't exist
+            return create_error_stream(
+                'Invalid action for component {}: "{}"',
+                self.component_title,
+                action,
+                )
+
+        # Get command payload from request stream
+        try:
+            payload = CommandPayload(unpack(frames.stream))
+        except:
+            LOG.exception('Received an invalid message format')
+            return create_error_stream('Internal communication failed')
+
+        # Call request handler and send response back
+        try:
+            payload = yield from self.process_payload(action, payload)
+        except asyncio.CancelledError:
+            # Avoid logging task cancel errors by catching it here
+            raise
+        except KatanaError as err:
+            payload = ErrorPayload.new(message=err.message).entity()
+        except:
+            LOG.exception('Component failed')
+            payload = ErrorPayload.new('Component failed').entity()
+
+        return [self.get_response_meta(payload) or EMPTY_META, pack(payload)]
+
+    @asyncio.coroutine
+    def process_payload(self, action, payload):
+        """Process a request payload.
+
+        :param action: Name of action that must process payload.
+        :type action: str
+        :param payload: A command payload.
+        :type payload: CommandPayload
+
+        :returns: A Payload with the component response.
         :rtype: coroutine.
 
         """
 
-        while 1:
-            events = yield from self.poller.poll()
-            events = dict(events)
+        if not payload.path_exists('command'):
+            LOG.error('Payload missing command')
+            return ErrorPayload.new('Internal communication failed').entity()
 
-            if events.get(frontend_sock) == zmq.POLLIN:
-                stream = yield from frontend_sock.recv_multipart()
-                yield from backend_sock.send_multipart(stream)
+        command_name = payload.get('command/name')
 
-            if events.get(backend_sock) == zmq.POLLIN:
-                stream = yield from backend_sock.recv_multipart()
-                yield from frontend_sock.send_multipart(stream)
+        # Create a component instance using the command payload and
+        # call user land callback to process it and get a response component.
+        component = self.create_component_instance(action, payload)
+        if not component:
+            return ErrorPayload.new('Internal communication failed').entity()
 
-    def initialize_sockets(self):
-        """Initialize component server sockets."""
+        try:
+            if self.__use_async:
+                # Call callback asynchronusly
+                component = yield from self.callbacks[action](component)
+            else:
+                # Call callback in a different thread
+                component = yield from self.loop.run_in_executor(
+                    None,  # Use default executor
+                    self.callbacks[action],
+                    component,
+                    )
+        except asyncio.CancelledError:
+            # Avoid logging task cancel errors by catching it here.
+            raise
+        except Exception as exc:
+            if self.error_callback:
+                LOG.debug('Running error callback ...')
+                try:
+                    self.error_callback(exc)
+                except:
+                    LOG.exception('Error callback failed for "%s"', action)
 
-        LOG.debug('Initializing internal sockets...')
-        # Connect to katana forwarder
-        self.sock = self.context.socket(zmq.ROUTER)
-        LOG.debug('Opening incoming socket: "%s"', self.channel)
-        self.sock.bind(self.channel)
+            LOG.exception('Component failed')
+            payload = self.create_error_payload(
+                exc,
+                component,
+                payload=payload,
+                )
+        else:
+            payload = self.component_to_payload(payload, component)
 
-        # Socket to forwrard incoming requests to workers
-        self.workers_sock = self.context.socket(zmq.DEALER)
-        LOG.debug(
-            'Opening subprocess communication socket: "%s"',
-            self.workers_channel,
-            )
-        self.workers_sock.bind(self.workers_channel)
-
-        self.poller.register(self.sock, zmq.POLLIN)
-        self.poller.register(self.workers_sock, zmq.POLLIN)
+        # Convert callback result to a command payload
+        return CommandResultPayload.new(command_name, payload).entity()
 
     @asyncio.coroutine
     def listen(self):
-        """Start listening for requests."""
+        """Start listening for incoming requests."""
 
-        self.initialize_sockets()
-        # Create subprocesses to handle requests
-        self.create_child_processes()
-        self.start_child_processes()
+        # Create a generic error stream
+        error_stream = create_error_stream('Failed to handle request')
 
-        LOG.debug('Component action(s): %s', ','.join(
-            sorted(self.callbacks.keys())
-            ))
+        LOG.debug('Listening for requests in channel: "%s"', self.channel)
+        self.__socket = self.context.socket(zmq.REP)
+        self.__socket.bind(self.channel)
+        self.poller.register(self.__socket, zmq.POLLIN)
+
+        LOG.info('Component initiated...')
         try:
-            LOG.info('Component initiated...')
-            yield from self.proxy(self.sock, self.workers_sock)
-        except CancelledError:
-            # Call stop before cancelling task
+            while 1:
+                events = yield from self.poller.poll()
+                events = dict(events)
+
+                if events.get(self.__socket) == zmq.POLLIN:
+                    # Get request multipart stream
+                    stream = yield from self.__socket.recv_multipart()
+                    # Process request and get response stream
+                    stream = yield from self.__process_request(stream)
+                    # When there is no response send a generic error
+                    if not stream:
+                        stream = error_stream
+
+                    yield from self.__socket.send_multipart(stream)
+        except:
             self.stop()
-            # Re raise exception to signal task cancellation
             raise
+
+    def stop(self):
+        """Stop server."""
+
+        LOG.debug('Stopping Component...')
+        if self.__socket:
+            self.poller.unregister(self.__socket)
+            self.__socket.close()
+            self.__socket = None

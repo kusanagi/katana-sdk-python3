@@ -9,32 +9,34 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-import logging
 
-from ..api.action import Action
-from ..payload import ErrorPayload
-from ..payload import get_path
-from ..payload import path_exists
-from ..payload import TransportPayload
-from ..worker import ComponentWorker
-from ..worker import DOWNLOAD
-from ..worker import FILES
-from ..worker import SERVICE_CALL
-from ..worker import TRANSACTIONS
+from .api.action import Action
+from .payload import ErrorPayload
+from .payload import get_path
+from .payload import path_exists
+from .payload import TransportPayload
+from .server import ComponentServer
+from .server import DOWNLOAD
+from .server import FILES
+from .server import SERVICE_CALL
+from .server import TRANSACTIONS
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
-LOG = logging.getLogger(__name__)
 
+class ServiceServer(ComponentServer):
+    """Server class for service component."""
 
-class ServiceWorker(ComponentWorker):
-    """Service worker task class."""
+    def __init__(self, *args, **kwargs):
+        from .sdk.service import get_component
 
-    def __get_component(self):
-        from ..sdk.service import get_component
+        super().__init__(*args, **kwargs)
+        self.__component = get_component()
 
-        return get_component()
+    @property
+    def component_path(self):
+        return '{}/{}'.format(self.component_name, self.component_version)
 
     def get_response_meta(self, payload):
         meta = super().get_response_meta(payload)
@@ -43,15 +45,19 @@ class ServiceWorker(ComponentWorker):
             return meta
 
         # When a download is registered add files flag
-        if transport.get('body', None):
+        if get_path(transport, 'body', None):
             meta += DOWNLOAD
 
         # Add transactions flag when any transaction is registered
-        if transport.get('transactions', None):
+        if get_path(transport, 'transactions', None):
             meta += TRANSACTIONS
 
         # Add meta for service call when inter service calls are made
-        calls = get_path(transport, 'calls/{}'.format(self.component_path), None)
+        calls = get_path(
+            transport,
+            'calls/{}'.format(self.component_path),
+            None,
+            )
         if calls:
             meta += SERVICE_CALL
 
@@ -70,6 +76,7 @@ class ServiceWorker(ComponentWorker):
                             get_path(call, 'version'),
                             get_path(call, 'action'),
                             )
+
                         # Add flag and exit when at least one call has files
                         if path_exists(files, files_path):
                             meta += FILES
@@ -89,21 +96,21 @@ class ServiceWorker(ComponentWorker):
 
         """
 
+        payload = payload.get('command/arguments')
+
         # Save transport locally to use it for response payload
-        self.__transport = TransportPayload(
-            payload.get('command/arguments/transport')
-            )
+        self.__transport = TransportPayload(get_path(payload, 'transport'))
 
         return Action(
             action,
-            payload.get('command/arguments/params'),
+            get_path(payload, 'params'),
             self.__transport,
-            self.__get_component(),
+            self.__component,
             self.source_file,
             self.component_name,
             self.component_version,
             self.platform_version,
-            variables=self.cli_args.get('var'),
+            variables=self.variables,
             debug=self.debug,
             )
 

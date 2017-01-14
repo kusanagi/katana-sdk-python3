@@ -9,10 +9,8 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-from time import time
 
 from . import utils
-from .errors import PayloadExpired
 from .utils import DELIMITER as SEP
 from .utils import date_to_str
 from .utils import EMPTY
@@ -299,68 +297,6 @@ class ErrorPayload(Payload):
             payload.set('status', status)
 
         return payload
-
-
-class ShortLivedPayload(Payload):
-    """Payload class that support a time to live (TTL) period.
-
-    This class will raise `PayloadExpired` each time its items are
-    accessed and TTL expired.
-
-    Default TTL is 8 seconds.
-
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.__time = time()
-        super().__init__(*args, **kwargs)
-        self.ttl = 8.0
-
-    @property
-    def alive_offset(self):
-        """Seconds since payload creation.
-
-        :rtype: float.
-
-        """
-
-        return time() - self.__time
-
-    @property
-    def is_valid(self):
-        """Check that payload is still valid.
-
-        Payload is valid when TTL since creation didn't expire.
-
-        :rtype: bool.
-
-        """
-
-        return self.alive_offset < self.ttl
-
-    def validate_time_to_live(self):
-        """Validate that TTL is still valid.
-
-        Payload expiration exception is raised whe TTL expires.
-
-        :raises: PayloadExpired.
-
-        """
-
-        if not self.is_valid:
-            raise PayloadExpired(self.alive_offset - self.ttl)
-
-    def __getitem__(self, key):
-        """Get a dictionary value."""
-
-        self.validate_time_to_live()
-        return super().__getitem__(key)
-
-    def __setitem__(self, key, value):
-        """Updates a dictionary value."""
-
-        self.validate_time_to_live()
-        return super().__setitem__(key, value)
 
 
 class MetaPayload(Payload):

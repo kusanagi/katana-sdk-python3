@@ -9,6 +9,7 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+
 import asyncio
 import inspect
 import logging
@@ -16,9 +17,8 @@ import os
 import signal
 
 import click
-import zmq.asyncio
-
 import katana.payload
+import zmq.asyncio
 
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
@@ -65,8 +65,17 @@ class ComponentRunner(object):
 
     """
 
-    def __init__(self, component, server_factory, help):
-        """Constructor."""
+    def __init__(self, component, server_cls, help):
+        """Constructor.
+
+        :param component: The component to run.
+        :type component: Component
+        :param server_cls: Class for the component server.
+        :param server_cls: ComponentServer
+        :param help: Help text for the CLI command.
+        :type help: str
+
+        """
 
         self.__component = component
         self.__tasks = []
@@ -80,7 +89,7 @@ class ComponentRunner(object):
         self.sleep_period = 0.1
         self.loop = None
         self.callbacks = None
-        self.server_factory = server_factory
+        self.server_cls = server_cls
         self.help = help
 
     @property
@@ -315,7 +324,7 @@ class ComponentRunner(object):
         self.loop.add_signal_handler(signal.SIGINT, self.stop)
 
         # Create component server and add it as a task
-        self.__server = self.server_factory(
+        self.__server = self.server_cls(
             channel,
             self.callbacks,
             self.args,

@@ -9,16 +9,17 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+
 from .api.action import Action
 from .payload import ErrorPayload
 from .payload import get_path
 from .payload import path_exists
 from .payload import TransportPayload
 from .server import ComponentServer
-from .worker import DOWNLOAD
-from .worker import FILES
-from .worker import SERVICE_CALL
-from .worker import TRANSACTIONS
+from .server import DOWNLOAD
+from .server import FILES
+from .server import SERVICE_CALL
+from .server import TRANSACTIONS
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"

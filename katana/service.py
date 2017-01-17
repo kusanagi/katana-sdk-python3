@@ -20,6 +20,7 @@ from .server import DOWNLOAD
 from .server import FILES
 from .server import SERVICE_CALL
 from .server import TRANSACTIONS
+from .utils import nomap
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
@@ -36,7 +37,10 @@ class ServiceServer(ComponentServer):
 
     @property
     def component_path(self):
-        return '{}/{}'.format(self.component_name, self.component_version)
+        return '{}/{}'.format(
+            nomap(self.component_name),
+            self.component_version,
+            )
 
     def get_response_meta(self, payload):
         meta = super().get_response_meta(payload)
@@ -72,9 +76,9 @@ class ServiceServer(ComponentServer):
                 if files:
                     for call in calls:
                         files_path = '{}/{}/{}'.format(
-                            get_path(call, 'name'),
+                            nomap(get_path(call, 'name')),
                             get_path(call, 'version'),
-                            get_path(call, 'action'),
+                            nomap(get_path(call, 'action')),
                             )
 
                         # Add flag and exit when at least one call has files
@@ -137,7 +141,7 @@ class ServiceServer(ComponentServer):
         transport.push(
             'errors|{}|{}|{}'.format(
                 transport.get('meta/gateway')[1],  # Public gateway address
-                action.get_name(),
+                nomap(action.get_name()),
                 action.get_version(),
                 ),
             ErrorPayload.new(str(exc)),

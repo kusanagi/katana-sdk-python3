@@ -262,6 +262,7 @@ class ComponentServer(object):
         if not component:
             return ErrorPayload.new('Internal communication failed').entity()
 
+        error = None
         try:
             if self.__use_async:
                 # Call callback asynchronusly
@@ -276,22 +277,26 @@ class ComponentServer(object):
         except asyncio.CancelledError:
             # Avoid logging task cancel errors by catching it here.
             raise
-        except Exception as exc:
-            if self.error_callback:
-                LOG.debug('Running error callback ...')
-                try:
-                    self.error_callback(exc)
-                except:
-                    LOG.exception('Error callback failed for "%s"', action)
-
-            LOG.exception('Component failed')
+        except KatanaError as exc:
+            error = exc
             payload = self.create_error_payload(
                 exc,
                 component,
                 payload=payload,
                 )
+        except Exception as exc:
+            LOG.exception('Component failed')
+            error = exc
+            payload = ErrorPayload.new(str(exc)).entity()
         else:
             payload = self.component_to_payload(payload, component)
+
+        if error and self.error_callback:
+            LOG.debug('Running error callback ...')
+            try:
+                self.error_callback(error)
+            except:
+                LOG.exception('Error callback failed for "%s"', action)
 
         # Convert callback result to a command payload
         return CommandResultPayload.new(command_name, payload).entity()

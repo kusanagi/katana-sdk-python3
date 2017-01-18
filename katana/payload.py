@@ -63,14 +63,15 @@ FIELD_MAPPINGS = {
     'entity': 'E',
     'error': 'E',
     'enum': 'em',
-    'exclusive_minimum': 'en',
-    'exclusive_maximum': 'ex',
+    'exclusive_min': 'en',
+    'exclusive_max': 'ex',
     'family': 'f',
     'field': 'f',
     'filename': 'f',
     'files': 'f',
     'format': 'f',
     'free': 'f',
+    'fallbacks': 'F',
     'fields': 'F',
     'gateway': 'g',
     'header': 'h',
@@ -95,13 +96,13 @@ FIELD_MAPPINGS = {
     'meta': 'm',
     'method': 'm',
     'mime': 'm',
-    'minimum': 'mn',
+    'min': 'mn',
     'multiple_of': 'mo',
-    'maximum': 'mx',
+    'max': 'mx',
     'name': 'n',
     'network': 'n',
-    'minimum_items': 'ni',
-    'minimum_length': 'nl',
+    'min_items': 'ni',
+    'min_length': 'nl',
     'optional': 'o',
     'origin': 'o',
     'out': 'o',
@@ -147,8 +148,8 @@ FIELD_MAPPINGS = {
     'iowait': 'w',
     'writes': 'w',
     'timeout': 'x',
-    'maximum_items': 'xi',
-    'maximum_length': 'xl',
+    'max_items': 'xi',
+    'max_length': 'xl',
 }
 
 
@@ -242,30 +243,48 @@ class Payload(LookupDict):
         if not DISABLE_FIELD_MAPPINGS:
             self.set_mappings(FIELD_MAPPINGS)
 
+    @property
+    def is_entity(self):
+        """Check if current payload is an entity.
+
+        :rtype: bool
+
+        """
+
+        return self.path_exists(self.name)
+
     def set_mappings(self, mappings):
         if not DISABLE_FIELD_MAPPINGS:
             super().set_mappings(mappings)
 
-    def entity(self, name=None):
+    def entity(self, undo=False):
         """Get payload as an entity.
 
         When a payload is created it contains all fields as first
         level values. A payload entity moves all fields in payload
         to a "namespace"; This way is possible to reference fields
         using a path like 'entity-name/field' instead of just using
-        'field'.
+        'field', and is useful to avoid conflict with fields from
+        other payloads.
 
-        :param name: Alternative entity name to use.
-        :type nme: str.
+        To remove the entity "namespace" call this method with
+        `undo` as True.
+
+        :param undo: Optionally undo an entity payload.
+        :type undo: bool
 
         :rtype: `Payload`
 
         """
 
-        name = name or self.name
-        if name:
+        if undo:
+            # Only apply undo when payload is an entity
+            if self.is_entity:
+                return Payload(self.get(self.name))
+        elif self.name:
+            # Apply namespace only when a name is defined
             payload = Payload()
-            payload.set(name, self)
+            payload.set(self.name, self)
             return payload
 
         return self

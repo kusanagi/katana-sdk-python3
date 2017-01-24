@@ -27,8 +27,8 @@ class KatanaFormatter(logging.Formatter):
     """Default KATANA logging formatter."""
 
     def formatTime(self, record, *args, **kwargs):
-        utc = time.gmtime(record.created)
-        return datetime.fromtimestamp(time.mktime(utc)).isoformat()[:-3]
+        utc = time.mktime(time.gmtime(record.created)) + (record.created % 1)
+        return datetime.fromtimestamp(utc).isoformat()[:-3]
 
 
 def value_to_log_string(value, max_chars=100000):

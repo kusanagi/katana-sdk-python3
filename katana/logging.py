@@ -11,6 +11,7 @@ file that was distributed with this source code.
 """
 
 import logging
+import time
 import types
 import sys
 
@@ -26,7 +27,8 @@ class KatanaFormatter(logging.Formatter):
     """Default KATANA logging formatter."""
 
     def formatTime(self, record, *args, **kwargs):
-        return datetime.fromtimestamp(record.created).isoformat()[:-3]
+        utc = time.gmtime(record.created)
+        return datetime.fromtimestamp(time.mktime(utc)).isoformat()[:-3]
 
 
 def value_to_log_string(value, max_chars=100000):

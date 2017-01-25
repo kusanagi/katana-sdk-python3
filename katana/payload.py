@@ -39,6 +39,7 @@ FIELD_MAPPINGS = {
     'cached': 'c',
     'call': 'c',
     'callback': 'c',
+    'callee': 'c',
     'client': 'c',
     'code': 'c',
     'collection': 'c',

@@ -15,10 +15,7 @@ from .schema.service import ServiceSchema
 from ..errors import KatanaError
 from ..logging import value_to_log_string
 from ..schema import get_schema_registry
-from ..versions import find_version
-from ..versions import VersionNotFound
-from ..versions import VersionParser
-from ..versions import VersionPattern
+from ..versions import VersionString
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
@@ -162,13 +159,11 @@ class Api(object):
         # Resolve service version when wildcards are used
         if '*' in version:
             try:
-                version = find_version(VersionPattern(version), [
-                    VersionParser(value)
-                    # Get versions for current service
-                    for value in self._schema.get(name, {}).keys()
-                    ])
+                version = VersionString(version).resolve(
+                    self._schema.get(name, {}).keys()
+                    )
                 payload = self._schema.get('{}/{}'.format(name, version), None)
-            except VersionNotFound:
+            except KatanaError:
                 payload = None
         else:
             payload = self._schema.get('{}/{}'.format(name, version), None)

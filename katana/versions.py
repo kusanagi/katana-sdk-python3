@@ -12,6 +12,9 @@ file that was distributed with this source code.
 
 import re
 
+from functools import cmp_to_key
+from itertools import zip_longest
+
 from .errors import KatanaError
 
 __license__ = "MIT"
@@ -20,122 +23,18 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 # Regexp to remove duplicated '*' in versions
 DUPLICATES = re.compile(r'(\*)\1+')
 
-
-class VersionParser(object):
-    """Parser for version strings.
-
-    Parser is used to compare version string against a pattern.
-
-    """
-
-    def __init__(self, value):
-        # Keep original version value without change
-        self.__value = value
-        # Use initial value as initial suffix
-        self.__suffix = value
-        self.parse_next()
-
-    def __str__(self):
-        return self.value
-
-    def __repr__(self):
-        return 'Version: {}'.format(self.value)
-
-    @property
-    def value(self):
-        return self.__value
-
-    @property
-    def part(self):
-        return self.__part
-
-    @property
-    def suffix(self):
-        return self.__suffix
-
-    @property
-    def suffix_len(self):
-        return self.__suffix_len
-
-    @property
-    def current_value(self):
-        return '{}.{}'.format(self.part, self.suffix)
-
-    def parse_next(self):
-        self.__part, *extra = self.__suffix.split('.', 1)
-        self.__suffix = extra[0] if extra else None
-        self.__suffix_len = len(self.__suffix) if self.__suffix else 0
-        return self
+# Regexp to check version pattern for invalid chars
+INVALID_PATTERN = re.compile(r'[^a-zA-Z0-9*.,_-]')
 
 
-class VersionPattern(object):
-    """Version pattern class.
+class InvalidVersionPattern(KatanaError):
+    """Exception raised when a version pattern is not valid."""
 
-    Patterns are used to find highest version strings.
-
-    A pattern can contain any number of '*' which are subtituted
-    by the highest version part. For example, given versions '1.2',
-    '1.2-alpha1' '2.0', a pattern '1.*' would match '1.2-alpha1'.
-
-    """
+    message = 'Invalid version pattern: "{}"'
 
     def __init__(self, pattern):
-        # Remove duplicated special chars from pattern
-        pattern = DUPLICATES.sub(r'\1', pattern)
-
-        self.__value = pattern
-        self.__part = None
-        self.__suffix_len = 0
-
-        self.static = '*' not in pattern
-        if not self.static:
-            self.__suffix = pattern
-            self.parse_next()
-            self.latest_version = (pattern == '*')
-        else:
-            self.__suffix = None
-            self.latest_version = False
-
-    @property
-    def value(self):
-        return self.__value
-
-    @property
-    def part(self):
-        return self.__part
-
-    @property
-    def suffix(self):
-        return self.__suffix
-
-    @property
-    def suffix_len(self):
-        return self.__suffix_len
-
-    @property
-    def highest(self):
-        return self.part == '*'
-
-    def parse_next(self):
-        self.__part, *extra = self.__suffix.split('.', 1)
-        self.__suffix = extra[0] if extra else None
-        self.__suffix_len = len(self.__suffix) if self.__suffix else 0
-        return self
-
-
-def sort_versions(versions):
-    """Sort a list of versions.
-
-    :param versions: A list of version strings.
-    :type versions: list
-
-    :returns: A new list of version strings.
-    :rtype: list
-
-    """
-
-    version_parts = sorted(version.split('.') for version in versions)
-    return ['.'.join(part) for part in version_parts]
+        super().__init__(message=self.message.format(pattern))
+        self.pattern = pattern
 
 
 class VersionNotFound(KatanaError):
@@ -148,74 +47,106 @@ class VersionNotFound(KatanaError):
         self.pattern = pattern
 
 
-def find_version(pattern, versions):
-    """Find the highest version for a version pattern.
+class VersionString(object):
+    def __init__(self, version):
+        # Validate pattern characters
+        if INVALID_PATTERN.search(version):
+            raise InvalidVersionPattern(version)
 
-    Versions must be given as `VersionParser` objects instead of
-    plain strings.
+        # Remove duplicated special chars from version
+        self.__version = DUPLICATES.sub(r'\1', version)
 
-    :param pattern: A version pattern.
-    :type pattern: VersionPattern
-    :param versions: A list of VersionParser objects.
-    :type versions: list
+        if '*' in self.__version:
+            # Create a pattern to be use for cmparison
+            self.__pattern = re.compile(re.sub(r'\*+', '[^*.]+', self.version))
+        else:
+            self.__pattern = None
 
-    :raises: VersionNotFound
+    @property
+    def version(self):
+        return self.__version
 
-    :returns: A version string.
-    :rtype: str
+    @property
+    def pattern(self):
+        return self.__pattern
 
-    """
+    @staticmethod
+    def compare_none(part1, part2):
+        if part1 == part2:
+            return 0
+        elif part2 is None:
+            return -1
+        else:
+            return 1
 
-    if pattern.static:
-        return pattern.value
-    elif pattern.latest_version:
-        # Patter value is '*' which means latest version is used
-        return versions[-1].value
-    elif not versions:
-        # When a pattern has no versions to compare then there is no match
-        raise VersionNotFound(pattern.value)
+    @staticmethod
+    def compare_sub_parts(sub1, sub2):
+        # Sub parts are equal
+        if sub1 == sub2:
+            return 0
 
-    # Get version for current pattern
-    current_version = None
-    if pattern.highest:
-        # Iterate versions in reverse order from greater to lower
-        for version in versions[::-1]:
-            if pattern.suffix_len == version.suffix_len:
-                # Get highest version that matches pattern length
-                current_version = version
-                break
-    else:
-        # Get version that matches current pattern part value
-        for version in versions:
-            if pattern.suffix_len != version.suffix_len:
-                # Skip versions that are shorter than pattern
-                continue
-            elif pattern.part == version.part:
-                # Current version part matches pattern part value
-                current_version = version
-                break
+        # Check if any sub part is an integer
+        is_integer = [False, False]
+        for idx, value in enumerate((sub1, sub2)):
+            try:
+                int(value)
+            except ValueError:
+                is_integer[idx] = False
+            else:
+                is_integer[idx] = True
 
-    if not current_version:
-        raise VersionNotFound(pattern.value)
+        # Compare both sub parts according to their type
+        if is_integer[0] != is_integer[1]:
+            # One is an integer. The integer one is lower than the non integer.
+            # Check if the first sub part is an integer.
+            return 1 if is_integer[0] else -1
 
-    if not pattern.suffix:
-        # Return current version part when pattern has no suffix
-        return current_version.part
-    elif '*' not in pattern.suffix:
-        # No more wildcards available in suffix. Return current version
-        # part value as prefix and use the rest of the pattern as suffix.
-        return '{}.{}'.format(current_version.part, pattern.suffix)
+        # Both sub parts are of the same type
+        return 1 if sub1 < sub2 else -1
 
-    # Filter versions by current version prefix
-    prefix = '{}.'.format(current_version.part)
-    prefix_len = len(prefix)
-    # Remove versions that don't start with current version prefix
-    versions = [
-        version.parse_next()
-        for version in versions
-        if version.suffix and version.current_value[:prefix_len] == prefix
-        ]
+    @classmethod
+    def compare(cls, ver1, ver2):
+        # Versions are equal
+        if ver1 == ver2:
+            return 0
 
-    # Keep parsing when version pattern suffix contains wildcards.
-    # Current version part value will be used as prefix.
-    return prefix + find_version(pattern.parse_next(), versions)
+        for part1, part2 in zip_longest(ver1.split('.'), ver2.split('.')):
+            # One of the parts is None
+            if part1 is None or part2 is None:
+                return cls.compare_none(part1, part2)
+
+            for sub1, sub2 in zip_longest(part1.split('-'), part2.split('-')):
+                # One of the sub parts is None
+                if sub1 is None or sub2 is None:
+                    result = cls.compare_none(sub1, sub2)
+                    if not result:
+                        # Sub parts are equal, continue with next part
+                        break
+
+                    # Sub parts are different
+                    return result
+
+                # Both sub parts have a value
+                result = cls.compare_sub_parts(sub1, sub2)
+                if result:
+                    # Sub parts are not equal
+                    return result
+
+        # By default return that versions are equal
+        return 0
+
+    def match(self, version):
+        if not self.pattern:
+            return self.version == version
+        else:
+            return self.pattern.fullmatch(version) is not None
+
+    def resolve(self, versions):
+        valid_versions = [ver for ver in versions if self.match(ver)]
+        if not valid_versions:
+            return VersionNotFound(self.pattern)
+
+        valid_versions.sort(key=cmp_to_key(self.compare))
+
+        # Return last version
+        return valid_versions[-1]

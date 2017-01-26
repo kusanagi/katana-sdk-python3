@@ -574,9 +574,10 @@ class Action(Api):
         """
 
         payload = Payload().set_many({
-            'service': self.get_name(),
+            'name': self.get_name(),
             'version': self.get_version(),
-            'action': action,
+            'action': self.get_action_name(),
+            'callee': action,
             })
         if params:
             payload.set('params', parse_params(params))
@@ -597,9 +598,10 @@ class Action(Api):
         """
 
         payload = Payload().set_many({
-            'service': self.get_name(),
+            'name': self.get_name(),
             'version': self.get_version(),
-            'action': action,
+            'action': self.get_action_name(),
+            'callee': action,
             })
         if params:
             payload.set('params', parse_params(params))
@@ -623,9 +625,10 @@ class Action(Api):
         """
 
         payload = Payload().set_many({
-            'service': self.get_name(),
+            'name': self.get_name(),
             'version': self.get_version(),
-            'action': action,
+            'action': self.get_action_name(),
+            'callee': action,
             })
         if params:
             payload.set('params', parse_params(params))

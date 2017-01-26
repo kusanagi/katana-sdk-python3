@@ -6,6 +6,7 @@ dist/
 var/
 *.egg-info/
 *.egg
+.cache/
 
 pip-log.txt
 pip-delete-this-directory.txt

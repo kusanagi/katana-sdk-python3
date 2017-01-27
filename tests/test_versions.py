@@ -46,7 +46,9 @@ def test_compare_none():
     compare_none = VersionString.compare_none
 
     assert compare_none(None, None) == EQUAL
-    assert compare_none('A', None) == LOWER
+    # Version with less parts is higher, which means
+    # None is higher than a non None "part" value.
+    assert compare_none('A', None) == GREATER
 
 
 def test_compare_sub_part():
@@ -69,10 +71,10 @@ def test_compare_sub_part():
 
     # Integer parts are always lower than string parts ...
 
-    # First part is greater than second one
-    assert compare_sub_parts('A', '1') == LOWER
-    # First part is lower than second one
-    assert compare_sub_parts('1', 'A') == GREATER
+    # Second part is greater than first one
+    assert compare_sub_parts('A', '1') == GREATER
+    # Second part is lower than first one
+    assert compare_sub_parts('1', 'A') == LOWER
 
 
 def test_compare_versions():
@@ -82,14 +84,14 @@ def test_compare_versions():
     """
 
     cases = (
-        ('A.B.C', GREATER, 'A.B'),
-        ('A.B-beta', GREATER, 'A.B'),
-        ('A.B-beta', GREATER, 'A.B-alpha'),
+        ('A.B.C', LOWER, 'A.B'),
+        ('A.B-beta', LOWER, 'A.B'),
+        ('A.B-beta', LOWER, 'A.B-gamma'),
         ('A.B.C', EQUAL, 'A.B.C'),
         ('A.B-alpha', EQUAL, 'A.B-alpha'),
-        ('A.B', LOWER, 'A.B.C'),
-        ('A.B', LOWER, 'A.B-alpha'),
-        ('A.B-beta', LOWER, 'A.B-gamma'),
+        ('A.B', GREATER, 'A.B.C'),
+        ('A.B', GREATER, 'A.B-alpha'),
+        ('A.B-beta', GREATER, 'A.B-alpha'),
         )
 
     compare = VersionString.compare
@@ -107,14 +109,14 @@ def test_resolve_versions():
     # Format: pattern, expected, versions
     cases = (
         ('3.4.1', '3.4.1', ('3.4.0', '3.4.1', '3.4.a')),
-        ('3.4.*', '3.4.0', ('3.4.0', '3.4.1', '3.4.a')),
-        ('3.4.*', '3.4.0', ('3.4.a', '3.4.1', '3.4.0')),
-        ('3.4.*', '3.4.alpha', ('3.4.alpha', '3.4.beta', '3.4.gamma')),
-        ('3.4.*', '3.4.a', ('3.4.alpha', '3.4.a', '3.4.gamma')),
-        ('3.4.*', '3.4.1', ('3.4.a', '3.4.12', '3.4.1')),
+        ('3.4.*', '3.4.1', ('3.4.0', '3.4.1', '3.4.a')),
+        ('3.4.*', '3.4.1', ('3.4.a', '3.4.1', '3.4.0')),
+        ('3.4.*', '3.4.gamma', ('3.4.alpha', '3.4.beta', '3.4.gamma')),
+        ('3.4.*', '3.4.gamma', ('3.4.alpha', '3.4.a', '3.4.gamma')),
+        ('3.4.*', '3.4.12', ('3.4.a', '3.4.12', '3.4.1')),
         ('3.4.*', '3.4.0', ('3.4.0', '3.4.0-a', '3.4.0-0')),
-        ('3.4.*', '3.4.0-0', ('3.4.0-0', '3.4.0-a', '3.4.0-1')),
-        ('3.4.*', '3.4.0-0', ('3.4.0-0', '3.4.0-1-0', '3.4.0-1')),
+        ('3.4.*', '3.4.0-1', ('3.4.0-0', '3.4.0-a', '3.4.0-1')),
+        ('3.4.*', '3.4.0-1', ('3.4.0-0', '3.4.0-1-0', '3.4.0-1')),
         )
 
     for pattern, expected, versions in cases:

@@ -1,0 +1,6 @@
+# Development requirements file for pip
+pytest
+sphinx
+sphinx_rtd_theme
+pylint
+pylama

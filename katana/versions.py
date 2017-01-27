@@ -75,9 +75,10 @@ class VersionString(object):
         if part1 == part2:
             return 0
         elif part2 is None:
-            return -1
-        else:
+            # The one that DO NOT have more parts is greater
             return 1
+        else:
+            return -1
 
     @staticmethod
     def compare_sub_parts(sub1, sub2):
@@ -97,9 +98,10 @@ class VersionString(object):
 
         # Compare both sub parts according to their type
         if is_integer[0] != is_integer[1]:
-            # One is an integer. The integer one is lower than the non integer.
-            # Check if the first sub part is an integer.
-            return 1 if is_integer[0] else -1
+            # One is an integer. The integer is higher than the non integer.
+            # Check if the first sub part is an integer, and if so it means
+            # sub2 is lower than sub1.
+            return -1 if is_integer[0] else 1
 
         # Both sub parts are of the same type
         return 1 if sub1 < sub2 else -1
@@ -147,6 +149,4 @@ class VersionString(object):
             return VersionNotFound(self.pattern)
 
         valid_versions.sort(key=cmp_to_key(self.compare))
-
-        # Return last version
-        return valid_versions[-1]
+        return valid_versions[0]

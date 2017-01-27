@@ -802,45 +802,6 @@ def install_uvevent_loop():
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
-def async_lru(size=100, timeout=None):
-    """Method decorator that saves up to the maxsize most recent calls.
-
-    :param size: Number of results to save.
-    :type size: int
-    :param timeout: Number of seconds a value can be cached.
-    :type timeout: int
-
-    """
-
-    cache = OrderedDict()
-
-    def clear_value(cache, key, func):
-        cache.pop(key, None)
-
-    def decorator(func):
-        @functools.wraps(func)
-        @asyncio.coroutine
-        def memoizer(self, *args, **kwargs):
-            key = str((args, kwargs))
-            try:
-                result = cache[key] = cache.pop(key)
-            except KeyError:
-                if len(cache) >= size:
-                    cache.popitem(last=False)
-
-                result = cache[key] = yield from func(self, *args, **kwargs)
-                # When a timeout is given clear value after some time
-                if timeout:
-                    loop = asyncio.get_event_loop()
-                    loop.call_later(timeout, clear_value, cache, key, func)
-
-            return result
-
-        return memoizer
-
-    return decorator
-
-
 def dict_crc(dict):
     """Create a CRC for a dictionary like object.
 

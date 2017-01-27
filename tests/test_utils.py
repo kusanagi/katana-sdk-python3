@@ -108,6 +108,7 @@ def test_get_path():
         get_path({}, 'foo/bar')
 
     expected = 'RESULT'
+
     # Item to be used for path resolution
     item = {'foo': {'bar': expected}}
 
@@ -118,8 +119,15 @@ def test_get_path():
     with pytest.raises(KeyError):
         get_path(item, 'invalid/path')
 
+
+def test_get_path_with_mappings():
+    get_path = utils.get_path
+
+    expected = 'RESULT'
+
     # Field mappings
     mp = {'foo': 'f', 'bar': 'b'}
+
     # Item to be used for path resolution
     item = {'f': {'b': expected}}
 
@@ -156,6 +164,10 @@ def test_set_path():
     set_path(item, 'foo|bar', 1, delimiter='|')
     assert utils.get_path(item, 'foo|bar', default=default, delimiter='|') == 1
 
+
+def test_set_path_with_mappings():
+    set_path = utils.set_path
+
     # Field mappings
     mp = {'foo': 'f', 'bar': 'b'}
 
@@ -169,3 +181,426 @@ def test_set_path():
     path = 'foo/{}'.format(utils.nomap('bar'))
     set_path(item, path, 1, mappings=mp)
     assert item == {'f': {'bar': 1}}
+
+
+def test_delete_path():
+    delete_path = utils.delete_path
+
+    # When path does not esists function returns false
+    assert delete_path({}, 'foo/bar') is False
+
+    item = {'foo': {'bar': 1}}
+    assert delete_path(item, 'foo/bar')
+    assert item == {}
+
+    item = {'foo': {'bar': 1, 'keep': 2}}
+    assert delete_path(item, 'foo/bar')
+    assert item == {'foo': {'keep': 2}}
+
+    item = {'foo': {'bar': 1}}
+    assert delete_path(item, 'foo|bar', delimiter='|')
+    assert item == {}
+
+    item = {'foo': {'bar': 1, 'keep': 2}}
+    assert delete_path(item, 'foo|bar', delimiter='|')
+    assert item == {'foo': {'keep': 2}}
+
+
+def test_delete_path_with_mappings():
+    delete_path = utils.delete_path
+
+    # Field mappings
+    mp = {'foo': 'f', 'bar': 'b'}
+
+    item = {'f': {'b': 1}}
+    assert delete_path(item, 'foo/bar', mappings=mp)
+    assert item == {}
+
+    item = {'f': {'b': 1, 'keep': 2}}
+    assert delete_path(item, 'foo/bar', mappings=mp)
+    assert item == {'f': {'keep': 2}}
+
+    item = {'f': {'b': 1}}
+    assert delete_path(item, 'foo|bar', mappings=mp, delimiter='|')
+    assert item == {}
+
+    item = {'f': {'b': 1, 'keep': 2}}
+    assert delete_path(item, 'foo|bar', mappings=mp, delimiter='|')
+    assert item == {'f': {'keep': 2}}
+
+    # Check removal with a key that is not mapped
+    path = 'foo/{}'.format(utils.nomap('bar'))
+
+    item = {'f': {'bar': 1}}
+    assert delete_path(item, path, mappings=mp)
+    assert item == {}
+
+    # Delete fails here because 'bar' does not exist as key
+    item = {'f': {'b': 1}}
+    assert delete_path(item, path, mappings=mp) is False
+    assert item == {'f': {'b': 1}}
+
+
+def test_merge():
+    merge = utils.merge
+
+    item1 = {'a': {'b': [1, 2], 'd': False}, 'x': [0]}
+    item2 = {'a': {'b': [3, 4], 'd': True}, 'x': [1]}
+
+    # Merge but don't extend "leaf" values that are lists
+    assert merge(item2, item1) == {
+        'a': {
+            'b': [1, 2],  # List is not extended/merged
+            'd': False,  # Existing items are not overwriten
+            },
+        'x': [0],  # List is not extended/merged
+        }
+
+    # Merge but don't extend "leaf" values that are lists
+    item1 = {'a': {'b': [1, 2]}, 'x': [0]}
+    assert merge(item2, item1, lists=True) == {
+        'a': {
+            'b': [1, 2, 3, 4],  # List contains elements from both items
+            'd': True,
+            },
+        'x': [0, 1],  # List contains elements from both items
+        }
+
+
+def test_merge_with_mappings():
+    merge = utils.merge
+
+    # Field mappings
+    mp = {'AA': 'a', 'BB': 'b', 'DD': 'd', 'XX': 'x'}
+
+    # After merging values will be short names
+    item1 = {'a': {'b': [1, 2], 'd': False}, 'x': [0]}
+    item2 = {'AA': {'BB': [3, 4], 'DD': True}, 'XX': [1]}
+
+    # Merge but don't extend "leaf" values that are lists
+    assert merge(item2, item1, mappings=mp) == {
+        'a': {
+            'b': [1, 2],
+            'd': False,
+            },
+        'x': [0],
+        }
+
+    # Merge but don't extend "leaf" values that are lists
+    item1 = {'a': {'b': [1, 2]}, 'x': [0]}
+    assert merge(item2, item1, mappings=mp, lists=True) == {
+        'a': {
+            'b': [1, 2, 3, 4],
+            'd': True,
+            },
+        'x': [0, 1],
+        }
+
+
+def test_lookup_dict():
+    LookupDict = utils.LookupDict
+
+    # Check that a value is THE empty value
+    assert LookupDict.is_empty(utils.EMPTY)
+
+    # An empty string is NOT the empty value
+    assert LookupDict.is_empty('') is False
+
+    expected = 'RESULT'
+    expected2 = 'RESULT-2'
+
+    # Define values to create lookup dictionaries
+    values = {'foo': {'bar': expected, 'other': expected2}}
+
+    lookup = LookupDict(values)
+
+    # Check different paths
+    assert lookup.path_exists('foo/bar')
+    assert lookup.path_exists('foo/missing') is False
+    assert lookup.path_exists('foo|bar', delimiter='|')
+    assert lookup.path_exists('foo|missing', delimiter='|') is False
+
+    # Get a path that does not exists without a default
+    with pytest.raises(KeyError):
+        lookup.get('foo/missing')
+
+    # Now try with a default setted
+    assert lookup.path_exists('foo/missing') is False
+    lookup.set_defaults({'foo/missing': 1})
+    assert lookup.path_exists('foo/missing')
+    assert lookup.get('foo/missing') == 1
+
+    # Get a single value
+    assert lookup.get('foo/missing', 'DEFAULT') == 'DEFAULT'
+    assert lookup.get('foo/bar') == expected
+    assert lookup.get('foo|bar', delimiter='|') == expected
+
+    # Get multiple values
+    multi = [expected, expected2]
+    assert lookup.get_many('foo/bar', 'foo/other') == multi
+    assert lookup.get_many('foo|bar', 'foo|other', delimiter='|') == multi
+    # When there is a missing path fail
+    with pytest.raises(KeyError):
+        lookup.get_many('foo/bar', 'other/missing')
+
+    # Set some new value
+    assert lookup.path_exists('new/path') is False
+    lookup.set('new/path', 'value')
+    assert lookup.path_exists('new/path')
+    assert lookup.get('new/path', None) == 'value'
+
+    # Set multiple new values
+    assert lookup.path_exists('multi/path') is False
+    assert lookup.path_exists('multi/path2') is False
+    lookup.set_many({
+        'multi/path': 1,
+        'multi/path2': 2,
+        })
+    assert lookup.path_exists('multi/path')
+    assert lookup.path_exists('multi/path2')
+    assert lookup.get_many('multi/path', 'multi/path2') == [1, 2]
+
+    # Create a new lookup
+    lookup = LookupDict({})
+
+    # Push a value to a non existing path
+    assert lookup.path_exists('multi/path') is False
+    lookup.push('multi/path', 1)
+    assert lookup.path_exists('multi/path')
+    assert lookup.get('multi/path') == [1]
+
+    # Push another item to an existing path
+    lookup.push('multi/path', 2)
+    assert lookup.path_exists('multi/path')
+    assert lookup.get('multi/path') == [1, 2]
+    # .. also push using a delimiter
+    lookup.push('multi|path', 3, delimiter='|')
+    assert lookup.get('multi|path', delimiter='|') == [1, 2, 3]
+
+    # Is not possible to push to an existing value that is not a list
+    lookup.set('new/path', 1)
+    with pytest.raises(TypeError):
+        lookup.push('new/path', 2)
+
+
+def test_lookup_dict_with_mappings():
+    LookupDict = utils.LookupDict
+
+    expected = 'RESULT'
+    expected2 = 'RESULT-2'
+
+    # Define values to create lookup dictionaries
+    values = {'f': {'b': expected, 'o': expected2}}
+
+    lookup = LookupDict(values)
+    # Use mappings
+    lookup.set_mappings({
+        'bar': 'b',
+        'foo': 'f',
+        'muli': 'm',
+        'new': 'n',
+        'other': 'o',
+        'path': 'p',
+        'path2': 'P',
+        })
+
+    # Check different paths
+    assert lookup.path_exists('foo/bar')
+    assert lookup.path_exists('foo/missing') is False
+    assert lookup.path_exists('foo|bar', delimiter='|')
+    assert lookup.path_exists('foo|missing', delimiter='|') is False
+
+    # Get a path that does not exists without a default
+    with pytest.raises(KeyError):
+        lookup.get('foo/missing')
+
+    # Get a single value
+    assert lookup.get('foo/missing', 'DEFAULT') == 'DEFAULT'
+    assert lookup.get('foo/bar') == expected
+    assert lookup.get('foo|bar', delimiter='|') == expected
+
+    # Get multiple values
+    multi = [expected, expected2]
+    assert lookup.get_many('foo/bar', 'foo/other') == multi
+    assert lookup.get_many('foo|bar', 'foo|other', delimiter='|') == multi
+    # When there is a missing path fail
+    with pytest.raises(KeyError):
+        lookup.get_many('foo/bar', 'foo/missing')
+
+    # Set some new value
+    assert lookup.path_exists('new/path') is False
+    lookup.set('new/path', 'value')
+    assert lookup.path_exists('new/path')
+    assert lookup.get('new/path', None) == 'value'
+
+    # Set multiple new values
+    assert lookup.path_exists('multi/path') is False
+    assert lookup.path_exists('multi/path2') is False
+    lookup.set_many({
+        'multi/path': 1,
+        'multi/path2': 2,
+        })
+    assert lookup.path_exists('multi/path')
+    assert lookup.path_exists('multi/path2')
+    assert lookup.get_many('multi/path', 'multi/path2') == [1, 2]
+
+    # Create a new lookup
+    lookup = LookupDict({})
+
+    # Push a value to a non existing path
+    assert lookup.path_exists('multi/path') is False
+    lookup.push('multi/path', 1)
+    assert lookup.path_exists('multi/path')
+    assert lookup.get('multi/path') == [1]
+
+    # Push another item to an existing path
+    lookup.push('multi/path', 2)
+    assert lookup.path_exists('multi/path')
+    assert lookup.get('multi/path') == [1, 2]
+    # .. also push using a delimiter
+    lookup.push('multi|path', 3, delimiter='|')
+    assert lookup.get('multi|path', delimiter='|') == [1, 2, 3]
+
+    # Is not possible to push to an existing value that is not a list
+    lookup.set('new/path', 1)
+    with pytest.raises(TypeError):
+        lookup.push('new/path', 2)
+
+
+def test_lookup_dict_merge():
+    LookupDict = utils.LookupDict
+
+    lookup = LookupDict()
+    lookup.set('foo/bar', {'a': {'b': [1, 2], 'd': False}, 'x': [0]})
+
+    # Merge values into the lookup dictionary
+    values = {'a': {'b': [3, 4], 'd': True}, 'x': [1]}
+    assert lookup.merge('foo/bar', values) == lookup
+    assert lookup.path_exists('foo/bar')
+    assert lookup.get('foo/bar') == {
+        'a': {
+            'b': [1, 2, 3, 4],  # List contains elements from both items
+            'd': False,  # Existing items are not overwriten
+            },
+        'x': [0, 1],  # List contains elements from both items
+        }
+
+    # When item in path is not a dictionary don't merge
+    lookup.set('foo/other', 1)
+    with pytest.raises(TypeError):
+        lookup.merge('foo/other', {})
+
+
+def test_lookup_dict_merge_with_mappings():
+    LookupDict = utils.LookupDict
+
+    lookup = LookupDict()
+    lookup.set_mappings({
+        'AA': 'a',
+        'BB': 'b',
+        'bar': 'B',
+        'DD': 'd',
+        'foo': 'f',
+        'XX': 'x',
+        'other': 'o',
+        })
+    lookup.set('foo/bar', {'a': {'b': [1, 2], 'd': False}, 'x': [0]})
+
+    # Merge values into the lookup dictionary
+    values = {'AA': {'BB': [3, 4], 'DD': True}, 'XX': [1]}
+    assert lookup.merge('foo/bar', values) == lookup
+    assert lookup.path_exists('foo/bar')
+    assert lookup.get('foo/bar') == {
+        'a': {
+            'b': [1, 2, 3, 4],  # List contains elements from both items
+            'd': False,  # Existing items are not overwriten
+            },
+        'x': [0, 1],  # List contains elements from both items
+        }
+
+    # When item in path is not a dictionary don't merge
+    lookup.set('foo/other', 1)
+    with pytest.raises(TypeError):
+        lookup.merge('foo/other', {})
+
+
+def test_multi_dict():
+    multi = utils.MultiDict()
+    assert multi == {}
+
+    # Get a non existing item without and with default
+    assert multi.getone('missing') is None
+    assert multi.getone('missing', 'DEFAULT') == 'DEFAULT'
+
+    # When setting a new item it is saved as a list
+    multi['item'] = 1
+    assert isinstance(multi['item'], list)
+    assert multi['item'] == [1]
+    assert multi.getone('item') == 1
+
+    # Set a value for an existing key
+    multi['item'] = 2
+    assert multi['item'] == [1, 2]
+    assert multi.getone('item') == 1  # This gets the first item in list
+
+    # Get all items splitted in tuples. Values will be strings.
+    multi['single'] = 3
+    items = multi.multi_items()
+    assert sorted(items) == [
+        ('item', '1'),
+        ('item', '2'),
+        ('single', '3'),
+        ]
+
+    # Create a multi dict from a list of tuples
+    assert utils.MultiDict(items) == {
+        'item': ['1', '2'],
+        'single': ['3'],
+        }
+
+    # Create a multi dict from a dicitonary
+    assert utils.MultiDict({'item': 1, 'single': 2}) == {
+        'item': [1],
+        'single': [2],
+        }
+
+
+def test_singleton():
+    # Define a test singleton class
+    class TestSingleton(object, metaclass=utils.Singleton):
+        pass
+
+    singleton = TestSingleton()
+    assert hasattr(singleton, 'instance')
+    assert singleton.instance == singleton
+
+    same = TestSingleton()
+    # Check that same and singleton are the same instance
+    assert singleton.instance == same
+    assert same.instance == singleton
+
+
+def test_dict_crc():
+    # Check CRC32 value
+    crc = utils.dict_crc({'a': 123, 'test': ['ok'], 'value': False})
+    assert isinstance(crc, str)
+    assert len(crc) == 9
+
+    # Create a new CRC for the same dictionary
+    value = {'a': 123, 'test': ['ok'], 'value': False}
+    assert utils.dict_crc(value) == crc
+
+    # Change dictionary and CRC must be different
+    value['a'] = 1234
+    assert utils.dict_crc(value) != crc
+
+
+def test_safe_cast():
+    # Successfull cast
+    assert utils.safe_cast('1', int) == 1
+
+    # Cast that fails
+    assert utils.safe_cast('A', float) is None
+
+    # Cast that fails with default
+    assert utils.safe_cast('A', float, default=2.2) == 2.2

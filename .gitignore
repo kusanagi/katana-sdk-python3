@@ -7,6 +7,7 @@ var/
 *.egg-info/
 *.egg
 .cache/
+docs/build/
 
 pip-log.txt
 pip-delete-this-directory.txt
@@ -14,5 +15,3 @@ pip-delete-this-directory.txt
 *.mo
 *.pot
 *.log
-
-docs/_build/

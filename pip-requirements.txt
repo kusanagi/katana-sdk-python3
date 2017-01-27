@@ -1,5 +1,6 @@
 # Development requirements file for pip
 pytest
+pytest-mock
 sphinx
 sphinx_rtd_theme
 pylint

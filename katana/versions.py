@@ -146,7 +146,7 @@ class VersionString(object):
     def resolve(self, versions):
         valid_versions = [ver for ver in versions if self.match(ver)]
         if not valid_versions:
-            return VersionNotFound(self.pattern)
+            raise VersionNotFound(self.pattern)
 
         valid_versions.sort(key=cmp_to_key(self.compare))
         return valid_versions[0]

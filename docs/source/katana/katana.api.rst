@@ -1,6 +1,11 @@
 katana.api package
 ==================
 
+.. automodule:: katana.api
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -22,10 +27,3 @@ Submodules
    katana.api.response
    katana.api.transport
 
-Module contents
----------------
-
-.. automodule:: katana.api
-    :members:
-    :undoc-members:
-    :show-inheritance:

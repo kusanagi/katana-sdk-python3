@@ -66,6 +66,17 @@ todo_include_todos = False
 add_module_names = False
 html_show_sphinx = False
 
+# Include both class docstring and __init__
+autoclass_content = 'both'
+
+autodoc_default_flags = [
+    'members',
+    'undoc-members',
+    'show-inheritance',
+    # 'inherited-members',
+    # 'private-members',
+    ]
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for

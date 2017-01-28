@@ -307,7 +307,7 @@ class HttpRequest(object):
         if not self.has_header(name):
             return default
 
-        return ', '.join(self.__headers[name])
+        return self.__headers.get(name)[0]
 
     def get_headers(self):
         """Get all HTTP headers.

@@ -231,6 +231,7 @@ def get_path(item, path, default=EMPTY, mappings=None, delimiter=DELIMITER):
 
 
 def set_path(item, path, value, mappings=None, delimiter=DELIMITER):
+    original_item = item
     parts = path.split(delimiter)
     last_part_index = len(parts) - 1
     for index, part in enumerate(parts):
@@ -254,7 +255,7 @@ def set_path(item, path, value, mappings=None, delimiter=DELIMITER):
         else:
             raise TypeError(part)
 
-    return item
+    return original_item
 
 
 def delete_path(item, path, mappings=None, delimiter=DELIMITER):

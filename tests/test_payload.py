@@ -146,9 +146,44 @@ def test_meta_payload():
     assert isinstance(payload.get('datetime'), str)
 
 
-def test_request_payload():
-    # TODO
-    pass
+def test_http_request_payload():
+    HttpRequestPayload = payload_module.HttpRequestPayload
+
+    class HttpRequest(object):
+        version = '1.1'
+        method = 'GET'
+        url = 'http://foo.com/bar/index/'
+        body = 'CONTENT'
+        query = None
+        post_data = None
+        headers = None
+
+    request = HttpRequest()
+
+    # Check default values
+    payload = HttpRequestPayload.new(request)
+    assert payload.get('version', default=None) == request.version
+    assert payload.get('method', default=None) == request.method
+    assert payload.get('url', default=None) == request.url
+    assert payload.get('body', default=None) == request.body
+    # Optional values are not present by default
+    assert not payload.path_exists('query')
+    assert not payload.path_exists('post_data')
+    assert not payload.path_exists('headers')
+    assert not payload.path_exists('files')
+
+    # Add all optional values to request
+    request.query = {'foo': 'bar'}
+    request.post_data = {'post_foo': 'post_bar'}
+    request.headers = {'X-Type': '1'}
+    files = [{'name': 'file'}]
+    # .. and create a new payload
+    payload = HttpRequestPayload.new(request, files=files)
+    # Check optional values
+    assert payload.get('query', default=None) == request.query
+    assert payload.get('post_data', default=None) == request.post_data
+    assert payload.get('headers', default=None) == request.headers
+    assert payload.get('files', default=None) == files
 
 
 def test_service_call_payload():

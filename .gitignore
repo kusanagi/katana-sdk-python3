@@ -1,6 +1,4 @@
 __pycache__/
-*.py[cod]
-
 sdist/
 dist/
 var/
@@ -11,7 +9,9 @@ docs/build/
 
 pip-log.txt
 pip-delete-this-directory.txt
+.coverage
 
+*.py[cod]
 *.mo
 *.pot
 *.log

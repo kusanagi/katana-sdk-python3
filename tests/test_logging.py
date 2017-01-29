@@ -44,18 +44,7 @@ def test_value_to_los_string():
     assert len(value_to_log_string('*' * (max_chars + 10))) == max_chars
 
 
-def test_setup_katana_logging(capsys):
-    # Loggers should not be initialized
-    assert not logging.root.handlers
-    for name in ('katana', 'katana.api'):
-        assert not logging.getLogger(name).handlers
-
-    # Asyncio level is not ERROR by default
-    assert logging.getLogger('asyncio').level != logging.ERROR
-
-    # Setup KATANA SDK logging
-    setup_katana_logging()
-
+def test_setup_katana_logging(logs):
     # Root logger must use KatanaFormatter
     assert len(logging.root.handlers) == 1
     assert isinstance(logging.root.handlers[0].formatter, KatanaFormatter)
@@ -76,8 +65,7 @@ def test_setup_katana_logging(capsys):
     # Basic check for logging format
     message = 'Test message'
     logging.getLogger('katana').info(message)
-    out, err = capsys.readouterr()
-    assert len(err) == 0
+    out = logs.getvalue()
     assert len(out) > 0
     out_parts = out.split(' ')
     assert out_parts[0].endswith('Z')  # Time

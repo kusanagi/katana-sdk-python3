@@ -80,8 +80,12 @@ def apply_cli_options(run_method):
         for option in self.get_argument_options():
             start_component = option(start_component)
 
-        # Run SDK component
-        start_component()
+        if not os.environ.get('TESTING'):
+            # Run SDK component
+            start_component()
+        else:
+            # Allow unit tests to properly parse CLI arguments
+            return start_component
 
     return wrapper
 

@@ -153,7 +153,12 @@ class HttpResponse(object):
 
         """
 
-        self.__headers.get(name)
+        values = self.__headers.get(name)
+        if not values:
+            return ''
+
+        # Get first header value
+        return values[0]
 
     def get_headers(self):
         """Get all HTTP header.

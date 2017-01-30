@@ -64,6 +64,16 @@ def value_to_log_string(value, max_chars=100000):
     return output[:max_chars]
 
 
+def get_output_buffer():
+    """Get buffer interface to send logging output.
+
+    :rtype: io.IOBase
+
+    """
+
+    return sys.stdout
+
+
 def setup_katana_logging(level=logging.INFO):
     """Initialize logging defaults for KATANA.
 
@@ -73,10 +83,12 @@ def setup_katana_logging(level=logging.INFO):
 
     format = "%(asctime)sZ [%(levelname)s] [SDK] %(message)s"
 
+    output = get_output_buffer()
+
     # Setup root logger
     root = logging.root
     if not root.handlers:
-        logging.basicConfig(level=level, stream=sys.stdout)
+        logging.basicConfig(level=level, stream=output)
         root.setLevel(level)
         root.handlers[0].setFormatter(KatanaFormatter(format))
 
@@ -84,7 +96,7 @@ def setup_katana_logging(level=logging.INFO):
     logger = logging.getLogger('katana')
     logger.setLevel(level)
     if not logger.handlers:
-        handler = logging.StreamHandler(stream=sys.stdout)
+        handler = logging.StreamHandler(stream=output)
         handler.setFormatter(KatanaFormatter(format))
         logger.addHandler(handler)
         logger.propagate = False
@@ -93,7 +105,7 @@ def setup_katana_logging(level=logging.INFO):
     logger = logging.getLogger('katana.api')
     logger.setLevel(logging.DEBUG)
     if not logger.handlers:
-        handler = logging.StreamHandler(stream=sys.stdout)
+        handler = logging.StreamHandler(stream=output)
         handler.setFormatter(logging.Formatter())  # No format is applied
         logger.addHandler(handler)
         logger.propagate = False

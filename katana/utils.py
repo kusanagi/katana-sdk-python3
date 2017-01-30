@@ -231,6 +231,7 @@ def get_path(item, path, default=EMPTY, mappings=None, delimiter=DELIMITER):
 
 
 def set_path(item, path, value, mappings=None, delimiter=DELIMITER):
+    original_item = item
     parts = path.split(delimiter)
     last_part_index = len(parts) - 1
     for index, part in enumerate(parts):
@@ -254,7 +255,7 @@ def set_path(item, path, value, mappings=None, delimiter=DELIMITER):
         else:
             raise TypeError(part)
 
-    return item
+    return original_item
 
 
 def delete_path(item, path, mappings=None, delimiter=DELIMITER):
@@ -800,45 +801,6 @@ def install_uvevent_loop():
         pass
     else:
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-
-def async_lru(size=100, timeout=None):
-    """Method decorator that saves up to the maxsize most recent calls.
-
-    :param size: Number of results to save.
-    :type size: int
-    :param timeout: Number of seconds a value can be cached.
-    :type timeout: int
-
-    """
-
-    cache = OrderedDict()
-
-    def clear_value(cache, key, func):
-        cache.pop(key, None)
-
-    def decorator(func):
-        @functools.wraps(func)
-        @asyncio.coroutine
-        def memoizer(self, *args, **kwargs):
-            key = str((args, kwargs))
-            try:
-                result = cache[key] = cache.pop(key)
-            except KeyError:
-                if len(cache) >= size:
-                    cache.popitem(last=False)
-
-                result = cache[key] = yield from func(self, *args, **kwargs)
-                # When a timeout is given clear value after some time
-                if timeout:
-                    loop = asyncio.get_event_loop()
-                    loop.call_later(timeout, clear_value, cache, key, func)
-
-            return result
-
-        return memoizer
-
-    return decorator
 
 
 def dict_crc(dict):

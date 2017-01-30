@@ -1,18 +1,17 @@
 __pycache__/
-*.py[cod]
-
 sdist/
 dist/
 var/
 *.egg-info/
 *.egg
 .cache/
+docs/build/
 
 pip-log.txt
 pip-delete-this-directory.txt
+.coverage
 
+*.py[cod]
 *.mo
 *.pot
 *.log
-
-docs/_build/

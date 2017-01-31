@@ -1,6 +1,8 @@
 import datetime
 import decimal
 
+import pytest
+
 from katana import json
 
 
@@ -27,6 +29,10 @@ def test_encoder():
 
     for value, expected in cases:
         assert encoder.default(value) == expected
+
+    # Unknown objects should raise an error
+    with pytest.raises(TypeError):
+        encoder.default(object())
 
 
 def test_deserialize():

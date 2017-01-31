@@ -1,3 +1,5 @@
+import os
+
 import click
 import pytest
 
@@ -72,6 +74,15 @@ def test_apply_cli_options(mocker, cli):
         'quiet': True,
         'var': {'foo': 'bar', 'hello': 'world'},
         }
+
+    # Check that by removing the TESTING environment component runs
+    # but ends with an exit code of 2 because argv does not have
+    # valid values.
+    exit = mocker.patch('sys.exit')
+    del os.environ['TESTING']
+    foo.run()
+    exit.assert_called_once_with(2)
+    os.environ['TESTING'] = '1'
 
 
 def test_component_runner():
@@ -192,8 +203,9 @@ def test_component_run(mocker, cli):
 
 
 def test_component_run_errors(mocker, cli):
+    side_effects = (ZMQError, ZMQError(98), Exception)
     loop = mocker.MagicMock()
-    loop.run_until_complete.side_effect = (ZMQError, Exception)
+    loop.run_until_complete.side_effect = side_effects
 
     mocker.patch('asyncio.set_event_loop')
     mocker.patch('zmq.asyncio.ZMQEventLoop', return_value=loop)
@@ -216,7 +228,7 @@ def test_component_run_errors(mocker, cli):
         ]
 
     # Run component twice to check ZMQError and Exception cases
-    for _ in range(2):
+    for _ in range(len(side_effects)):
         # Create a component runner and run it
         runner = ComponentRunner(None, ServerCls, None)
         result = cli.invoke(runner.run(), cli_args)
@@ -226,3 +238,58 @@ def test_component_run_errors(mocker, cli):
 
         # Check exit with error
         exit.assert_called_with(EXIT_ERROR)
+
+
+def test_component_run_callbacks(mocker, cli):
+    loop = mocker.MagicMock()
+
+    mocker.patch('asyncio.set_event_loop')
+    mocker.patch('zmq.asyncio.ZMQEventLoop', return_value=loop)
+
+    exit = mocker.patch('os._exit')
+
+    # Define values to be used in component runner
+    startup_callback = mocker.MagicMock()
+    shutdown_callback = mocker.MagicMock()
+    component = object()
+    ServerCls = mocker.MagicMock()
+    cli_args = [
+        '--name', 'foo',
+        '--version', '1.0',
+        '--component', 'service',
+        '--platform-version', '1.0.0',
+        '--tcp', '5000',
+        ]
+
+    # Create the component runner and assign callbacks
+    runner = ComponentRunner(component, ServerCls, None)
+    runner.set_startup_callback(startup_callback)
+    runner.set_shutdown_callback(shutdown_callback)
+
+    result = cli.invoke(runner.run(), cli_args)
+    # Running the component should succeed
+    assert result.exit_code == 0
+
+    # Check that callbacks were called
+    startup_callback.assert_called_once_with(component)
+    shutdown_callback.assert_called_once_with(component)
+
+    # Check normal exit
+    exit.assert_called_once_with(EXIT_OK)
+
+    # Check startup callback errors
+    startup_callback.side_effect = Exception
+    result = cli.invoke(runner.run(), cli_args)
+    # Running the component should succeed
+    assert result.exit_code == 0
+    # Check error exit
+    exit.assert_called_with(EXIT_ERROR)
+
+    # Check shutdown callback errors
+    startup_callback.side_effect = None
+    shutdown_callback.side_effect = Exception
+    result = cli.invoke(runner.run(), cli_args)
+    # Running the component should succeed
+    assert result.exit_code == 0
+    # Check error exit
+    exit.assert_called_with(EXIT_ERROR)

@@ -79,6 +79,10 @@ def test_stream_to_payload():
     with pytest.raises(TypeError):
         stream_to_payload(pack('Boom !'))
 
+    # None can't be a payload
+    with pytest.raises(TypeError):
+        stream_to_payload(None)
+
     # An invalid stream can't be parsed
     with pytest.raises(TypeError):
         stream_to_payload(b'Boom !')

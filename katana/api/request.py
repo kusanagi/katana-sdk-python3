@@ -169,16 +169,18 @@ class Request(Api):
         if self.get_gateway_protocol() == urn.HTTP:
             http_response = {
                 'status_code': status_code or 200,
-                'status_text': status_text or '200 OK',
+                'status_text': status_text or 'OK',
                 }
 
         return Response(
-            self._component,
             Transport({}),
+            self._component,
             self.get_path(),
             self.get_name(),
             self.get_version(),
             self.get_platform_version(),
+            gateway_protocol=self.get_gateway_protocol(),
+            gateway_addresses=self.__gateway_addresses,
             http_response=http_response,
             )
 

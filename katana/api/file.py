@@ -277,7 +277,6 @@ class File(object):
             self.__path,
             size=self.__size,
             mime=kwargs.get('mime', self.__mime),
-            path=self.__path,
             )
 
     def copy_with_name(self, name):

@@ -56,7 +56,7 @@ def test_api_http_request_query():
     assert request.get_query_params_array() == query
 
 
-def test_api_http_request_POST():
+def test_api_http_request_post():
     method = 'POST'
     url = 'http://foo.com/bar/index/'
     request = HttpRequest(method, url)

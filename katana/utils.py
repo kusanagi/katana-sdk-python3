@@ -11,14 +11,12 @@ file that was distributed with this source code.
 """
 
 import asyncio
-import functools
 import json
 import os
 import re
 import signal
 import socket
 
-from collections import OrderedDict
 from datetime import datetime
 from binascii import crc32
 from uuid import uuid4

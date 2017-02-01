@@ -7,7 +7,7 @@ from katana.schema import get_schema_registry
 from katana.schema import SchemaRegistry
 
 
-def test_api(mocker):
+def test_api_base(mocker):
     SchemaRegistry()
 
     values = {
@@ -45,9 +45,10 @@ def test_api(mocker):
     api = base.Api(component, variables=variables, debug=True, **values)
     assert api.is_debug()
     assert api.get_variables() == variables
+    assert api.get_variable('foo') == variables['foo']
 
 
-def test_api_get_service_schema(mocker):
+def test_api_base_get_service_schema(mocker):
     mocker.patch('katana.schema.SchemaRegistry')
     mocker.patch('katana.schema.SchemaRegistry')
 
@@ -97,7 +98,7 @@ def test_api_get_service_schema(mocker):
         api.get_service_schema(svc_name, '*.*.*')
 
 
-def test_api_log(mocker, logs):
+def test_api_base_log(mocker, logs):
     SchemaRegistry()
 
     values = {

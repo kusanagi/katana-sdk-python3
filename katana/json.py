@@ -37,6 +37,7 @@ class Encoder(json.JSONEncoder):
         elif isinstance(obj, bytes):
             return obj.decode('utf8')
 
+        # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, obj)
 
 

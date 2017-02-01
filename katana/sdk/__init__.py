@@ -10,8 +10,9 @@ file that was distributed with this source code.
 
 """
 
-from .middleware import Middleware
-from .service import Service
+# These 2 classes are imported here to follow KATANA SDK specs
+from .middleware import Middleware  # noqa
+from .service import Service  # noqa
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"

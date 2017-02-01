@@ -28,6 +28,9 @@ def test_payload():
     payload.name = 'test'
     assert not payload.is_entity
     assert not path_exists(payload, 'test')
+    # When there is no entity name and undo is not called it must return self
+    payload.name = None
+    assert payload.entity() == payload
 
 
 def test_payload_mappings():

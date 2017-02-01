@@ -46,7 +46,7 @@ def test_payload_to_file():
         assert getter() == value
 
 
-def test_file(data_path):
+def test_file(data_path, mocker):
     # Empty name is invalid
     with pytest.raises(TypeError):
         File('  ', 'file:///tmp/foo.json')
@@ -55,14 +55,45 @@ def test_file(data_path):
     with pytest.raises(TypeError):
         File('foo', 'http://127.0.0.1:8080/ANBDKAD23142421')
 
+    # Patch HTTP connection object and make al request "200 OK"
+    response = mocker.MagicMock(status=200, reason='OK')
+    connection = mocker.MagicMock()
+    connection.getresponse.return_value = response
+    mocker.patch('http.client.HTTPConnection', return_value=connection)
+
     # ... with token should work
     try:
         file = File('foo', 'http://127.0.0.1:8080/ANBDKAD23142421', token='xx')
     except:
         pytest.fail('Creation of HTTP file with token failed')
     else:
-        # ... but file does not exist
-        assert not file.exists()
+        assert file.exists()
+
+    # Check HTTP file missing
+    response.status = 404
+    response.reason = 'Not found'
+    assert not file.exists()
+
+    # Check result when connection to remote HTTP file server fails
+    connection.request.side_effect = Exception
+    assert not file.exists()
+
+    # Check remote file read
+    request = mocker.MagicMock()
+    request.read.return_value = b'CONTENT'
+    reader = mocker.MagicMock()
+    reader.__enter__.return_value = request
+    reader.__exit__.return_value = False
+    mocker.patch('urllib.request.urlopen', return_value=reader)
+    assert file.read() == b'CONTENT'
+
+    # Check error during remote file read
+    request.read.side_effect = Exception
+    assert file.read() == b''
+
+    # A file with empty path should not exist
+    file = File('foo', '')
+    assert not file.exists()
 
     # Check creation of a local file
     local_file = os.path.join(data_path, 'foo.json')
@@ -78,6 +109,20 @@ def test_file(data_path):
     # Read file contents
     with open(local_file, 'rb') as test_file:
         assert file.read() == test_file.read()
+
+    # Read should return empty when file path is not a file
+    mocker.patch('os.path.isfile', return_value=False)
+    assert file.read() == b''
+
+    # Try to read a file that does not exist
+    mocker.patch('os.path.isfile', return_value=True)
+    file = File('foo', 'does-not-exist')
+    assert file.read() == b''
+
+    # Check file creation where size can't be getted
+    mocker.patch('os.path.getsize', side_effect=OSError)
+    file = File('foo', local_file)
+    assert file.get_size() == 0
 
 
 def test_file_copy(data_path):

@@ -114,6 +114,7 @@ def test_get_path():
 
     assert get_path(item, 'foo') == item['foo']
     assert get_path(item, 'foo/bar') == expected
+    assert get_path(item, 'foo/{}'.format(utils.nomap('bar'))) == expected
     assert get_path(item, 'foo|bar', delimiter='|') == expected
     # No default raises exception
     with pytest.raises(KeyError):
@@ -163,6 +164,12 @@ def test_set_path():
     assert utils.get_path(item, 'foo|bar', default=default) == default
     set_path(item, 'foo|bar', 1, delimiter='|')
     assert utils.get_path(item, 'foo|bar', default=default, delimiter='|') == 1
+
+    # Set a path where an item in path is not traversable
+    item = {}
+    set_path(item, 'foo/bar', 1)
+    with pytest.raises(TypeError):
+        set_path(item, 'foo/bar/more', 2)
 
 
 def test_set_path_with_mappings():

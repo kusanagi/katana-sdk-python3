@@ -1,4 +1,5 @@
 import io
+import json
 import logging
 import os
 
@@ -8,7 +9,7 @@ import pytest
 from katana.logging import setup_katana_logging
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='session')
 def data_path(request):
     """
     Fixture to add full path to test data directory.
@@ -16,6 +17,23 @@ def data_path(request):
     """
 
     return os.path.join(os.path.dirname(__file__), 'data')
+
+
+@pytest.fixture(scope='session')
+def read_json(data_path):
+    """
+    Fixture to add JSON loading support to tests.
+
+    """
+
+    def deserialize(name):
+        if not name[-4:] == 'json':
+            name += '.json'
+
+        with open(os.path.join(data_path, name), 'r') as file:
+            return json.load(file)
+
+    return deserialize
 
 
 @pytest.fixture(scope='function')

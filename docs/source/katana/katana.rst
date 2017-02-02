@@ -1,11 +1,6 @@
 katana package
 ==============
 
-.. automodule:: katana
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 
@@ -32,3 +27,10 @@ Submodules
    katana.utils
    katana.versions
 
+Module contents
+---------------
+
+.. automodule:: katana
+    :members:
+    :undoc-members:
+    :show-inheritance:

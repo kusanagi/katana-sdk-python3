@@ -1,11 +1,6 @@
 katana.sdk package
 ==================
 
-.. automodule:: katana.sdk
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Submodules
 ----------
 
@@ -16,3 +11,10 @@ Submodules
    katana.sdk.runner
    katana.sdk.service
 
+Module contents
+---------------
+
+.. automodule:: katana.sdk
+    :members:
+    :undoc-members:
+    :show-inheritance:

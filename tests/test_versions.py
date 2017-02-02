@@ -1,3 +1,7 @@
+import pytest
+
+from katana.versions import InvalidVersionPattern
+from katana.versions import VersionNotFound
 from katana.versions import VersionString
 
 GREATER = 1
@@ -125,3 +129,18 @@ def test_resolve_versions():
         # Compare pattern against all versions
         for version in versions:
             assert version_string.resolve(versions) == expected
+
+    # Check for a non maching pattern
+    with pytest.raises(VersionNotFound):
+        VersionString('*.*.*').resolve(['1.0', 'A.B.C.D'])
+
+
+def test_invalid_pattern():
+    """
+    Check invalid version pattern error.
+
+    """
+
+    with pytest.raises(InvalidVersionPattern):
+        # The @ is not a valid version character
+        VersionString('1.0.@')

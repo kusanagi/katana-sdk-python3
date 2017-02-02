@@ -222,6 +222,114 @@ class ActionSchema(object):
 
         return relations_from_payload(self.__payload.get('relations', None))
 
+    def has_call(self, name, version=None, action=None):
+        """Check if an internal call exists for a Service.
+
+        :param name: Service name.
+        :type name: str
+        :param version: Optional Service version.
+        :type version: str
+        :param action: Optional action name.
+        :type action: str
+
+        :rtype: bool
+
+        """
+
+        for call in self.get_calls():
+            if call[0] != name:
+                continue
+
+            if version and call[1] != version:
+                continue
+
+            if action and call[2] != action:
+                continue
+
+            # When all given arguments match the call return True
+            return True
+
+        # By default call does not exist
+        return False
+
+    def has_calls(self):
+        """Check if any internal call exists for the action.
+
+        :rtype: bool
+
+        """
+
+        return self.__payload.path_exists('calls')
+
+    def get_calls(self):
+        """Get Service calls.
+
+        Each call items is a list containing the Service name,
+        the Service version and the action name.
+
+        :rtype: list
+
+        """
+
+        return self.__payload.get('calls', [])
+
+    def has_remote_call(self, address, name=None, version=None, action=None):
+        """Check if a remote call exists for a Service.
+
+        :param address: Gateway address.
+        :type address: str
+        :param name: Optional Service name.
+        :type name: str
+        :param version: Optional Service version.
+        :type version: str
+        :param action: Optional action name.
+        :type action: str
+
+        :rtype: bool
+
+        """
+
+        for call in self.get_remote_calls():
+            if call[0] != address:
+                continue
+
+            if name and call[1] != name:
+                continue
+
+            if version and call[2] != version:
+                continue
+
+            if action and call[3] != action:
+                continue
+
+            # When all given arguments match the call return True
+            return True
+
+        # By default call does not exist
+        return False
+
+    def has_remote_calls(self):
+        """Check if any remote call exists for the action.
+
+        :rtype: bool
+
+        """
+
+        return self.__payload.path_exists('remote_calls')
+
+    def get_remote_calls(self):
+        """Get remote Service calls.
+
+        Each remote call items is a list containing the public address
+        of the Gateway, the Service name, the Service version and the
+        action name.
+
+        :rtype: list
+
+        """
+
+        return self.__payload.get('remote_calls', [])
+
     def get_params(self):
         """Get the parameters names defined for the action.
 

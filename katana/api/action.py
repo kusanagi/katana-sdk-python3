@@ -699,6 +699,8 @@ class Action(Api):
         :type params: list
         :param files: Optative list of File objects.
         :type files: list
+        :param timeout: Optative call timeout in milliseconds.
+        :type timeout: int
 
         :raises: NoFileServerError
 
@@ -729,6 +731,10 @@ class Action(Api):
             'version': version,
             'action': action,
             })
+
+        timeout = kwargs.get('timeout')
+        if timeout:
+            payload.set('timeout', timeout)
 
         # callback = kwargs.get('callback')
         # if callback:

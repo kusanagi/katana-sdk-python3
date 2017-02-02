@@ -122,9 +122,9 @@ FIELD_MAPPINGS = {
     'request': 'r',
     'required': 'r',
     'relations': 'r',
-    'remote_calls': 'r',
     'result': 'r',
     'rollback': 'r',
+    'remote_calls': 'rc',
     'response': 'R',
     'schema': 's',
     'schemes': 's',
@@ -195,7 +195,7 @@ def set_path(payload, path, value, mappings=None, delimiter=SEP):
         payload,
         path,
         value,
-        mappings or FIELD_MAPPINGS,
+        mappings=(mappings or FIELD_MAPPINGS),
         delimiter=delimiter,
         )
 
@@ -204,12 +204,12 @@ def delete_path(payload, path, mappings=None, delimiter=SEP):
     return utils.delete_path(
         payload,
         path,
-        mappings or FIELD_MAPPINGS,
+        mappings=(mappings or FIELD_MAPPINGS),
         delimiter=delimiter,
         )
 
 
-def path_exists(payload, path, default=EMPTY, mappings=None, delimiter=SEP):
+def path_exists(payload, path, mappings=None, delimiter=SEP):
     """Check if a path is available.
 
     :rtype: bool.
@@ -220,8 +220,7 @@ def path_exists(payload, path, default=EMPTY, mappings=None, delimiter=SEP):
         utils.get_path(
             payload,
             path,
-            default,
-            mappings or FIELD_MAPPINGS,
+            mappings=(mappings or FIELD_MAPPINGS),
             delimiter=delimiter,
             )
     except KeyError:
@@ -327,10 +326,10 @@ class MetaPayload(Payload):
     name = 'meta'
 
     @classmethod
-    def new(cls, version, request_id, protocol, gateway, client):
+    def new(cls, version, id, protocol, gateway, client):
         payload = cls()
         payload.set('version', version)
-        payload.set('id', request_id)
+        payload.set('id', id)  # Request ID
         payload.set('protocol', protocol)
         payload.set('gateway', gateway)
         payload.set('datetime', date_to_str(utcnow()))

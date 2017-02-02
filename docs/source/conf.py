@@ -14,7 +14,8 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-
+from datetime import datetime
+from katana import __version__
 
 # -- General configuration ------------------------------------------------
 
@@ -39,8 +40,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
+this_year = datetime.now().year
 project = 'KATANA SDK for Python 3'
-copyright = '2016-2017 KUSANAGI S.L. All rights reserved'
+copyright = '2016-{} KUSANAGI S.L. All rights reserved'.format(this_year)
 author = 'Jerónimo Albi'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -48,9 +50,9 @@ author = 'Jerónimo Albi'
 # built documents.
 #
 # The short X.Y version.
-version = '1.0.0'
+version = __version__.split('-', 1)[0]
 # The full version, including alpha/beta/rc tags.
-release = '1.0.0-beta.4'
+release = __version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -95,6 +97,7 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_title = 'Release v{}'.format(release)
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -122,5 +125,14 @@ def remove_module_docstring(app, what, name, obj, options, lines):
         del lines[:]
 
 
+def mod_signature(app, what, name, obj, options, signature, return_annotation):
+    if what != 'module':
+        return
+
+    if len(name) > 6:
+        return (name[6:], return_annotation)
+
+
 def setup(app):
     app.connect("autodoc-process-docstring", remove_module_docstring)
+    app.connect("autodoc-process-signature", mod_signature)

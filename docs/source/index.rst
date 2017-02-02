@@ -1,16 +1,20 @@
-KATANA SDK for Python 3 documentation
-=====================================
+KATANA SDK for Python 3
+=======================
+
+:Release: |release|
+:Date: |today|
+
+API Documentation
+=================
 
 .. toctree::
    :maxdepth: 1
+   :glob:
 
-   Modules <katana/modules>
-
-
+   api/katana.*
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

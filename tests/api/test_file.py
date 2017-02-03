@@ -8,7 +8,7 @@ from katana.api.file import payload_to_file
 from katana.payload import FIELD_MAPPINGS
 
 
-def test_file_to_payload():
+def test_api_file_to_payload():
     empty = object()
     values = {
         'path': 'http://127.0.0.1:8080/ANBDKAD23142421',
@@ -25,7 +25,7 @@ def test_file_to_payload():
         assert payload.get(name, default=empty) == value
 
 
-def test_payload_to_file():
+def test_api_payload_to_file():
     values = {
         'path': 'http://127.0.0.1:8080/ANBDKAD23142421',
         'mime': 'application/json',
@@ -46,7 +46,7 @@ def test_payload_to_file():
         assert getter() == value
 
 
-def test_file(data_path, mocker):
+def test_api_file(data_path, mocker):
     # Empty name is invalid
     with pytest.raises(TypeError):
         File('  ', 'file:///tmp/foo.json')
@@ -125,7 +125,7 @@ def test_file(data_path, mocker):
     assert file.get_size() == 0
 
 
-def test_file_copy(data_path):
+def test_api_file_copy(data_path):
     file = File('foo', os.path.join(data_path, 'foo.json'))
 
     # Check generic file copy

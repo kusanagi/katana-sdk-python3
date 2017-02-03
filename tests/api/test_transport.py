@@ -6,7 +6,7 @@ from katana.payload import delete_path
 from katana.payload import get_path
 
 
-def test_transport(read_json):
+def test_api_transport(read_json):
     transport = Transport(read_json('transport.json'))
     payload = transport._Transport__transport
 

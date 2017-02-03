@@ -1,0 +1,12 @@
+{
+  "m": "application/json,document/pdf",
+  "r": true,
+  "mx": 100444,
+  "ex": true,
+  "mn": 100,
+  "en": true,
+  "h": {
+    "g": false,
+    "p": "upload"
+  }
+}

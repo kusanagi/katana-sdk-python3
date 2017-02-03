@@ -108,6 +108,7 @@ FIELD_MAPPINGS = {
     'optional': 'o',
     'origin': 'o',
     'out': 'o',
+    'param': 'p',
     'params': 'p',
     'path': 'p',
     'pattern': 'p',

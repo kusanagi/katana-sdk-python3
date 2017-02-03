@@ -1,0 +1,26 @@
+{
+  "t": "array",
+  "f": "email",
+  "af": "ssv",
+  "p": "\\s{,2}aa",
+  "e": true,
+  "d": "1 2 3 4",
+  "r": true,
+  "i": {"type": "integer"},
+  "mx": 5,
+  "ex": true,
+  "mn": 2,
+  "en": true,
+  "xl": 10,
+  "nl": 12,
+  "xi": 42,
+  "ni": 2,
+  "ui": true,
+  "em": [1, 2, 3],
+  "mo": 2,
+  "h": {
+    "g": false,
+    "i": "path",
+    "p": "bar"
+  }
+}

@@ -7,6 +7,7 @@ import click.testing
 import pytest
 
 from katana.logging import setup_katana_logging
+from katana.schema import SchemaRegistry
 
 
 @pytest.fixture(scope='session')
@@ -34,6 +35,20 @@ def read_json(data_path):
             return json.load(file)
 
     return deserialize
+
+
+@pytest.fixture(scope='function')
+def registry(request):
+    """
+    Fixture to add schema registry support to tests.
+
+    """
+
+    def cleanup():
+        SchemaRegistry.instance = None
+
+    request.addfinalizer(cleanup)
+    return SchemaRegistry()
 
 
 @pytest.fixture(scope='function')

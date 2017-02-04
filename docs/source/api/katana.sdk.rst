@@ -1,20 +1,34 @@
-katana.sdk package
-==================
+katana.sdk
+==========
 
-Submodules
-----------
+katana.sdk.component
+--------------------
 
-.. toctree::
+.. automodule:: katana.sdk.component
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   katana.sdk.component
-   katana.sdk.middleware
-   katana.sdk.runner
-   katana.sdk.service
+katana.sdk.middleware
+---------------------
 
-Module contents
----------------
+.. automodule:: katana.sdk.middleware
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-.. automodule:: katana.sdk
+katana.sdk.runner
+-----------------
+
+.. automodule:: katana.sdk.runner
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.sdk.service
+------------------
+
+.. automodule:: katana.sdk.service
     :members:
     :undoc-members:
     :show-inheritance:

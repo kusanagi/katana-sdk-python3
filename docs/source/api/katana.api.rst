@@ -1,5 +1,5 @@
-katana.api package
-==================
+katana.api
+==========
 
 Subpackages
 -----------
@@ -9,23 +9,58 @@ Subpackages
     katana.api.http
     katana.api.schema
 
-Submodules
-----------
+katana.api.action
+-----------------
 
-.. toctree::
+.. automodule:: katana.api.action
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   katana.api.action
-   katana.api.base
-   katana.api.file
-   katana.api.param
-   katana.api.request
-   katana.api.response
-   katana.api.transport
-
-Module contents
+katana.api.base
 ---------------
 
-.. automodule:: katana.api
+.. automodule:: katana.api.base
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.api.file
+---------------
+
+.. automodule:: katana.api.file
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.api.param
+----------------
+
+.. automodule:: katana.api.param
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.api.request
+------------------
+
+.. automodule:: katana.api.request
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.api.response
+-------------------
+
+.. automodule:: katana.api.response
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.api.transport
+--------------------
+
+.. automodule:: katana.api.transport
     :members:
     :undoc-members:
     :show-inheritance:

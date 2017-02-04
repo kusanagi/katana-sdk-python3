@@ -1,18 +1,18 @@
-katana.api.http package
-=======================
+katana.api.http
+===============
 
-Submodules
-----------
+katana.api.http.request
+-----------------------
 
-.. toctree::
+.. automodule:: katana.api.http.request
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   katana.api.http.request
-   katana.api.http.response
+katana.api.http.response
+------------------------
 
-Module contents
----------------
-
-.. automodule:: katana.api.http
+.. automodule:: katana.api.http.response
     :members:
     :undoc-members:
     :show-inheritance:

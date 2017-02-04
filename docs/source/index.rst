@@ -1,3 +1,5 @@
+.. API documentation templates inside `source/api` were
+.. generated using: sphinx-apidoc -o source/api -T ../katana
 KATANA SDK for Python 3
 =======================
 
@@ -11,7 +13,7 @@ API Documentation
    :maxdepth: 1
    :glob:
 
-   api/katana.*
+   api/*
 
 Indices and tables
 ==================

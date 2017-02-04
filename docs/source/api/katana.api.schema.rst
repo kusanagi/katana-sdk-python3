@@ -1,21 +1,42 @@
-katana.api.schema package
-=========================
+katana.api.schema
+=================
 
-Submodules
-----------
+katana.api.schema.action
+------------------------
 
-.. toctree::
+.. automodule:: katana.api.schema.action
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   katana.api.schema.action
-   katana.api.schema.error
-   katana.api.schema.file
-   katana.api.schema.param
-   katana.api.schema.service
+katana.api.schema.error
+-----------------------
 
-Module contents
----------------
+.. automodule:: katana.api.schema.error
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-.. automodule:: katana.api.schema
+katana.api.schema.file
+----------------------
+
+.. automodule:: katana.api.schema.file
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.api.schema.param
+-----------------------
+
+.. automodule:: katana.api.schema.param
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.api.schema.service
+-------------------------
+
+.. automodule:: katana.api.schema.service
     :members:
     :undoc-members:
     :show-inheritance:

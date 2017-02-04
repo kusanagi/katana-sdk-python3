@@ -1,5 +1,5 @@
-katana package
-==============
+katana
+======
 
 Subpackages
 -----------
@@ -9,28 +9,98 @@ Subpackages
     katana.api
     katana.sdk
 
-Submodules
+katana.errors
+-------------
+
+.. automodule:: katana.errors
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.json
+-----------
+
+.. automodule:: katana.json
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.logging
+--------------
+
+.. automodule:: katana.logging
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.middleware
+-----------------
+
+.. automodule:: katana.middleware
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.payload
+--------------
+
+.. automodule:: katana.payload
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.schema
+-------------
+
+.. automodule:: katana.schema
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.serialization
+--------------------
+
+.. automodule:: katana.serialization
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.server
+-------------
+
+.. automodule:: katana.server
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.service
+--------------
+
+.. automodule:: katana.service
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.urn
 ----------
 
-.. toctree::
+.. automodule:: katana.urn
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   katana.errors
-   katana.json
-   katana.logging
-   katana.middleware
-   katana.payload
-   katana.schema
-   katana.serialization
-   katana.server
-   katana.service
-   katana.urn
-   katana.utils
-   katana.versions
+katana.utils
+------------
 
-Module contents
+.. automodule:: katana.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+katana.versions
 ---------------
 
-.. automodule:: katana
+.. automodule:: katana.versions
     :members:
     :undoc-members:
     :show-inheritance:

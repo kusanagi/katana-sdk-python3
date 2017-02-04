@@ -57,7 +57,7 @@ FIELD_MAPPINGS = {
     'default_value': 'd',
     'disk': 'd',
     'path_delimiter': 'd',
-    'deprecated': 'dp',
+    'deprecated': 'D',
     'allow_empty': 'e',
     'entity_path': 'e',
     'errors': 'e',

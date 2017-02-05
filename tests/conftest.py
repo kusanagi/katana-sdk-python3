@@ -1,3 +1,4 @@
+import asyncio
 import io
 import json
 import logging
@@ -90,3 +91,15 @@ def logs(request, mocker):
     mocker.patch('katana.logging.get_output_buffer', return_value=output)
     setup_katana_logging()
     return output
+
+
+@pytest.fixture(scope='function')
+def async_mock(mocker):
+    def mock(callback):
+        @asyncio.coroutine
+        def mocked_coroutine(*args, **kwargs):
+            return callback()
+
+        return mocker.Mock(wraps=mocked_coroutine)
+
+    return mock

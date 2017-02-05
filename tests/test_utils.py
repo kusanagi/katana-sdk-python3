@@ -1,3 +1,6 @@
+import asyncio
+import signal
+
 from datetime import datetime
 
 import pytest
@@ -273,6 +276,18 @@ def test_merge():
         'x': [0, 1],  # List contains elements from both items
         }
 
+    # Merge using mapped names
+    mappings = {'A': 'a', 'B': 'b', 'D': 'd', 'X': 'x'}
+    item2 = {'A': {'B': [3, 4], 'D': True}, 'X': [1]}
+    item1 = {'a': {'b': [1, 2]}, 'x': [0]}
+    assert merge(item2, item1, mappings=mappings, lists=True) == {
+        'a': {
+            'b': [1, 2, 3, 4],
+            'd': True,
+            },
+        'x': [0, 1],
+        }
+
 
 def test_merge_with_mappings():
     merge = utils.merge
@@ -389,6 +404,10 @@ def test_lookup_dict():
     with pytest.raises(TypeError):
         lookup.push('new/path', 2)
 
+    # Push a value to a path with a non traversable value
+    with pytest.raises(TypeError):
+        lookup.push('new/path/more', '')
+
 
 def test_lookup_dict_with_mappings():
     LookupDict = utils.LookupDict
@@ -492,10 +511,19 @@ def test_lookup_dict_merge():
         'x': [0, 1],  # List contains elements from both items
         }
 
+    # Merge can only merge dictionaries
+    with pytest.raises(TypeError):
+        lookup.merge('foo/bar', 1)
+
     # When item in path is not a dictionary don't merge
     lookup.set('foo/other', 1)
     with pytest.raises(TypeError):
         lookup.merge('foo/other', {})
+
+    # Merge values into a completely new path
+    lookup = LookupDict()
+    values = {'test': 'value'}
+    assert lookup.merge('new/path', values) == {'new': {'path': values}}
 
 
 def test_lookup_dict_merge_with_mappings():
@@ -571,6 +599,12 @@ def test_multi_dict():
         'single': [2],
         }
 
+    # Create a multi dict with list values
+    assert utils.MultiDict({'item': [1], 'single': [2]}) == {
+        'item': [1],
+        'single': [2],
+        }
+
 
 def test_singleton():
     # Define a test singleton class
@@ -585,6 +619,73 @@ def test_singleton():
     # Check that same and singleton are the same instance
     assert singleton.instance == same
     assert same.instance == singleton
+
+
+def test_run_context(mocker, async_mock):
+    class TestException(Exception):
+        pass
+
+    # Check cleanup callback
+    context = utils.RunContext(mocker.MagicMock())
+
+    # Callback must be a coroutine
+    with pytest.raises(TypeError):
+        context.register_callback(lambda: None)
+
+    callback = mocker.MagicMock()
+    context.register_callback(async_mock(callback))
+
+    # Create a task to stop context
+    @asyncio.coroutine
+    def task(context):
+        context.terminate()
+
+    loop = asyncio.get_event_loop()
+    assert not loop.is_running()
+    loop.create_task(task(context))
+    loop.run_until_complete(asyncio.wait([context.run()], timeout=1.0))
+
+    # Check that callback was called
+    callback.assert_called_once()
+
+    # Patch wait to just return
+    mocker.patch('asyncio.wait', async_mock(lambda: None))
+
+    # Create a run context with a fake event loop
+    fake_loop = mocker.MagicMock()
+    context = utils.RunContext(fake_loop)
+
+    # Add a task without exception
+    task = mocker.MagicMock()
+    task.exception.return_value = None
+    task.done.return_value = False
+    context.tasks.append(task)
+
+    # Add a task without exception that is finished
+    task = mocker.MagicMock()
+    task.exception.return_value = None
+    task.done.return_value = True
+    context.tasks.append(task)
+
+    # Add a fake task that contains an exception
+    task = mocker.MagicMock()
+    task.exception.return_value = TestException()
+    task.done.return_value = True
+    context.tasks.append(task)
+
+    # Run should raise the task exception
+    with pytest.raises(TestException):
+        loop.run_until_complete(context.run())
+
+    # Check that SIGTERM and SIGINT are attached
+    fake_loop.add_signal_handler.assert_any_call(
+        signal.SIGTERM,
+        context.terminate,
+        )
+    fake_loop.add_signal_handler.assert_any_call(
+        signal.SIGINT,
+        context.terminate,
+        )
 
 
 def test_dict_crc():

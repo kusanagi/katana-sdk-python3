@@ -1,0 +1,206 @@
+{
+  "m": {
+    "v": "1.0.0",
+    "i": "f1b27da9-240b-40e3-99dd-a567e4498ed7",
+    "d": "2016-04-12T02:49:05.761",
+    "g": ["12.34.56.78:1234", "http://127.0.0.1:80"],
+    "o": ["users", "1.0.0", "list"],
+    "l": 1,
+    "f": [["users", "1.0.0", ["create", "update"]]],
+    "p": {
+      "foo": "bar"
+    }
+  },
+  "b": {
+    "p": "file:///tmp/document.pdf",
+    "f": "document.pdf",
+    "s": 1234567890,
+    "m": "application/pdf"
+  },
+  "f": {
+    "http://127.0.0.1:80": {
+      "users": {
+        "1.0.0": {
+          "create": {
+            "avatar": {
+              "p": "http://12.34.56.78:1234/files/ac3bd4b8-7da3-4c40-8661-746adfa55e0d",
+              "t": "fb9an6c46be74s425010896fcbd99e2a",
+              "f": "smiley.jpg",
+              "s": 1234567890,
+              "m": "image/jpeg"
+            },
+            "document": {
+              "p": "file:///tmp/document.pdf",
+              "f": "document.pdf",
+              "s": 1234567890,
+              "m": "application/pdf"
+            }
+          }
+        }
+      }
+    }
+  },
+  "d": {
+    "http://127.0.0.1:80": {
+      "users": {
+        "1.0.0": {
+          "read_users": [
+            {"name": "Foo", "id": 1},
+            {"name": "Mandela", "id": 2}
+          ],
+          "list_users": [
+            [{"name": "Foo", "id": 1}, {"name": "Mandela", "id": 2}]
+          ]
+        }
+      }
+    }
+  },
+  "r": {
+    "http://127.0.0.1:80": {
+      "users": {
+        "123": {
+          "http://127.0.0.1:80": {
+            "posts": ["1", "2"]
+          }
+        }
+      },
+      "posts": {
+        "1": {
+          "http://127.0.0.1:80": {
+            "categories": "1"
+          },
+          "ktp://87.65.43.21:4321": {
+            "comments": ["1", "2", "3"]
+          }
+        },
+        "2": {
+          "http://127.0.0.1:80": {
+            "categories": "2"
+          },
+          "ktp://87.65.43.21:4321": {
+            "comments": ["4"]
+          }
+        }
+      }
+    }
+  },
+  "l": {
+    "http://127.0.0.1:80": {
+      "users": {
+        "self": "http://api.example.com/v1/users/123"
+      }
+    }
+  },
+  "C": {
+    "foo": {
+      "1.0.0": [
+        {
+          "n": "bar",
+          "v": "1.0.0",
+          "a": "list"
+        }
+      ]
+    },
+    "users": {
+      "1.0.0": [
+        {
+          "n": "posts",
+          "v": "1.2.0",
+          "a": "list",
+          "p": [
+            {
+              "n": "X-Request-Token",
+              "v": "ac3bd4b8-7da3-4c40-8661-746adfa55e0d",
+              "t": "string"
+            },
+            {
+              "n": "user_id",
+              "v": 123,
+              "t": "integer"
+            }
+          ]
+        },
+        {
+          "g": "ktp://87.65.43.21:4321",
+          "n": "comments",
+          "v": "1.1.0",
+          "a": "list",
+          "c": "update",
+          "p": [
+            {
+              "n": "post_id",
+              "v": 321,
+              "t": "integer"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "t": {
+    "c": [
+      {
+        "n": "users",
+        "v": "1.0.0",
+        "a": "create",
+        "c": "save",
+        "p": [
+          {
+            "n": "user_id",
+            "v": 123,
+            "t": "integer"
+          }
+        ]
+      }
+    ],
+    "r": [
+      {
+        "n": "users",
+        "v": "1.0.0",
+        "a": "create",
+        "c": "undo",
+        "p": [
+          {
+            "n": "user_id",
+            "v": 123,
+            "t": "integer"
+          }
+        ]
+      }
+    ],
+    "C": [
+      {
+        "n": "users",
+        "v": "1.0.0",
+        "a": "create",
+        "c": "cleanup",
+        "p": [
+          {
+            "n": "user_id",
+            "v": 123,
+            "t": "integer"
+          }
+        ]
+      },
+      {
+        "n": "foo",
+        "v": "1.0.0",
+        "a": "bar",
+        "c": "cleanup"
+      }
+    ]
+  },
+  "e": {
+    "http://127.0.0.1:80": {
+      "users": {
+        "1.0.0": [
+          {
+            "m": "The user does not exist",
+            "c": 9,
+            "s": "404 Not Found"
+          }
+        ]
+      }
+    }
+  }
+}

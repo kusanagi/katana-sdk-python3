@@ -1,4 +1,6 @@
+import asyncio
 import io
+import json
 import logging
 import os
 
@@ -6,9 +8,10 @@ import click.testing
 import pytest
 
 from katana.logging import setup_katana_logging
+from katana.schema import SchemaRegistry
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='session')
 def data_path(request):
     """
     Fixture to add full path to test data directory.
@@ -16,6 +19,37 @@ def data_path(request):
     """
 
     return os.path.join(os.path.dirname(__file__), 'data')
+
+
+@pytest.fixture(scope='session')
+def read_json(data_path):
+    """
+    Fixture to add JSON loading support to tests.
+
+    """
+
+    def deserialize(name):
+        if not name[-4:] == 'json':
+            name += '.json'
+
+        with open(os.path.join(data_path, name), 'r') as file:
+            return json.load(file)
+
+    return deserialize
+
+
+@pytest.fixture(scope='function')
+def registry(request):
+    """
+    Fixture to add schema registry support to tests.
+
+    """
+
+    def cleanup():
+        SchemaRegistry.instance = None
+
+    request.addfinalizer(cleanup)
+    return SchemaRegistry()
 
 
 @pytest.fixture(scope='function')
@@ -57,3 +91,15 @@ def logs(request, mocker):
     mocker.patch('katana.logging.get_output_buffer', return_value=output)
     setup_katana_logging()
     return output
+
+
+@pytest.fixture(scope='function')
+def async_mock(mocker):
+    def mock(callback):
+        @asyncio.coroutine
+        def mocked_coroutine(*args, **kwargs):
+            return callback()
+
+        return mocker.Mock(wraps=mocked_coroutine)
+
+    return mock

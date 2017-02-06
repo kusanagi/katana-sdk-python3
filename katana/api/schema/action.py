@@ -337,7 +337,7 @@ class ActionSchema(object):
 
         """
 
-        return self.__params.keys()
+        return list(self.__params.keys())
 
     def has_param(self, name):
         """Check that a parameter schema exists.
@@ -374,7 +374,7 @@ class ActionSchema(object):
 
         """
 
-        return self.__files.keys()
+        return list(self.__files.keys())
 
     def has_file(self, name):
         """Check that a file parameter schema exists.

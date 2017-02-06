@@ -11,7 +11,7 @@ from katana.api.param import TYPE_STRING
 from katana.payload import FIELD_MAPPINGS
 
 
-def test_param_to_payload():
+def test_api_param_to_payload():
     empty = object()
     values = {
         'value': 'bar',
@@ -26,7 +26,7 @@ def test_param_to_payload():
         assert payload.get(name, default=empty) == value
 
 
-def test_payload_to_param():
+def test_api_payload_to_param():
     values = {
         'name': 'foo',
         'value': 'bar',
@@ -44,7 +44,7 @@ def test_payload_to_param():
         assert getter() == value
 
 
-def test_param():
+def test_api_param():
     # Check empty param creation
     param = Param('foo')
     assert param.get_name() == 'foo'
@@ -64,7 +64,7 @@ def test_param():
     assert param.exists()
 
 
-def test_param_resolve_type():
+def test_api_param_resolve_type():
     class Foo(object):
         pass
 
@@ -86,7 +86,7 @@ def test_param_resolve_type():
         assert Param.resolve_type(value) == type_
 
 
-def test_param_copy():
+def test_api_param_copy():
     param = Param('foo', value=42)
 
     # Check generic param copy

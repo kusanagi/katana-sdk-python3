@@ -103,7 +103,8 @@ class Transport(object):
 
         """
 
-        return payload_to_file(self.__transport.get('body'))
+        if self.has_download():
+            return payload_to_file('download', self.__transport.get('body'))
 
     def get_data(self, address=None, service=None, version=None, action=None):
         """Get data from Transport.
@@ -120,7 +121,7 @@ class Transport(object):
         :type action: str
 
         :returns: The Transport data.
-        :rtype: object
+        :rtype: dict
 
         """
 
@@ -146,7 +147,7 @@ class Transport(object):
         :type service: str
 
         :returns: The relations from the Transport.
-        :rtype: object
+        :rtype: dict
 
         """
 
@@ -172,7 +173,7 @@ class Transport(object):
         :type service: str
 
         :returns: The links from the Transport.
-        :rtype: object
+        :rtype: dict
 
         """
 
@@ -181,7 +182,7 @@ class Transport(object):
             if not key:
                 break
 
-            links = links.get(service, {})
+            links = links.get(key, {})
 
         return links
 
@@ -198,7 +199,7 @@ class Transport(object):
         :type service: str
 
         :returns: The calls from the Transport.
-        :rtype: object
+        :rtype: dict
 
         """
 
@@ -206,7 +207,7 @@ class Transport(object):
             has_calls = False
             result = {}
             for name, versions in self.__transport.get('calls', {}).items():
-                # When a service name is give skip other services
+                # When a service name is given skip other services
                 if service and service != name:
                     continue
 
@@ -227,9 +228,8 @@ class Transport(object):
 
             return result if has_calls else {}
         elif service:
-            return {
-                service: self.__transport.get('calls/{}'.format(service), {}),
-                }
+            calls = self.__transport.get('calls/{}'.format(service), {})
+            return {service: calls} if calls else {}
         else:
             return self.__transport.get('calls', {})
 
@@ -246,13 +246,25 @@ class Transport(object):
         :type service: str
 
         :returns: The transactions from the Transport.
-        :rtype: object
+        :rtype: dict
 
         """
 
         transactions = self.__transport.get('transactions', {})
-        if service:
-            return transactions.get(service, {})
+        if service and transactions:
+            # Get filtered transactions in a new object
+            result = {}
+            for action, items in transactions.items():
+                # Filter transaction items by service name
+                result[action] = [
+                    item for item in items
+                    if get_path(item, 'name') == service
+                    ]
+                # Remove action from results if its empty
+                if not result[action]:
+                    del result[action]
+
+            return result
 
         return transactions
 
@@ -269,7 +281,7 @@ class Transport(object):
         :type service: str
 
         :returns: The errors from the Transport.
-        :rtype: object
+        :rtype: dict
 
         """
 
@@ -278,6 +290,6 @@ class Transport(object):
             if not key:
                 break
 
-            errors = errors.get(service, {})
+            errors = errors.get(key, {})
 
         return errors

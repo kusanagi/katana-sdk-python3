@@ -60,7 +60,7 @@ class ServiceSchema(object):
 
         """
 
-        return self.__actions.keys()
+        return list(self.__actions.keys())
 
     def has_action(self, name):
         """Check if an action exists for current Service schema.

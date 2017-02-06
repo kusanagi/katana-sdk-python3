@@ -245,15 +245,7 @@ class ParamSchema(object):
 
         """
 
-        if not self.__payload.path_exists('enum'):
-            return ''
-
-        try:
-            # Items must be a valid JSON string
-            return json.loads(self.__payload.get('enum'))
-        except:
-            LOG.exception('Value for "enum" is not valid JSON')
-            return ''
+        return self.__payload.get('enum', [])
 
     def get_multiple_of(self):
         """Get value that parameter must be divisible by.

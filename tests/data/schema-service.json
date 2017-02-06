@@ -1,0 +1,121 @@
+{
+  "h": {
+    "b": "/0.1.0",
+    "g": false
+  },
+  "f": true,
+  "a": "127.0.0.1:5003",
+  "ac": {
+    "defaults": {},
+    "foo": {
+      "x": 2000,
+      "e": "foo:bar",
+      "d": ":",
+      "k": "pk",
+      "c": true,
+      "C": [["foo", "1.0", "dummy"], ["bar", "1.1", "dummy"]],
+      "rc": [["ktp://87.65.43.21:4321", "foo", "1.0", "dummy"]],
+      "F": null,
+      "D": true,
+      "h": {
+        "g": false,
+        "p": "/1.0/foo/{bar}",
+        "m": "put",
+        "i": "form-data",
+        "b": ["application/json"]
+      },
+      "p": {
+        "value": {
+          "t": "array",
+          "f": "email",
+          "af": "ssv",
+          "p": "\\s{,2}aa",
+          "e": true,
+          "d": "1 2 3 4",
+          "r": true,
+          "i": {"type": "integer"},
+          "mx": 5,
+          "ex": true,
+          "mn": 2,
+          "en": true,
+          "xl": 10,
+          "nl": 12,
+          "xi": 42,
+          "ni": 2,
+          "ui": true,
+          "em": [1, 2, 3],
+          "mo": 2,
+          "h": {
+            "g": false,
+            "i": "path",
+            "p": "bar"
+          }
+        }
+      },
+      "f": {
+        "upload": {
+          "m": "application/json,document/pdf",
+          "r": true,
+          "mx": 100444,
+          "ex": true,
+          "mn": 100,
+          "en": true,
+          "h": {
+            "g": false,
+            "p": "upload"
+          }
+        }
+      },
+      "E": {
+        "F": [
+          {
+            "n": "contact",
+            "f": [
+              {
+                "n": "id",
+                "t": "integer"
+              },
+              {
+                "n": "email"
+              },
+              {
+                "n": "location",
+                "t": "object"
+              }
+            ],
+            "o": false
+          }
+        ],
+        "f": [
+          {
+            "n": "id",
+            "t": "integer"
+          },
+          {
+            "n": "name",
+            "t": "string"
+          },
+          {
+            "n": "active",
+            "t": "boolean"
+          },
+          {
+            "n": "is_admin",
+            "t": "boolean",
+            "o": true
+          }
+        ],
+        "V": true
+      },
+      "r": [
+        {
+          "n": "accounts"
+        },
+        {
+          "t": "many",
+          "n": "posts"
+        }
+      ]
+    }
+  }
+}

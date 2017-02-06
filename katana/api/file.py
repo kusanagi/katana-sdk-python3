@@ -9,12 +9,12 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+import http.client
 import logging
 import mimetypes
 import os
 import urllib.request
 
-from http.client import HTTPConnection
 from urllib.parse import urlparse
 
 from ..payload import get_path
@@ -193,7 +193,7 @@ class File(object):
             # Make a HEAD request to check that file exists
             part = urlparse(self.__path)
             try:
-                conn = HTTPConnection(part.netloc, timeout=2)
+                conn = http.client.HTTPConnection(part.netloc, timeout=2)
                 conn.request('HEAD', part.path, headers=headers)
                 response = conn.getresponse()
                 exists = response.status == 200

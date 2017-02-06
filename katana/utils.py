@@ -312,15 +312,15 @@ def merge(from_value, to_value, mappings=None, lists=False):
             # When mapped name exists use it
             name = mappings.get(key, key)
         else:
-            # use dictionary key as name
+            # Use dictionary key as name
             name = key
 
         # When field is not available in destination
         # dict add the value from the original dict.
         if name not in to_value:
             # Use mapped name, when available, to save value
-            if name == key and mappings:
-                name = mappings.get(name, name)
+            # if name == key and mappings:
+            #     name = mappings.get(name, name)
 
             # Add new value to destination and continue with next value
             to_value[name] = value
@@ -715,17 +715,17 @@ class RunContext(object):
 
     @asyncio.coroutine
     def cleanup(self):
-        if self.__cleaned:
+        if self.__cleaned:  # pragma: no cover
             return
 
         # Execute all registered callbacks
         if self.__callbacks:
             yield from asyncio.wait(self.__callbacks, timeout=1.5)
 
+        self.__cleaned = True
+
         # Finish all pending tasks
         yield from self.finish_pending_tasks()
-
-        self.__cleaned = True
 
     @asyncio.coroutine
     def finish_pending_tasks(self):
@@ -736,7 +736,7 @@ class RunContext(object):
 
         """
 
-        if not self.tasks:
+        if not self.tasks:  # pragma: no cover
             return
 
         exc = None
@@ -745,9 +745,9 @@ class RunContext(object):
                 # When an exception is found save it
                 if task.exception() and not exc:
                     exc = task.exception()
-
-                # This task is finished, continue with next one
-                continue
+                else:
+                    # This task is finished, continue with next one
+                    continue  # pragma: no cover
 
             task.cancel()
 
@@ -787,7 +787,7 @@ class RunContext(object):
         yield from self.cleanup()
 
 
-def install_uvevent_loop():
+def install_uvevent_loop():  # pragma: no cover
     """Install uvloop as default event loop when available.
 
     See: http://magic.io/blog/uvloop-blazing-fast-python-networking/

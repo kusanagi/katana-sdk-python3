@@ -239,9 +239,9 @@ class ComponentRunner(object):
                 help='Component name',
                 ),
             click.option(
-                '-p', '--platform-version',
+                '-p', '--framework-version',
                 required=True,
-                help='KATANA platform version',
+                help='KATANA framework version',
                 ),
             click.option(
                 '-q', '--quiet',

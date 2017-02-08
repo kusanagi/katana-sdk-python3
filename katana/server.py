@@ -105,8 +105,8 @@ class ComponentServer(object):
         return self.__args['version']
 
     @property
-    def platform_version(self):
-        return self.__args['platform_version']
+    def framework_version(self):
+        return self.__args['framework_version']
 
     @property
     def debug(self):

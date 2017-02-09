@@ -14,7 +14,7 @@ def test_api_base(mocker):
         'path': '/path/to/file.py',
         'name': 'dummy',
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         }
 
     component = mocker.MagicMock()
@@ -25,7 +25,7 @@ def test_api_base(mocker):
     assert api.get_variables() == {}
 
     # Check values
-    assert api.get_platform_version() == values['platform_version']
+    assert api.get_framework_version() == values['framework_version']
     assert api.get_path() == values['path']
     assert api.get_name() == values['name']
     assert api.get_version() == values['version']
@@ -60,7 +60,7 @@ def test_api_base_get_service_schema(mocker):
         'path': '/path/to/file.py',
         'name': 'dummy',
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     svc_name = 'foo'
@@ -106,7 +106,7 @@ def test_api_base_log(mocker, logs):
         'path': '/path/to/file.py',
         'name': 'dummy',
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         }
 
     log_message = 'Test log message'

@@ -178,7 +178,7 @@ class Request(Api):
             self.get_path(),
             self.get_name(),
             self.get_version(),
-            self.get_platform_version(),
+            self.get_framework_version(),
             gateway_protocol=self.get_gateway_protocol(),
             gateway_addresses=self.__gateway_addresses,
             http_response=http_response,

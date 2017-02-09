@@ -76,7 +76,7 @@ class MiddlewareServer(ComponentServer):
             self.source_file,
             self.component_name,
             self.component_version,
-            self.platform_version,
+            self.framework_version,
             debug=self.debug,
             # TODO: Use meta and call as arguments instead these many kwargs
             service_name=payload.get('call/service'),
@@ -96,7 +96,7 @@ class MiddlewareServer(ComponentServer):
             self.source_file,
             self.component_name,
             self.component_version,
-            self.platform_version,
+            self.framework_version,
             debug=self.debug,
             # TODO: Use meta and argument
             gateway_protocol=payload.get('meta/protocol'),

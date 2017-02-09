@@ -113,7 +113,7 @@ class ServiceServer(ComponentServer):
             self.source_file,
             self.component_name,
             self.component_version,
-            self.platform_version,
+            self.framework_version,
             variables=self.variables,
             debug=self.debug,
             )

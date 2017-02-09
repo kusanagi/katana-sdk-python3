@@ -94,7 +94,7 @@ class ActionSchemaError(ServiceSchemaError):
 
 
 class ActionSchema(object):
-    """Action schema in the platform."""
+    """Action schema in the framework."""
 
     def __init__(self, name, payload):
         self.__name = name
@@ -415,7 +415,7 @@ class ActionSchema(object):
 
 
 class HttpActionSchema(object):
-    """HTTP semantics of an action schema in the platform."""
+    """HTTP semantics of an action schema in the framework."""
 
     def __init__(self, payload):
         self.__payload = Payload(payload)

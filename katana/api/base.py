@@ -28,11 +28,11 @@ class ApiError(KatanaError):
 class Api(object):
     """Base API class for SDK components."""
 
-    def __init__(self, component, path, name, version, platform_version, **kw):
+    def __init__(self, component, path, name, version, framework_version, **kw):
         self.__path = path
         self.__name = name
         self.__version = version
-        self.__platform_version = platform_version
+        self.__framework_version = framework_version
         self.__variables = kw.get('variables') or {}
         self.__debug = kw.get('debug', False)
         self._schema = get_schema_registry()
@@ -53,14 +53,14 @@ class Api(object):
 
         return self.__debug
 
-    def get_platform_version(self):
-        """Get KATANA platform version.
+    def get_framework_version(self):
+        """Get KATANA framework version.
 
         :rtype: str
 
         """
 
-        return self.__platform_version
+        return self.__framework_version
 
     def get_path(self):
         """Get source file path.

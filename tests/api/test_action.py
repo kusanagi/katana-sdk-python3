@@ -56,7 +56,7 @@ def test_api_action(read_json, registry):
         'path': '/path/to/file.py',
         'name': 'dummy',
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     assert action.get_action_name() == 'test'
@@ -91,7 +91,7 @@ def test_api_action_params(read_json, registry):
         'path': '/path/to/file.py',
         'name': 'dummy',
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Check action parameters
@@ -159,7 +159,7 @@ def test_api_action_files(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': service_version,
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     assert action.has_file('avatar')
@@ -211,7 +211,7 @@ def test_api_action_download(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': service_version,
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Download accepts only a File instance
@@ -260,7 +260,7 @@ def test_api_action_data(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': service_version,
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Clear transport data
@@ -327,7 +327,7 @@ def test_api_action_relate(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Clear transport relations
@@ -400,7 +400,7 @@ def test_api_action_links(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Clear transport links
@@ -430,7 +430,7 @@ def test_api_action_transactions(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': service_version,
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Clear transport transactions
@@ -483,7 +483,7 @@ def test_api_action_call(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': service_version,
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Clear transport calls
@@ -561,7 +561,7 @@ def test_api_action_call_remote(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': service_version,
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Clear transport calls
@@ -655,7 +655,7 @@ def test_api_action_errors(read_json, registry):
         'path': '/path/to/file.py',
         'name': service_name,
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         })
 
     # Clear transport errors

@@ -15,7 +15,7 @@ def test_api_response():
         'path': '/path/to/file.py',
         'name': 'dummy',
         'version': '1.0',
-        'platform_version': '1.0.0',
+        'framework_version': '1.0.0',
         'gateway_protocol': urn.HTTP,
         'gateway_addresses': ['12.34.56.78:1234', 'http://127.0.0.1:80'],
         }

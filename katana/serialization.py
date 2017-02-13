@@ -44,12 +44,16 @@ def decode(data):
 
     if isinstance(data, dict) and '__type__' in data:
         data_type = data['__type__']
-        if data_type == 'decimal':
-            return decimal.Decimal(data['value'])
-        elif data_type == 'datetime':
-            return utils.str_to_date(data['value'])
-        elif data_type == 'date':
-            return datetime.datetime.strptime(data['value'], '%Y-%m-%d')
+        try:
+            if data_type == 'decimal':
+                return decimal.Decimal(data['value'])
+            elif data_type == 'datetime':
+                return utils.str_to_date(data['value'])
+            elif data_type == 'date':
+                return datetime.datetime.strptime(data['value'], '%Y-%m-%d')
+        except:
+            # Don't fail when there are inconsistent data values
+            return
 
     return data
 

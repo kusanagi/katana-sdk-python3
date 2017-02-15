@@ -31,7 +31,7 @@ def encode(obj):
     elif isinstance(obj, datetime.datetime):
         return ['type', 'datetime', utils.date_to_str(obj)]
     elif isinstance(obj, datetime.date):
-        return ['type', 'datetime', obj.strftime('%Y-%m-%d')]
+        return ['type', 'date', obj.strftime('%Y-%m-%d')]
     elif isinstance(obj, time.struct_time):
         return ['type', 'time', time.strftime('%H:%M', obj)]
     elif hasattr(obj, '__serialize__'):
@@ -43,10 +43,14 @@ def encode(obj):
 def decode(data):
     """Handle unpacking for custom types."""
 
-    if isinstance(data, list) and len(data) == 3 and data[0] == 'type':
+    # Custom types are serialized as list, where first item is
+    # "type", the second is the type name and the third is the
+    # value represented as a basic type.
+    if len(data) == 3 and data[0] == 'type':
         data_type = data[1]
         try:
             if data_type == 'decimal':
+                # Decimal is represented as a tuple of strings
                 return decimal.Decimal('.'.join(data[2]))
             elif data_type == 'datetime':
                 return utils.str_to_date(data[2])
@@ -89,7 +93,7 @@ def unpack(stream):
 
     """
 
-    return msgpack.unpackb(stream, object_hook=decode, encoding='utf-8')
+    return msgpack.unpackb(stream, list_hook=decode, encoding='utf-8')
 
 
 def stream_to_payload(stream):

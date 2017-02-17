@@ -15,12 +15,12 @@ def test_encode():
     # Create a class that supports serialization
     class Serializable(object):
         def __serialize__(self):
-            return {'__type__': 'object', 'value': 'OK'}
+            return ['type', 'object', 'OK']
 
     cases = (
         (decimal.Decimal('123.321'),
          'decimal',
-         '123.321'),
+         ['123', '321']),
         (datetime.date(2017, 1, 27),
          'date',
          '2017-01-27'),
@@ -34,7 +34,7 @@ def test_encode():
 
     # Check custom types encoding
     for value, type_, expected in cases:
-        assert encode(value) == {'__type__': type_, 'value': expected}
+        assert encode(value) == ['type', type_, expected]
 
     # A string is not a custom type
     with pytest.raises(TypeError):
@@ -43,7 +43,7 @@ def test_encode():
 
 def test_decode():
     cases = (
-        ('123.321',
+        (['123', '321'],
          'decimal',
          decimal.Decimal('123.321')),
         ('2017-01-27',
@@ -56,7 +56,7 @@ def test_decode():
 
     # Check custom types decoding
     for value, type_, expected in cases:
-        assert decode({'__type__': type_, 'value': value}) == expected
+        assert decode(['type', type_, value]) == expected
 
     # Values other than dictionaries are not decoded
     assert decode('NON_DICT') == 'NON_DICT'

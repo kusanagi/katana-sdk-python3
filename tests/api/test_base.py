@@ -48,8 +48,28 @@ def test_api_base(mocker):
     assert api.get_variable('foo') == variables['foo']
 
 
+def test_api_base_get_services(registry):
+    api = base.Api(**{
+        'component': None,
+        'path': '/path/to/file.py',
+        'name': 'dummy',
+        'version': '1.0',
+        'framework_version': '1.0.0',
+        })
+
+    # Get services is empty when there are no service mappings
+    assert api.get_services() == []
+
+    # Add data to registry
+    svc_name = 'foo'
+    svc_version = '1.0.0'
+    registry.update_registry({svc_name: {svc_version: {}}})
+
+    # Get services must return service name and version
+    assert api.get_services() == [{'name': svc_name, 'version': svc_version}]
+
+
 def test_api_base_get_service_schema(mocker):
-    mocker.patch('katana.schema.SchemaRegistry')
     mocker.patch('katana.schema.SchemaRegistry')
 
     # Get the mocked SchemaRegistry
@@ -77,12 +97,15 @@ def test_api_base_get_service_schema(mocker):
     registry.get.assert_called(path, None)
 
     # Check getting a service schema
-    call = mocker.patch('katana.api.schema.service.ServiceSchema.__call__')
+    init = mocker.patch(
+        'katana.api.schema.service.ServiceSchema.__init__',
+        return_value=None,
+        )
     registry.get = mocker.MagicMock(return_value=payload)
     svc_schema = api.get_service_schema(svc_name, svc_version)
     assert isinstance(svc_schema, ServiceSchema)
     registry.get.assert_called(path, None)
-    call.assert_called(svc_name, svc_version, payload)
+    init.assert_called(svc_name, svc_version, payload)
 
     # Check getting a service schema using a wildcard version
     expected_version = '1.0.0'
@@ -90,7 +113,7 @@ def test_api_base_get_service_schema(mocker):
     resolve.return_value = expected_version
     svc_schema = api.get_service_schema(svc_name, '*.*.*')
     assert isinstance(svc_schema, ServiceSchema)
-    call.assert_called(svc_name, expected_version, payload)
+    init.assert_called(svc_name, expected_version, payload)
 
     # Check unresolved wildcard versions (resolve should raise KatanaError)
     resolve.side_effect = KatanaError

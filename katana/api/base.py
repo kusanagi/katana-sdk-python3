@@ -139,6 +139,20 @@ class Api(object):
 
         return self._component.get_resource(name)
 
+    def get_services(self):
+        """Get service names and versions.
+
+        :rtype: list
+
+        """
+
+        services = []
+        for name in self._schema.get_service_names():
+            for version in self._schema.get(name).keys():
+                services.append({'name': name, 'version': version})
+
+        return services
+
     def get_service_schema(self, name, version):
         """Get service schema.
 

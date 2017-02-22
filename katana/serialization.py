@@ -12,6 +12,7 @@ file that was distributed with this source code.
 
 import datetime
 import decimal
+import time
 
 import msgpack
 
@@ -26,13 +27,13 @@ def encode(obj):
     """Handle packing for custom types."""
 
     if isinstance(obj, decimal.Decimal):
-        # Note: Use str instead of float
-        # to avoid dealing with presition
-        return {'__type__': 'decimal', 'value': str(obj)}
+        return ['type', 'decimal', str(obj).split('.')]
     elif isinstance(obj, datetime.datetime):
-        return {'__type__': 'datetime', 'value': utils.date_to_str(obj)}
+        return ['type', 'datetime', utils.date_to_str(obj)]
     elif isinstance(obj, datetime.date):
-        return {'__type__': 'date', 'value': obj.strftime('%Y-%m-%d')}
+        return ['type', 'date', obj.strftime('%Y-%m-%d')]
+    elif isinstance(obj, time.struct_time):
+        return ['type', 'time', time.strftime('%H:%M', obj)]
     elif hasattr(obj, '__serialize__'):
         return obj.__serialize__()
 
@@ -42,17 +43,25 @@ def encode(obj):
 def decode(data):
     """Handle unpacking for custom types."""
 
-    if isinstance(data, dict) and '__type__' in data:
-        data_type = data['__type__']
+    # Custom types are serialized as list, where first item is
+    # "type", the second is the type name and the third is the
+    # value represented as a basic type.
+    if len(data) == 3 and data[0] == 'type':
+        data_type = data[1]
         try:
             if data_type == 'decimal':
-                return decimal.Decimal(data['value'])
+                # Decimal is represented as a tuple of strings
+                return decimal.Decimal('.'.join(data[2]))
             elif data_type == 'datetime':
-                return utils.str_to_date(data['value'])
+                return utils.str_to_date(data[2])
             elif data_type == 'date':
-                return datetime.datetime.strptime(data['value'], '%Y-%m-%d')
+                return datetime.datetime.strptime(data[2], '%Y-%m-%d')
+            elif data_type == 'time':
+                # Use time as a string "HH:MM"
+                return data[2]
         except:
-            # Don't fail when there are inconsistent data values
+            # Don't fail when there are inconsistent data values.
+            # Invalid values will be null.
             return
 
     return data
@@ -84,7 +93,7 @@ def unpack(stream):
 
     """
 
-    return msgpack.unpackb(stream, object_hook=decode, encoding='utf-8')
+    return msgpack.unpackb(stream, list_hook=decode, encoding='utf-8')
 
 
 def stream_to_payload(stream):

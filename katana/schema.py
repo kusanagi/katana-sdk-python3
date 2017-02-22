@@ -84,6 +84,15 @@ class SchemaRegistry(object, metaclass=Singleton):
 
         return self.__mappings.get(path, *args, **kwargs)
 
+    def get_service_names(self):
+        """Get the list of service names in schema.
+
+        :rtype: list
+
+        """
+
+        return list(self.__mappings.keys())
+
 
 def get_schema_registry():
     """Get global schema registry.

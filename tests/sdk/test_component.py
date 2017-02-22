@@ -6,6 +6,7 @@ from katana.sdk.component import ComponentError
 
 
 def test_component():
+    Component.instance = None
     component = Component()
     assert not component.has_resource('dummy')
 
@@ -30,6 +31,7 @@ def test_component():
 
 
 def test_component_run(mocker):
+    Component.instance = None
     component = Component()
     # Runner is defined by sub clases, when is not define component must fail
     with pytest.raises(Exception):
@@ -43,14 +45,14 @@ def test_component_run(mocker):
     component._callbacks = callbacks
     component.run()
     # Check that runner was run, and callbacks were assigned
-    assert runner.run.assert_caled()
+    runner.run.assert_called()
     runner.set_callbacks.assert_called_once_with(callbacks)
     # A schema registry singleton must be created on run
     assert get_schema_registry() is not None
     # When there are no special callbacks no set_*_callback should be called
-    runner.set_startup_callback.assert_not_caled()
-    runner.set_shutdown_callback.assert_not_caled()
-    runner.set_error_callback.assert_not_caled()
+    runner.set_startup_callback.assert_not_called()
+    runner.set_shutdown_callback.assert_not_called()
+    runner.set_error_callback.assert_not_called()
 
     # Set callbacks for component and check that they are setted in the runner
     def startup_callback():
@@ -74,6 +76,7 @@ def test_component_run(mocker):
 
 
 def test_component_log(logs):
+    Component.instance = None
     expected = 'Test log message'
     Component().log(expected)
     out = logs.getvalue()

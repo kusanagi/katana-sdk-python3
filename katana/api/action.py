@@ -9,6 +9,8 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+from decimal import Decimal
+
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import Payload
@@ -20,9 +22,30 @@ from .file import File
 from .file import file_to_payload
 from .file import payload_to_file
 from .param import Param
+from ..errors import KatanaError
+from ..versions import VersionString
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
+# Default return values by type name
+DEFAULT_RETURN_VALUES = {
+    'boolean': False,
+    'integer': 0,
+    'float': 0.0,
+    'string': '',
+    'array': [],
+    'object': {},
+    }
+
+RETURN_TYPES = {
+    'boolean': (bool, ),
+    'integer': (int, ),
+    'float': (float, Decimal),
+    'string': (str, ),
+    'array': (list, ),
+    'object': (dict, ),
+    }
 
 
 class NoFileServerError(ApiError):
@@ -34,6 +57,99 @@ class NoFileServerError(ApiError):
         self.service = service
         self.version = version
         super().__init__(self.message.format(service=service, version=version))
+
+
+class ServiceNotFound(ApiError):
+    """Error raised when a Service is not found for a run-time call."""
+
+    message = 'Service not found: "{service}" ({version})'
+
+    def __init__(self, service, version):
+        self.service = service
+        self.version = version
+        super().__init__(self.message.format(service=service, version=version))
+
+
+class ActionError(ApiError):
+    """Base error class for API Action errors."""
+
+    def __init__(self, service, version, action, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.service = service
+        self.version = version
+        self.action = action
+        self.service_string = '"{}" ({})'.format(service, version)
+
+
+class UndefinedReturnValueError(ActionError):
+    """Error raised when no return value is defined for an action."""
+
+    message = 'Cannot set a return value in {service} for action: "{action}"'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = self.message.format(
+            service=self.service_string,
+            action=self.action,
+            )
+
+
+class ReturnTypeError(ActionError):
+    """Error raised when return value type is invalid for an action."""
+
+    message = 'Invalid return type given in {service} for action: "{action}"'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = self.message.format(
+            service=self.service_string,
+            action=self.action,
+            )
+
+
+class CallNotConfigured(ActionError):
+    """Error raised when a call is not defined for an action."""
+
+    message = (
+        'Call not configured, connection to action '
+        'on {service} aborted: "{action}"'
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = self.message.format(
+            service=self.service_string,
+            action=self.action,
+            )
+
+
+class ReturnNotConfigured(ActionError):
+    """Error raised when a return value is not defined for an action."""
+
+    message = 'Cannot return value from {service} for action: "{action}"'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = self.message.format(
+            service=self.service_string,
+            action=self.action,
+            )
+
+
+class LocalFileError(ActionError):
+    """Error raised when a local file is used for a run-time call."""
+
+    message = (
+        'Cannot reference local file, connection to action on {service} '
+        'aborted: "{action}"'
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = self.message.format(
+            service=self.service_string,
+            action=self.action,
+            )
 
 
 def parse_params(params):
@@ -82,33 +198,53 @@ class Action(Api):
             for param in params
             }
 
+        service = self.get_name()
+        version = self.get_version()
+        action_name = self.get_action_name()
+
         # Get files for current service, version and action
         path = 'files|{}|{}|{}|{}'.format(
             self.__public_address,
-            nomap(self.get_name()),
-            self.get_version(),
-            nomap(self.get_action_name()),
+            nomap(service),
+            version,
+            nomap(action_name),
             )
         self.__files = transport.get(path, default={}, delimiter='|')
 
-    def __files_to_payload(self, files):
-        current_service = self.get_name()
-        current_version = self.get_version()
+        # Get schema for current action
         try:
-            schema = self.get_service_schema(current_service, current_version)
+            self.__schema = self.get_service_schema(service, version)
+            self.__action_schema = self.__schema.get_action_schema(action_name)
         except ApiError:
             # When schema for current service can't be resolved it means action
             # is run from CLI and because of that there are no mappings to
-            # resolve schemas. In this case is valid to set has_file_server to
-            # true.
-            has_file_server = True
+            # resolve schemas.
+            self.__schema = None
+            self.__action_schema = None
+
+        # Init return value with a default when action supports it
+        self.__return_value = kwargs.get('return_value', Payload())
+        if not self.__action_schema:
+            self.__return_value.set('return', None)
+        elif self.__action_schema.has_return():
+            # When return value is supported set a default value by type
+            rtype = self.__action_schema.get_return_type()
+            self.__return_value.set('return', DEFAULT_RETURN_VALUES.get(rtype))
+
+    def __files_to_payload(self, files):
+        if self.__schema:
+            has_file_server = self.__schema.has_file_server()
         else:
-            has_file_server = schema.has_file_server()
+            # When schema for current service can't be resolved it means action
+            # is run from CLI and because of that there are no mappings to
+            # resolve schemas. For this case is valid to set has_file_server
+            # to true.
+            has_file_server = True
 
         files_payload = {}
         for file in files:
             if file.is_local() and not has_file_server:
-                raise NoFileServerError(current_service, current_version)
+                raise NoFileServerError(self.get_name(), self.get_version())
 
             files_payload[file.get_name()] = file_to_payload(file)
 
@@ -330,6 +466,37 @@ class Action(Api):
                 raise NoFileServerError(service, version)
 
         self.__transport.set('body', file_to_payload(file))
+        return self
+
+    def set_return(self, value):
+        """Sets the value to be returned as "return value".
+
+        Supported value types: bool, int, float, str, list, dict and None.
+
+        :param value: A supported return value.
+        :type value: object
+
+        :raises: UndefinedReturnValueError
+        :raises: ReturnTypeError
+
+        :rtype: Action
+
+        """
+
+        service = self.get_name()
+        version = self.get_version()
+        action = self.get_action_name()
+
+        if not self.__action_schema.has_return():
+            raise UndefinedReturnValueError(service, version, action)
+
+        # Check that value type matches return type
+        if value is not None:
+            rtype = self.__action_schema.get_return_type()
+            if not isinstance(value, RETURN_TYPES[rtype]):
+                raise ReturnTypeError(service, version, action)
+
+        self.__return_value.set('return', value)
         return self
 
     def set_entity(self, entity):
@@ -637,7 +804,73 @@ class Action(Api):
         return self
 
     def call(self, service, version, action, params=None, files=None):
-        """Register a call to a service.
+        """Perform a run-time call to a service.
+
+        :param service: The service name.
+        :type service: str
+        :param version: The service version.
+        :type version: str
+        :param action: The action name.
+        :type action: str
+        :param params: Optative list of Param objects.
+        :type params: list
+        :param files: Optative list of File objects.
+        :type files: list
+
+        :raises: CallNotConfigured
+        :raises: ReturnNotConfigured
+        :raises: LocalFileError
+
+        :rtype: Action
+
+        """
+
+        # Resolve service version when wildcards are used
+        if '*' in version:
+            try:
+                version = VersionString(version).resolve(
+                    self._schema.get(service, {}).keys()
+                    )
+            except KatanaError:
+                raise ServiceNotFound(service, version)
+
+        # Check that no local files are being used. Only remote files are
+        # supported.
+        if files:
+            for file in files:
+                if not file.is_local():
+                    continue
+
+                raise LocalFileError(service, version, action)
+
+        # Check if current action has a call defined for current arguments
+        if not self.__action_schema.has_call(service, version, action):
+            raise CallNotConfigured(service, version, action)
+
+        if service == self.get_name() and version == self.get_version():
+            # Check if the called service action has a return value defined
+            if not self.__action_schema.has_return():
+                raise ReturnNotConfigured(service, version, action)
+        else:
+            # Get schema for the callee service
+            try:
+                schema = self.get_service_schema(service, version)
+            except ApiError:
+                raise ServiceNotFound(service, version)
+
+            # Check if the called service action has a return value defined
+            action_schema = schema.get_action_schema(action)
+            if not action_schema.has_return():
+                raise ReturnNotConfigured(service, version, action)
+
+            # TODO: ACA: Implement `runtime_call`. Move validations to
+            # forwarder. In the forwarder use ia prefix with the name of the
+            # action to identify request for return values like:
+            #     'return:ACTION_NAME'.
+            return runtime_call(service, version, action)
+
+    def defer_call(self, service, version, action, params=None, files=None):
+        """Register a deferred call to a service.
 
         :param service: The service name.
         :type service: str
@@ -684,7 +917,7 @@ class Action(Api):
             )
         return self
 
-    def call_remote(self, address, service, version, action, **kwargs):
+    def remote_call(self, address, service, version, action, **kwargs):
         """Register a call to a remote service.
 
         :param address: Public address of a Gateway from another Realm.
@@ -735,10 +968,6 @@ class Action(Api):
         timeout = kwargs.get('timeout')
         if timeout:
             payload.set('timeout', timeout)
-
-        # callback = kwargs.get('callback')
-        # if callback:
-        #     payload.set('callback', callback)
 
         params = kwargs.get('params')
         if params:

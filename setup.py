@@ -17,7 +17,7 @@ setup(
     zip_safe=True,
     install_requires=[
         'click==6.4',
-        'pyzmq==16.0.2',
+        'pyzmq==15.4.0',
         'msgpack-python==0.4.7',
     ],
     classifiers=[

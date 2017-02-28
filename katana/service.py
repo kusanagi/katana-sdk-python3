@@ -112,7 +112,7 @@ class ServiceServer(ComponentServer):
 
         return Action(
             action,
-            get_path(payload, 'params'),
+            get_path(payload, 'params', []),
             self.__transport,
             self.__component,
             self.source_file,

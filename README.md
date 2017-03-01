@@ -1,15 +1,13 @@
 KATANA SDK for Python 3
 =======================
 
-[badges]
-
 Python 3 SDK to interface with the **KATANA**™ framework (https://katana.kusanagi.io).
 
 Requirements
 ------------
 
 * KATANA Framework 1.0+
-* Python 3.4+
+* [Python](https://www.python.org/downloads/) 3.4+
 * [libzmq](http://zeromq.org/intro:get-the-software) 4.1.5+
 
 Installation
@@ -42,102 +40,14 @@ $ pytest -q --cov=katana --cov-report=term
 Getting Started
 ---------------
 
-To start using the **KATANA SDK for Python 3** we will create a **Middleware** that handles requests and responses, and then a simple **Service**.
+To start using the **KATANA** SDK for **Python 3** we'll create a **Middleware** that handles requests and responses, and then a simple **Service**.
 
-So first create a python module that defines a **Middleware** like this:
-
-```python
-import logging
-import json
-
-from katana.sdk import Middleware
-
-LOG = logging.getLogger('katana')
-
-def request_handler(request):
-    return request
-    
-    
-def response_handler(response):
-    return response
-    
-    
-if __name__ == '__main__':
-    middleware = Middleware()
-    middleware.request(request_handler)
-    middleware.response(response_handler)
-    middleware.run()
-```
-
-Save the module as `middleware-example.py`.
-
-This module defines a **Middleware** that processes requests and also responses, so it is called two times per request.
-
-The `request_handler` is called first, before any **Service** call, so there we have to set the **Service** name, version and action to call. To do so change the `request_handler` function to:
-
-```python
-def request_handler(request):
-    http_request = request.get_http_request()
-    path = http_request.get_url_path()
-    LOG.info('Pre-processing request to URL %s', path)
-    
-    # These values would normally be extracted by parsing the URL
-    request.set_service_name('users')
-    request.set_service_version('0.1')
-    request.set_action_name('read')
-    
-    return request
-```
-
-This calls the *read* action for the version *0.1* of the users **Service** for every request.
-
-The `response_handler` is called at the end of the request/response lifecycle, after the **Service** call finishes.
-For the example all responses will be JSON responses. To do so change the `response_handler` function to look like this:
-
-```python
-def response_handler(response):
-    http_response = response.get_http_response()
-    http_response.set_header('Content-Type', 'application/json')
-    
-    # Serialize transport to JSON and use it as response body
-    transport = response.get_transport()
-    body = json.dumps(transport.get_data())
-    http_response.set_body(body)
-    
-    return response
-```
-
-At this point there is a complete **Middleware** defined, so the next step is to define a **Service**. Create a new python module that defines the **Service** like this:
-
-```python
-from katana.sdk import Service
-
-
-def read_handler(action):
-    user_id = action.get_param('id').get_value()
-    
-    # Users read action returns a single user entity
-    action.set_entity({
-        'id': user_id,
-        'name': 'foobar',
-        'first_name': 'Foo',
-        'last_name': 'Bar',
-    })
-    return action
-    
-    
-if __name__ == '__main__':
-    service = Service()
-    service.action('read', read_handler)
-    service.run()
-```
-
-Save the module as `service-users.py`.
-
-The final step is to define the configuration files for the example **Middleware** and **Service**.
+First, define the configuration files for the example **Middleware** and **Service**.
 
 **KATANA** configurations can be defined as *XML*, *YAML* or *JSON*.
-For the examples we will use *YAML*. Create a new config file for the **Middleware** that looks like:
+For these examples we'll use *YAML*.
+
+Create a new config file for the **Middleware** as the following:
 
 ```yaml
 "@context": urn:katana:middleware
@@ -151,9 +61,9 @@ engine:
   path: ./middleware-example.py
 ```
 
-Save the config as `middleware-example.yaml`.
+Now, save the config as `middleware-example.yaml`.
 
-And finally create a config file for the **Service** that looks like:
+Next, create a config file for the **Service** as the following:
 
 ```yaml
 "@context": urn:katana:service
@@ -175,14 +85,111 @@ action:
         required: true
 ```
 
-Save the config as `service-users.yaml`.
+Now, save the config as `service-users.yaml`.
 
-Now you can add the **Middleware** to the **Gateway** config and run the example.
+With the configuration files written we've now modelled our components.
 
-Examples
---------
+Next, we'll create a python module that defines the **Middleware** component:
 
-*(optional) Any relevant examples to help with development*
+```python
+import logging
+import json
+
+from katana.sdk import Middleware
+
+LOG = logging.getLogger('katana')
+
+def request_handler(request):
+    return request
+
+
+def response_handler(response):
+    return response
+
+
+if __name__ == '__main__':
+    middleware = Middleware()
+    middleware.request(request_handler)
+    middleware.response(response_handler)
+    middleware.run()
+```
+
+Now, save the module as `middleware-example.py`.
+
+This module defines a **Middleware** that processes requests and also responses, so it's called two times per request.
+
+The `request_handler` is called first, before any **Service** call, so there we have to set the **Service** name, version and action to call.
+
+To do so, change the `request_handler` function to the following:
+
+```python
+def request_handler(request):
+    http_request = request.get_http_request()
+    path = http_request.get_url_path()
+    LOG.info('Pre-processing request to URL %s', path)
+
+    # Debug logs can also be written with the framework
+    request.log('Pre-processing request to URL {}'.format(path))
+
+    # These values would normally be extracted by parsing the URL
+    request.set_service_name('users')
+    request.set_service_version('0.1')
+    request.set_action_name('read')
+
+    return request
+```
+
+This calls the *read* action for version *0.1* of the users **Service** for every request.
+
+The `response_handler` is called at the end of the request/response lifecycle, after the **Service** call finishes.
+
+For the example, all responses will be formatted as JSON. To do so, change the `response_handler` function to the following:
+
+```python
+def response_handler(response):
+    http_response = response.get_http_response()
+    http_response.set_header('Content-Type', 'application/json')
+
+    # Serialize transport to JSON and use it as response body
+    transport = response.get_transport()
+    body = json.dumps(transport.get_data())
+    http_response.set_body(body)
+
+    return response
+```
+
+At this point there is a complete **Middleware** defined, so the next step is to define a **Service**.
+
+Create a new python module that defines the **Service** as the following:
+
+```python
+from katana.sdk import Service
+
+
+def read_handler(action):
+    user_id = action.get_param('id').get_value()
+
+    # Users read action returns a single user entity
+    action.set_entity({
+        'id': user_id,
+        'name': 'foobar',
+        'first_name': 'Foo',
+        'last_name': 'Bar',
+    })
+    return action
+
+
+if __name__ == '__main__':
+    service = Service()
+    service.action('read', read_handler)
+    service.run()
+```
+
+Now, save the module as `service-users.py`.
+
+At this point you can add the **Middleware** to the **Gateway** config and run the example.
+
+Happy hacking!!
 
 Documentation
 -------------

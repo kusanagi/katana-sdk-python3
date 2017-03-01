@@ -1,8 +1,6 @@
 KATANA SDK for Python 3
 =======================
 
-[badges]
-
 Python 3 SDK to interface with the **KATANA**™ framework (https://katana.kusanagi.io).
 
 Requirements
@@ -182,7 +180,7 @@ Now you can add the **Middleware** to the **Gateway** config and run the example
 Examples
 --------
 
-*(optional) Any relevant examples to help with development*
+Refer to the [Getting Started](#getting-started) section for examples.
 
 Documentation
 -------------

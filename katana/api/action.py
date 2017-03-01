@@ -531,6 +531,11 @@ class Action(Api):
         version = self.get_version()
         action = self.get_action_name()
 
+        # When runnong from CLI allow any return values
+        if not self.__action_schema:
+            self.__return_value.set('return', value)
+            return self
+
         if not self.__action_schema.has_return():
             raise UndefinedReturnValueError(service, version, action)
 

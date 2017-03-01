@@ -9,10 +9,20 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+import logging
+
+from decimal import Decimal
+
+import zmq
+
+from ..payload import CommandPayload
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import Payload
+from ..utils import ipc
 from ..utils import nomap
+from ..serialization import pack
+from ..serialization import unpack
 
 from .base import Api
 from .base import ApiError
@@ -20,9 +30,45 @@ from .file import File
 from .file import file_to_payload
 from .file import payload_to_file
 from .param import Param
+from .param import param_to_payload
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
+LOG = logging.getLogger(__name__)
+
+# Default return values by type name
+DEFAULT_RETURN_VALUES = {
+    'boolean': False,
+    'integer': 0,
+    'float': 0.0,
+    'string': '',
+    'array': [],
+    'object': {},
+    }
+
+RETURN_TYPES = {
+    'boolean': (bool, ),
+    'integer': (int, ),
+    'float': (float, Decimal),
+    'string': (str, ),
+    'array': (list, ),
+    'object': (dict, ),
+    }
+
+CONTEXT = zmq.Context.instance()
+CONTEXT.linger = 0
+
+RUNTIME_CALL = b'\x01'
+
+
+class RuntimeCallError(ApiError):
+    """Error raised when when run-time call fails."""
+
+    message = 'Run-time call failed: {}'
+
+    def __init__(self, message):
+        super().__init__(self.message.format(message))
 
 
 class NoFileServerError(ApiError):
@@ -34,6 +80,43 @@ class NoFileServerError(ApiError):
         self.service = service
         self.version = version
         super().__init__(self.message.format(service=service, version=version))
+
+
+class ActionError(ApiError):
+    """Base error class for API Action errors."""
+
+    def __init__(self, service, version, action, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.service = service
+        self.version = version
+        self.action = action
+        self.service_string = '"{}" ({})'.format(service, version)
+
+
+class UndefinedReturnValueError(ActionError):
+    """Error raised when no return value is defined for an action."""
+
+    message = 'Cannot set a return value in {service} for action: "{action}"'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = self.message.format(
+            service=self.service_string,
+            action=self.action,
+            )
+
+
+class ReturnTypeError(ActionError):
+    """Error raised when return value type is invalid for an action."""
+
+    message = 'Invalid return type given in {service} for action: "{action}"'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = self.message.format(
+            service=self.service_string,
+            action=self.action,
+            )
 
 
 def parse_params(params):
@@ -69,6 +152,83 @@ def parse_params(params):
     return result
 
 
+def runtime_call(address, transport, action, callee, **kwargs):
+    """Make a Service run-time call.
+
+    :param address: Caller Service address.
+    :type address: str
+    :param transport: Current transport payload
+    :type transport: TransportPayload
+    :param action: The caller action name.
+    :type action: str
+    :param callee: The callee Service name, version and action name.
+    :type callee: list
+    :param params: Optative list of Param objects.
+    :type params: list
+    :param files: Optative list of File objects.
+    :type files: list
+    :param timeout: Optative timeout in milliseconds.
+    :type timeout: int
+
+    :raises: ApiError
+    :raises: RuntimeCallError
+
+    :returns: The return value for the call.
+    :rtype: object
+
+    """
+
+    args = Payload().set_many({
+        'action': action,
+        'callee': callee,
+        'transport': transport,
+        })
+
+    params = kwargs.get('params')
+    if params:
+        args.set('params', [param_to_payload(param) for param in params])
+
+    files = kwargs.get('files')
+    if files:
+        args.set('files', [file_to_payload(file) for file in files])
+
+    command = CommandPayload.new('runtime-call', 'service', args=args)
+
+    timeout = kwargs.get('timeout') or 1000
+    channel = ipc(address)
+    socket = CONTEXT.socket(zmq.REQ)
+    try:
+        socket.connect(channel)
+        socket.send_multipart([RUNTIME_CALL, pack(command)], zmq.NOBLOCK)
+        poller = zmq.Poller()
+        poller.register(socket, zmq.POLLIN)
+        event = dict(poller.poll(timeout))
+        if event.get(socket) == zmq.POLLIN:
+            stream = socket.recv()
+        else:
+            stream = None
+    except zmq.error.ZMQError as err:
+        LOG.exception('Run-time call to address failed: %s', address)
+        raise RuntimeCallError('Connection failed')
+    finally:
+        if not socket.closed:
+            socket.disconnect(channel)
+            socket.close()
+
+    if not stream:
+        raise RuntimeCallError('Timeout')
+
+    try:
+        payload = Payload(unpack(stream))
+    except (TypeError, ValueError):
+        raise RuntimeCallError('Communication failed')
+
+    if payload.path_exists('error'):
+        raise ApiError(payload.get('error/message'))
+
+    return payload.get('command_reply/result/return')
+
+
 class Action(Api):
     """Action API class for Service component."""
 
@@ -76,39 +236,59 @@ class Action(Api):
         super().__init__(*args, **kwargs)
         self.__action = action
         self.__transport = transport
-        self.__public_address = transport.get('meta/gateway')[1]
+        self.__gateway = transport.get('meta/gateway')
         self.__params = {
             get_path(param, 'name'): Payload(param)
             for param in params
             }
 
+        service = self.get_name()
+        version = self.get_version()
+        action_name = self.get_action_name()
+
         # Get files for current service, version and action
         path = 'files|{}|{}|{}|{}'.format(
-            self.__public_address,
-            nomap(self.get_name()),
-            self.get_version(),
-            nomap(self.get_action_name()),
+            self.__gateway[1],
+            nomap(service),
+            version,
+            nomap(action_name),
             )
         self.__files = transport.get(path, default={}, delimiter='|')
 
-    def __files_to_payload(self, files):
-        current_service = self.get_name()
-        current_version = self.get_version()
+        # Get schema for current action
         try:
-            schema = self.get_service_schema(current_service, current_version)
+            self.__schema = self.get_service_schema(service, version)
+            self.__action_schema = self.__schema.get_action_schema(action_name)
         except ApiError:
             # When schema for current service can't be resolved it means action
             # is run from CLI and because of that there are no mappings to
-            # resolve schemas. In this case is valid to set has_file_server to
-            # true.
-            has_file_server = True
+            # resolve schemas.
+            self.__schema = None
+            self.__action_schema = None
+
+        # Init return value with a default when action supports it
+        self.__return_value = kwargs.get('return_value', Payload())
+        if not self.__action_schema:
+            self.__return_value.set('return', None)
+        elif self.__action_schema.has_return():
+            # When return value is supported set a default value by type
+            rtype = self.__action_schema.get_return_type()
+            self.__return_value.set('return', DEFAULT_RETURN_VALUES.get(rtype))
+
+    def __files_to_payload(self, files):
+        if self.__schema:
+            has_file_server = self.__schema.has_file_server()
         else:
-            has_file_server = schema.has_file_server()
+            # When schema for current service can't be resolved it means action
+            # is run from CLI and because of that there are no mappings to
+            # resolve schemas. For this case is valid to set has_file_server
+            # to true.
+            has_file_server = True
 
         files_payload = {}
         for file in files:
             if file.is_local() and not has_file_server:
-                raise NoFileServerError(current_service, current_version)
+                raise NoFileServerError(self.get_name(), self.get_version())
 
             files_payload[file.get_name()] = file_to_payload(file)
 
@@ -332,6 +512,37 @@ class Action(Api):
         self.__transport.set('body', file_to_payload(file))
         return self
 
+    def set_return(self, value):
+        """Sets the value to be returned as "return value".
+
+        Supported value types: bool, int, float, str, list, dict and None.
+
+        :param value: A supported return value.
+        :type value: object
+
+        :raises: UndefinedReturnValueError
+        :raises: ReturnTypeError
+
+        :rtype: Action
+
+        """
+
+        service = self.get_name()
+        version = self.get_version()
+        action = self.get_action_name()
+
+        if not self.__action_schema.has_return():
+            raise UndefinedReturnValueError(service, version, action)
+
+        # Check that value type matches return type
+        if value is not None:
+            rtype = self.__action_schema.get_return_type()
+            if not isinstance(value, RETURN_TYPES[rtype]):
+                raise ReturnTypeError(service, version, action)
+
+        self.__return_value.set('return', value)
+        return self
+
     def set_entity(self, entity):
         """Sets the entity data.
 
@@ -354,7 +565,7 @@ class Action(Api):
 
         self.__transport.push(
             'data|{}|{}|{}|{}'.format(
-                self.__public_address,
+                self.__gateway[1],
                 nomap(self.get_name()),
                 self.get_version(),
                 nomap(self.get_action_name()),
@@ -390,7 +601,7 @@ class Action(Api):
 
         self.__transport.push(
             'data|{}|{}|{}|{}'.format(
-                self.__public_address,
+                self.__gateway[1],
                 nomap(self.get_name()),
                 self.get_version(),
                 nomap(self.get_action_name()),
@@ -419,10 +630,10 @@ class Action(Api):
 
         self.__transport.set(
             'relations|{}|{}|{}|{}|{}'.format(
-                self.__public_address,
+                self.__gateway[1],
                 nomap(self.get_name()),
                 nomap(primary_key),
-                self.__public_address,
+                self.__gateway[1],
                 nomap(service),
                 ),
             foreign_key,
@@ -454,10 +665,10 @@ class Action(Api):
 
         self.__transport.set(
             'relations|{}|{}|{}|{}|{}'.format(
-                self.__public_address,
+                self.__gateway[1],
                 nomap(self.get_name()),
                 nomap(primary_key),
-                self.__public_address,
+                self.__gateway[1],
                 nomap(service),
                 ),
             foreign_keys,
@@ -488,7 +699,7 @@ class Action(Api):
 
         self.__transport.set(
             'relations|{}|{}|{}|{}|{}'.format(
-                self.__public_address,
+                self.__gateway[1],
                 nomap(self.get_name()),
                 nomap(primary_key),
                 address,
@@ -527,7 +738,7 @@ class Action(Api):
 
         self.__transport.set(
             'relations|{}|{}|{}|{}|{}'.format(
-                self.__public_address,
+                self.__gateway[1],
                 nomap(self.get_name()),
                 nomap(primary_key),
                 address,
@@ -552,7 +763,7 @@ class Action(Api):
 
         self.__transport.set(
             'links|{}|{}|{}'.format(
-                self.__public_address,
+                self.__gateway[1],
                 nomap(self.get_name()),
                 nomap(link),
                 ),
@@ -636,8 +847,49 @@ class Action(Api):
         self.__transport.push('transactions/complete', payload)
         return self
 
-    def call(self, service, version, action, params=None, files=None):
-        """Register a call to a service.
+    def call(self, service, version, action, **kwargs):
+        """Perform a run-time call to a service.
+
+        :param service: The service name.
+        :type service: str
+        :param version: The service version.
+        :type version: str
+        :param action: The action name.
+        :type action: str
+        :param params: Optative list of Param objects.
+        :type params: list
+        :param files: Optative list of File objects.
+        :type files: list
+        :param timeout: Optative timeout in milliseconds.
+        :type timeout: int
+
+        :raises: ApiError
+        :raises: RuntimeCallError
+
+        :rtype: Action
+
+        """
+
+        # Get address for current action's service
+        path = '/'.join([self.get_name(), self.get_version(), 'address'])
+        address = self._schema.get(path, None)
+        if not address:
+            msg = 'Failed to get address for Service: "{}" ({})'.format(
+                self.get_name(),
+                self.get_version(),
+                )
+            raise ApiError(msg)
+
+        return runtime_call(
+            address,
+            self.__transport,
+            self.get_action_name(),
+            [service, version, action],
+            **kwargs
+            )
+
+    def defer_call(self, service, version, action, params=None, files=None):
+        """Register a deferred call to a service.
 
         :param service: The service name.
         :type service: str
@@ -660,7 +912,7 @@ class Action(Api):
         if files:
             self.__transport.set(
                 'files|{}|{}|{}|{}'.format(
-                    self.__public_address,
+                    self.__gateway[1],
                     nomap(service),
                     version,
                     nomap(action),
@@ -684,7 +936,7 @@ class Action(Api):
             )
         return self
 
-    def call_remote(self, address, service, version, action, **kwargs):
+    def remote_call(self, address, service, version, action, **kwargs):
         """Register a call to a remote service.
 
         :param address: Public address of a Gateway from another Realm.
@@ -716,7 +968,7 @@ class Action(Api):
         if files:
             self.__transport.set(
                 'files|{}|{}|{}|{}'.format(
-                    self.__public_address,
+                    self.__gateway[1],
                     nomap(service),
                     version,
                     nomap(action),
@@ -735,10 +987,6 @@ class Action(Api):
         timeout = kwargs.get('timeout')
         if timeout:
             payload.set('timeout', timeout)
-
-        # callback = kwargs.get('callback')
-        # if callback:
-        #     payload.set('callback', callback)
 
         params = kwargs.get('params')
         if params:
@@ -771,7 +1019,7 @@ class Action(Api):
 
         self.__transport.push(
             'errors|{}|{}|{}'.format(
-                self.__public_address,
+                self.__gateway[1],
                 nomap(self.get_name()),
                 self.get_version(),
                 ),

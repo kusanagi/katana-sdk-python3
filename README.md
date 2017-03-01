@@ -101,12 +101,12 @@ LOG = logging.getLogger('katana')
 
 def request_handler(request):
     return request
-    
-    
+
+
 def response_handler(response):
     return response
-    
-    
+
+
 if __name__ == '__main__':
     middleware = Middleware()
     middleware.request(request_handler)
@@ -118,7 +118,7 @@ Now, save the module as `middleware-example.py`.
 
 This module defines a **Middleware** that processes requests and also responses, so it's called two times per request.
 
-The `request_handler` is called first, before any **Service** call, so there we have to set the **Service** name, version and action to call. 
+The `request_handler` is called first, before any **Service** call, so there we have to set the **Service** name, version and action to call.
 
 To do so, change the `request_handler` function to the following:
 
@@ -127,15 +127,15 @@ def request_handler(request):
     http_request = request.get_http_request()
     path = http_request.get_url_path()
     LOG.info('Pre-processing request to URL %s', path)
-    
+
     # Debug logs can also be written with the framework
     request.log('Pre-processing request to URL {}'.format(path))
-    
+
     # These values would normally be extracted by parsing the URL
     request.set_service_name('users')
     request.set_service_version('0.1')
     request.set_action_name('read')
-    
+
     return request
 ```
 
@@ -149,12 +149,12 @@ For the example, all responses will be formatted as JSON. To do so, change the `
 def response_handler(response):
     http_response = response.get_http_response()
     http_response.set_header('Content-Type', 'application/json')
-    
+
     # Serialize transport to JSON and use it as response body
     transport = response.get_transport()
     body = json.dumps(transport.get_data())
     http_response.set_body(body)
-    
+
     return response
 ```
 
@@ -168,7 +168,7 @@ from katana.sdk import Service
 
 def read_handler(action):
     user_id = action.get_param('id').get_value()
-    
+
     # Users read action returns a single user entity
     action.set_entity({
         'id': user_id,
@@ -177,8 +177,8 @@ def read_handler(action):
         'last_name': 'Bar',
     })
     return action
-    
-    
+
+
 if __name__ == '__main__':
     service = Service()
     service.action('read', read_handler)

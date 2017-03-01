@@ -471,9 +471,22 @@ def test_api_action_transactions(read_json, registry):
 
 
 def test_api_action_call(read_json, registry):
-    transport = Payload(read_json('transport.json'))
     service_name = 'foo'
     service_version = '1.0'
+
+    # Check that registry does not have mappings
+    assert not registry.has_mappings
+    # Add an empty test action to mappings
+    registry.update_registry({
+        service_name: {
+            service_version: {
+                FIELD_MAPPINGS['files']: True,
+                FIELD_MAPPINGS['actions']: {'test': {}},
+                },
+            },
+        })
+
+    transport = Payload(read_json('transport.json'))
     calls_path = 'calls/{}/{}'.format(nomap(service_name), service_version)
     action = Action(**{
         'action': 'test',
@@ -503,7 +516,7 @@ def test_api_action_call(read_json, registry):
         }]
 
     # Make a call
-    assert action.call(c_name, c_version, c_action, params=params) == action
+    assert action.defer_call( c_name, c_version, c_action, params=params) == action
     assert transport.path_exists(calls_path)
     calls = transport.get(calls_path)
     assert isinstance(calls, list)
@@ -524,7 +537,7 @@ def test_api_action_call(read_json, registry):
         nomap(c_action),
         ])
     files = [action.new_file('download', '/tmp/file.ext')]
-    assert action.call(c_name, c_version, c_action, files=files) == action
+    assert action.defer_call(c_name, c_version, c_action, files=files) == action
     tr_files = transport.get(files_path, delimiter='|')
     assert isinstance(tr_files, dict)
     assert len(tr_files) == 1
@@ -537,21 +550,50 @@ def test_api_action_call(read_json, registry):
         FIELD_MAPPINGS['path']: 'file:///tmp/file.ext',
         }
 
-    # Check that registry does not have mappings
-    assert not registry.has_mappings
     # Set file server mappings to False and try to call with local files
     registry.update_registry({
-        service_name: {service_version: {'files': False}}
+        service_name: {
+            service_version: {
+                FIELD_MAPPINGS['files']: False,
+                FIELD_MAPPINGS['actions']: {'test': {}},
+                },
+            },
+        })
+
+    # TODO: Figure out why existing action does not see new mappungs.
+    #       Action should read the mapping values from previous statement.
+    action = Action(**{
+        'action': 'test',
+        'params': [],
+        'transport': transport,
+        'component': None,
+        'path': '/path/to/file.py',
+        'name': service_name,
+        'version': service_version,
+        'framework_version': '1.0.0',
         })
 
     with pytest.raises(NoFileServerError):
-        action.call(c_name, c_version, c_action, files=files)
+        action.defer_call(c_name, c_version, c_action, files=files)
 
 
 def test_api_action_call_remote(read_json, registry):
-    transport = Payload(read_json('transport.json'))
     service_name = 'foo'
     service_version = '1.0'
+
+    # Check that registry does not have mappings
+    assert not registry.has_mappings
+    # Add an empty test action to mappings
+    registry.update_registry({
+        service_name: {
+            service_version: {
+                FIELD_MAPPINGS['files']: True,
+                FIELD_MAPPINGS['actions']: {'test': {}},
+                },
+            },
+        })
+
+    transport = Payload(read_json('transport.json'))
     calls_path = 'calls/{}/{}'.format(nomap(service_name), service_version)
     action = Action(**{
         'action': 'test',
@@ -590,7 +632,7 @@ def test_api_action_call_remote(read_json, registry):
         'params': params,
         'timeout': 2.0,
         }
-    assert action.call_remote(**kwargs) == action
+    assert action.remote_call(**kwargs) == action
     assert transport.path_exists(calls_path)
     calls = transport.get(calls_path)
     assert isinstance(calls, list)
@@ -612,7 +654,7 @@ def test_api_action_call_remote(read_json, registry):
         nomap(c_action),
         ])
     kwargs['files'] = [action.new_file('download', '/tmp/file.ext')]
-    assert action.call_remote(**kwargs) == action
+    assert action.remote_call(**kwargs) == action
     tr_files = transport.get(files_path, delimiter='|')
     assert isinstance(tr_files, dict)
     assert len(tr_files) == 1
@@ -625,15 +667,31 @@ def test_api_action_call_remote(read_json, registry):
         FIELD_MAPPINGS['path']: 'file:///tmp/file.ext',
         }
 
-    # Check that registry does not have mappings
-    assert not registry.has_mappings
     # Set file server mappings to False and try to call with local files
     registry.update_registry({
-        service_name: {service_version: {'files': False}}
+        service_name: {
+            service_version: {
+                FIELD_MAPPINGS['files']: False,
+                FIELD_MAPPINGS['actions']: {'test': {}},
+                },
+            },
+        })
+
+    # TODO: Figure out why existing action does not see new mappungs.
+    #       Action should read the mapping values from previous statement.
+    action = Action(**{
+        'action': 'test',
+        'params': [],
+        'transport': transport,
+        'component': None,
+        'path': '/path/to/file.py',
+        'name': service_name,
+        'version': service_version,
+        'framework_version': '1.0.0',
         })
 
     with pytest.raises(NoFileServerError):
-        action.call_remote(**kwargs)
+        action.remote_call(**kwargs)
 
 
 def test_api_action_errors(read_json, registry):

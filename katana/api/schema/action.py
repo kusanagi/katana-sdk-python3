@@ -223,7 +223,7 @@ class ActionSchema(object):
         return relations_from_payload(self.__payload.get('relations', None))
 
     def has_call(self, name, version=None, action=None):
-        """Check if an internal call exists for a Service.
+        """Check if a run-time call exists for a Service.
 
         :param name: Service name.
         :type name: str
@@ -253,7 +253,7 @@ class ActionSchema(object):
         return False
 
     def has_calls(self):
-        """Check if any internal call exists for the action.
+        """Check if any run-time call exists for the action.
 
         :rtype: bool
 
@@ -262,7 +262,7 @@ class ActionSchema(object):
         return self.__payload.path_exists('calls')
 
     def get_calls(self):
-        """Get Service calls.
+        """Get Service run-time calls.
 
         Each call items is a list containing the Service name,
         the Service version and the action name.
@@ -272,6 +272,57 @@ class ActionSchema(object):
         """
 
         return self.__payload.get('calls', [])
+
+    def has_defer_call(self, name, version=None, action=None):
+        """Check if a deferred call exists for a Service.
+
+        :param name: Service name.
+        :type name: str
+        :param version: Optional Service version.
+        :type version: str
+        :param action: Optional action name.
+        :type action: str
+
+        :rtype: bool
+
+        """
+
+        for call in self.get_defer_calls():
+            if call[0] != name:
+                continue
+
+            if version and call[1] != version:
+                continue
+
+            if action and call[2] != action:
+                continue
+
+            # When all given arguments match the call return True
+            return True
+
+        # By default call does not exist
+        return False
+
+    def has_defer_calls(self):
+        """Check if any deferred call exists for the action.
+
+        :rtype: bool
+
+        """
+
+        return self.__payload.path_exists('deferred_calls')
+
+    def get_defer_calls(self):
+        """Get Service deferred calls.
+
+        Each call items is a list containing the Service name,
+        the Service version and the action name.
+
+        :rtype: list
+
+        """
+
+        return self.__payload.get('deferred_calls', [])
 
     def has_remote_call(self, address, name=None, version=None, action=None):
         """Check if a remote call exists for a Service.
@@ -329,6 +380,24 @@ class ActionSchema(object):
         """
 
         return self.__payload.get('remote_calls', [])
+
+    def has_return(self):
+        """Check if a return value is defined for the action.
+
+        :rtype: bool
+
+        """
+
+        return self.__payload.path_exists('return')
+
+    def get_return_type(self):
+        """Get the data type of the returned action value.
+
+        :rtype: str
+
+        """
+
+        return self.__payload.get('return/type', '')
 
     def get_params(self):
         """Get the parameters names defined for the action.

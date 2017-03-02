@@ -54,6 +54,7 @@ Create a new config file for the **Middleware** as the following:
 name: example
 version: "0.1"
 request: true
+response: true
 info:
   title: Example Middleware
 engine:

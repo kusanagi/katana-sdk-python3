@@ -9,6 +9,7 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+import copy
 import logging
 
 from decimal import Decimal
@@ -19,6 +20,7 @@ from ..payload import CommandPayload
 from ..payload import ErrorPayload
 from ..payload import get_path
 from ..payload import Payload
+from ..payload import TRANSPORT_MERGEABLE_PATHS
 from ..utils import ipc
 from ..utils import nomap
 from ..serialization import pack
@@ -173,8 +175,8 @@ def runtime_call(address, transport, action, callee, **kwargs):
     :raises: ApiError
     :raises: RuntimeCallError
 
-    :returns: The return value for the call.
-    :rtype: object
+    :returns: The transport and the return value for the call.
+    :rtype: tuple
 
     """
 
@@ -226,7 +228,8 @@ def runtime_call(address, transport, action, callee, **kwargs):
     if payload.path_exists('error'):
         raise ApiError(payload.get('error/message'))
 
-    return payload.get('command_reply/result/return')
+    result = payload.get('command_reply/result')
+    return (get_path(result, 'transport'), get_path(result, 'return'))
 
 
 class Action(Api):
@@ -274,6 +277,11 @@ class Action(Api):
             # When return value is supported set a default value by type
             rtype = self.__action_schema.get_return_type()
             self.__return_value.set('return', DEFAULT_RETURN_VALUES.get(rtype))
+
+        # Make a transport clone to be used for runtime calls.
+        # This is required to avoid merging back values that are
+        # already inside current transport.
+        self.__runtime_transport = copy.deepcopy(self.__transport)
 
     def __files_to_payload(self, files):
         if self.__schema:
@@ -792,8 +800,8 @@ class Action(Api):
         payload = Payload().set_many({
             'name': self.get_name(),
             'version': self.get_version(),
-            'action': self.get_action_name(),
-            'callee': action,
+            'callee': self.get_action_name(),
+            'action': action,
             })
         if params:
             payload.set('params', parse_params(params))
@@ -816,8 +824,8 @@ class Action(Api):
         payload = Payload().set_many({
             'name': self.get_name(),
             'version': self.get_version(),
-            'action': self.get_action_name(),
-            'callee': action,
+            'callee': self.get_action_name(),
+            'action': action,
             })
         if params:
             payload.set('params', parse_params(params))
@@ -843,8 +851,8 @@ class Action(Api):
         payload = Payload().set_many({
             'name': self.get_name(),
             'version': self.get_version(),
-            'action': self.get_action_name(),
-            'callee': action,
+            'callee': self.get_action_name(),
+            'action': action,
             })
         if params:
             payload.set('params', parse_params(params))
@@ -885,13 +893,25 @@ class Action(Api):
                 )
             raise ApiError(msg)
 
-        return runtime_call(
+        transport, result = runtime_call(
             address,
-            self.__transport,
+            self.__runtime_transport,
             self.get_action_name(),
             [service, version, action],
             **kwargs
             )
+
+        # Clear default to succesfully merge dictionaries. Without
+        # this merge would be done with a default value that is not
+        # part of the payload.
+        self.__transport.set_defaults({})
+        for path in TRANSPORT_MERGEABLE_PATHS:
+            value = get_path(transport, path, None)
+            # Don't merge empty values
+            if value:
+                self.__transport.merge(path, value)
+
+        return result
 
     def defer_call(self, service, version, action, params=None, files=None):
         """Register a deferred call to a service.
@@ -930,6 +950,7 @@ class Action(Api):
             'name': service,
             'version': version,
             'action': action,
+            'caller': self.get_action_name(),
             })
         if params:
             payload.set('params', parse_params(params))
@@ -987,6 +1008,7 @@ class Action(Api):
             'name': service,
             'version': version,
             'action': action,
+            'caller': self.get_action_name(),
             })
 
         timeout = kwargs.get('timeout')

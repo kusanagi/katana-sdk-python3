@@ -1,6 +1,9 @@
 KATANA SDK for Python 3
 =======================
 
+[![Build Status](https://travis-ci.org/kusanagi/katana-sdk-python3.svg?branch=master)](https://travis-ci.org/kusanagi/katana-sdk-python3)
+[![Coverage Status](https://coveralls.io/repos/github/kusanagi/katana-sdk-python3/badge.svg?branch=master)](https://coveralls.io/github/kusanagi/katana-sdk-python3?branch=master)
+
 Python 3 SDK to interface with the **KATANA**™ framework (https://katana.kusanagi.io).
 
 Requirements

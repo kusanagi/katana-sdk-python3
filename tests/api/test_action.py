@@ -3,11 +3,14 @@ import pytest
 from katana.api.action import Action
 from katana.api.action import NoFileServerError
 from katana.api.action import parse_params
+from katana.api.action import ReturnTypeError
+from katana.api.action import UndefinedReturnValueError
 from katana.api.file import File
 from katana.api.file import file_to_payload
 from katana.api.param import Param
 from katana.api.param import TYPE_INTEGER
 from katana.api.param import TYPE_STRING
+from katana.payload import delete_path
 from katana.payload import ErrorPayload
 from katana.payload import FIELD_MAPPINGS
 from katana.payload import get_path
@@ -470,7 +473,53 @@ def test_api_action_transactions(read_json, registry):
             assert get_path(tr, 'params', default='NO') == tr_params
 
 
-def test_api_action_call(read_json, registry):
+def test_api_action_return_value(read_json, registry):
+    service_name = 'foo'
+    service_version = '1.0'
+    transport = Payload(read_json('transport.json'))
+    return_value = Payload()
+    action_args = {
+        'action': 'foo',
+        'params': [],
+        'transport': transport,
+        'component': None,
+        'path': '/path/to/file.py',
+        'name': service_name,
+        'version': service_version,
+        'framework_version': '1.0.0',
+        'return_value': return_value,
+        }
+
+    # By default return value is set when no schema is available
+    action = Action(**action_args)
+    assert action.set_return(1) == action
+    assert return_value.get('return') == 1
+
+    # Check that registry does not have mappings
+    assert not registry.has_mappings
+    # Add an empty test action to mappings
+    mappings = Payload(read_json('schema-service.json'))
+    registry.update_registry({service_name: {service_version: mappings}})
+
+    # Set return when mappings contain a return definition for the action
+    action = Action(**action_args)
+    assert action.set_return(1) == action
+    assert action_args['return_value'].get('return') == 1
+
+    # Set an invalid return value type
+    with pytest.raises(ReturnTypeError):
+        action.set_return('fail')
+
+    # Set a return value when no return definition exists for the action
+    assert mappings.path_exists('actions/foo/return')
+    delete_path(mappings, 'actions/foo/return')
+    assert not mappings.path_exists('actions/foo/return')
+    action = Action(**action_args)
+    with pytest.raises(UndefinedReturnValueError):
+        action.set_return(1)
+
+
+def test_api_action_defer_call(read_json, registry):
     service_name = 'foo'
     service_version = '1.0'
 

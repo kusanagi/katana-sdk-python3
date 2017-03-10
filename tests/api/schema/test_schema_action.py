@@ -25,9 +25,14 @@ def test_api_schema_action_defaults():
     assert not action.has_call('foo')
     assert not action.has_calls()
     assert action.get_calls() == []
+    assert not action.has_defer_call('foo')
+    assert not action.has_defer_calls()
+    assert action.get_defer_calls() == []
     assert not action.has_remote_call('ktp://87.65.43.21:4321')
     assert not action.has_remote_calls()
     assert action.get_remote_calls() == []
+    assert not action.has_return()
+    assert action.get_return_type() == ''
     assert action.get_params() == []
     assert not action.has_param('foo')
 
@@ -77,6 +82,10 @@ def test_api_schema_action(read_json):
     assert len(entity) == 3
     assert sorted(entity.keys()) == ['field', 'fields', 'validate']
 
+    # Check return value
+    assert action.has_return()
+    assert action.get_return_type() == payload.get('return/type')
+
     # Check relations
     assert action.has_relations()
     assert sorted(action.get_relations()) == [
@@ -84,7 +93,7 @@ def test_api_schema_action(read_json):
         ['one', 'accounts'],
         ]
 
-    # Check local calls
+    # Check runtime calls
     assert action.has_calls()
     assert sorted(action.get_calls()) == [
         ['bar', '1.1', 'dummy'],
@@ -95,6 +104,18 @@ def test_api_schema_action(read_json):
     assert not action.has_call('MISSING')
     assert not action.has_call('foo', 'MISSING')
     assert not action.has_call('foo', '1.0', 'MISSING')
+
+    # Check deferred calls
+    assert action.has_defer_calls()
+    assert sorted(action.get_defer_calls()) == [
+        ['bar', '1.1', 'dummy'],
+        ['foo', '1.0', 'dummy'],
+        ]
+    assert action.has_defer_call('foo', '1.0', 'dummy')
+    # Check invalid local call arguments
+    assert not action.has_defer_call('MISSING')
+    assert not action.has_defer_call('foo', 'MISSING')
+    assert not action.has_defer_call('foo', '1.0', 'MISSING')
 
     # Check files
     assert action.has_file('upload')

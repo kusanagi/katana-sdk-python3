@@ -14,9 +14,11 @@
       "k": "pk",
       "c": true,
       "C": [["foo", "1.0", "dummy"], ["bar", "1.1", "dummy"]],
+      "dc": [["foo", "1.0", "dummy"], ["bar", "1.1", "dummy"]],
       "rc": [["ktp://87.65.43.21:4321", "foo", "1.0", "dummy"]],
       "F": null,
       "D": true,
+      "R": {"t": "integer"},
       "h": {
         "g": false,
         "p": "/1.0/foo/{bar}",

@@ -1,5 +1,6 @@
 import datetime
 import decimal
+import time
 
 import pytest
 
@@ -27,6 +28,9 @@ def test_encode():
         (datetime.datetime(2017, 1, 27, 20, 12, 8, 952811),
          'datetime',
          '2017-01-27T20:12:08.952811+00:00'),
+        (time.strptime("2017-01-27 20:12:08", "%Y-%m-%d %H:%M:%S"),
+         'time',
+         '20:12:08'),
         (Serializable(),
          'object',
          'OK'),
@@ -52,6 +56,13 @@ def test_decode():
         ('2017-01-27T20:12:08.952811+00:00',
          'datetime',
          datetime.datetime(2017, 1, 27, 20, 12, 8, 952811)),
+        ('20:12:08',
+         'time',
+         '20:12:08'),
+        # Invalid format should not fail
+        ('',
+         'date',
+         None),
         )
 
     # Check custom types decoding

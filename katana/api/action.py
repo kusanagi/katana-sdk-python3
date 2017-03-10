@@ -800,8 +800,8 @@ class Action(Api):
         payload = Payload().set_many({
             'name': self.get_name(),
             'version': self.get_version(),
-            'callee': self.get_action_name(),
             'action': action,
+            'caller': self.get_action_name(),
             })
         if params:
             payload.set('params', parse_params(params))
@@ -824,8 +824,8 @@ class Action(Api):
         payload = Payload().set_many({
             'name': self.get_name(),
             'version': self.get_version(),
-            'callee': self.get_action_name(),
             'action': action,
+            'caller': self.get_action_name(),
             })
         if params:
             payload.set('params', parse_params(params))
@@ -851,8 +851,8 @@ class Action(Api):
         payload = Payload().set_many({
             'name': self.get_name(),
             'version': self.get_version(),
-            'callee': self.get_action_name(),
             'action': action,
+            'caller': self.get_action_name(),
             })
         if params:
             payload.set('params', parse_params(params))

@@ -33,7 +33,7 @@ def encode(obj):
     elif isinstance(obj, datetime.date):
         return ['type', 'date', obj.strftime('%Y-%m-%d')]
     elif isinstance(obj, time.struct_time):
-        return ['type', 'time', time.strftime('%H:%M', obj)]
+        return ['type', 'time', time.strftime('%H:%M:%S', obj)]
     elif hasattr(obj, '__serialize__'):
         return obj.__serialize__()
 
@@ -57,7 +57,7 @@ def decode(data):
             elif data_type == 'date':
                 return datetime.datetime.strptime(data[2], '%Y-%m-%d')
             elif data_type == 'time':
-                # Use time as a string "HH:MM"
+                # Use time as a string "HH:MM:SS"
                 return data[2]
         except:
             # Don't fail when there are inconsistent data values.

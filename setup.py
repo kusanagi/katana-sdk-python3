@@ -27,6 +27,7 @@ setup(
         'pytest',
         'pytest-mock',
         'pytest-cov',
+        'coverage',
     ],
     classifiers=[
         'Intended Audience :: Developers',

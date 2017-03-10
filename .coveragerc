@@ -1,0 +1,6 @@
+[run]
+source = katana
+omit = */tests/*
+
+[report]
+omit = *__init__*

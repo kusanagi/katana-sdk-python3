@@ -20,6 +20,15 @@ setup(
         'pyzmq==15.4.0',
         'msgpack-python==0.4.7',
     ],
+    setup_requires=[
+        'pytest-runner',
+    ],
+    tests_require=[
+        'pytest',
+        'pytest-mock',
+        'pytest-cov',
+        'coverage',
+    ],
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python :: 3.4',

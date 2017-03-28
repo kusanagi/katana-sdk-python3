@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.3] - 2017-03-28
+### Added
+- Version wildcards support for single '*' to match all.
+
+### Changed
+- The wildcard ('*') in the last version part now matches any character.
+
 ## [1.0.1] - 2017-03-07
 ### Added
 - Transport merge support for run-time calls.

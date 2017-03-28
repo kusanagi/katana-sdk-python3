@@ -37,7 +37,7 @@ def test_wildcards_version_match():
         assert version_string.match(version)
 
     # Version formats don't match
-    for version in ('A.B.C', '2.2.3', '1.2.3.alpha'):
+    for version in ('A.B.C', '2.2.3'):
         assert not version_string.match(version)
 
 
@@ -112,6 +112,8 @@ def test_resolve_versions():
 
     # Format: pattern, expected, versions
     cases = (
+        ('*', '3.4.1', ('3.4.0', '3.4.1', '3.4.a')),
+        ('3.*', '3.4.1', ('3.4.0', '3.4.1', '3.4.a')),
         ('3.4.1', '3.4.1', ('3.4.0', '3.4.1', '3.4.a')),
         ('3.4.*', '3.4.1', ('3.4.0', '3.4.1', '3.4.a')),
         ('3.4.*', '3.4.1', ('3.4.a', '3.4.1', '3.4.0')),
@@ -132,7 +134,7 @@ def test_resolve_versions():
 
     # Check for a non maching pattern
     with pytest.raises(VersionNotFound):
-        VersionString('*.*.*').resolve(['1.0', 'A.B.C.D'])
+        VersionString('3.4.*.*').resolve(['1.0', 'A.B.C.D', '3.4.1'])
 
 
 def test_invalid_pattern():

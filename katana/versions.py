@@ -20,11 +20,17 @@ from .errors import KatanaError
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
-# Regexp to remove duplicated '*' in versions
-DUPLICATES = re.compile(r'(\*)\1+')
-
 # Regexp to check version pattern for invalid chars
 INVALID_PATTERN = re.compile(r'[^a-zA-Z0-9*.,_-]')
+
+# Regexp to remove duplicated '*' from version
+WILDCARDS = re.compile(r'\*+')
+
+# Regexp to match version dot separators
+VERSION_DOTS = re.compile(r'([^*])\.')
+
+# Regexp to match all wildcards except the last one
+VERSION_WILDCARDS = re.compile(r'\*+([^$])')
 
 
 class InvalidVersionPattern(KatanaError):
@@ -53,12 +59,22 @@ class VersionString(object):
         if INVALID_PATTERN.search(version):
             raise InvalidVersionPattern(version)
 
-        # Remove duplicated special chars from version
-        self.__version = DUPLICATES.sub(r'\1', version)
+        # Remove duplicated wildcards from version
+        self.__version = WILDCARDS.sub('*', version)
 
         if '*' in self.__version:
+            # Create an expression for version pattern comparisons
+            expr = VERSION_WILDCARDS.sub(r'[^*.]+\1', self.version)
+            # Escape dots to work with the regular expression
+            expr = VERSION_DOTS.sub(r'\1\.', expr)
+
+            # If there is a final wildcard left replace it with an
+            # expression to match any characters after the last dot.
+            if expr[-1] == '*':
+                expr = expr[:-1] + '.*'
+
             # Create a pattern to be use for cmparison
-            self.__pattern = re.compile(re.sub(r'\*+', '[^*.]+', self.version))
+            self.__pattern = re.compile(expr)
         else:
             self.__pattern = None
 

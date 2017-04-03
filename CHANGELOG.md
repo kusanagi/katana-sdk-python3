@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Added support to run a component server and handle a single request
+  where the payload is send from the CLI in a JSON file (#72).
+
 ### Changed
 - Logging was changed to use byte strings without encoding them first.
 

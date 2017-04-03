@@ -13,6 +13,7 @@ file that was distributed with this source code.
 import asyncio
 import functools
 import inspect
+import json
 import logging
 import os
 
@@ -20,6 +21,7 @@ import click
 import katana.payload
 import zmq.asyncio
 
+from ..errors import KatanaError
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
@@ -56,6 +58,37 @@ def key_value_strings_callback(ctx, param, values):
         params[param_name] = param_value
 
     return params
+
+
+def json_input_callback(ctx, param, values):
+    """Option callback to validate input payload file.
+
+    Value format is: ACTION_NAME:FILE_PATH
+
+    Where ACTION_NAME is the name of the Service action to call, and
+    FILE_PATH is the path to the JSON file that contains the command
+    payload to send.
+
+    :rtype: dict
+
+    """
+
+    result = {}
+    if not values:
+        return result
+
+    parts = values.split(':')
+    if len(parts) != 2:
+        raise click.BadParameter('Invalid parameter format')
+
+    result['action'] = parts[0]
+    try:
+        with open(parts[1], 'r') as file:
+            result['payload'] = json.load(file)
+    except:
+        raise click.BadParameter('Invalid JSON file')
+
+    return result
 
 
 def apply_cli_options(run_method):
@@ -229,6 +262,11 @@ class ComponentRunner(object):
                 required=True,
                 ),
             click.option(
+                '-C', '--callback',
+                help='JSON file to use as payload. Format: ACTION_NAME:FILE_PATH',
+                callback=json_input_callback,
+                ),
+            click.option(
                 '-d', '--disable-compact-names',
                 is_flag=True,
                 help='Use full property names instead of compact in payloads.',
@@ -326,23 +364,26 @@ class ComponentRunner(object):
 
         self._args = kwargs
 
-        # Initialize component logging only when `quiet` argument is False
+        # Get input message with action name and payload if available
+        message = kwargs.get('callback')
+
+        # Initialize component logging only when `quiet` argument is False, or
+        # if an input message is given init logging only when debug is True
         if not kwargs.get('quiet'):
             setup_katana_logging(logging.DEBUG if self.debug else logging.INFO)
 
         LOG.debug('Using PID: "%s"', os.getpid())
 
-        # Set main event loop
-        install_uvevent_loop()
-        self.loop = zmq.asyncio.ZMQEventLoop()
-        asyncio.set_event_loop(self.loop)
-
-        # Create channel for TCP or IPC conections
-        if self.tcp_port:
-            channel = tcp('127.0.0.1:{}'.format(self.tcp_port))
+        # Skip zeromq initialization when transport payload is given
+        # as an input file in the CLI.
+        if message:
+            # Use standard event loop to run component server without zeromq
+            self.loop = asyncio.get_event_loop()
         else:
-            # Abstract domain unix socket
-            channel = 'ipc://{}'.format(self.socket_name)
+            # Set zeromq event loop when component is run as server
+            install_uvevent_loop()
+            self.loop = zmq.asyncio.ZMQEventLoop()
+            asyncio.set_event_loop(self.loop)
 
         # When compact mode is enabled use long payload field names
         if not self.compact_names:
@@ -353,14 +394,25 @@ class ComponentRunner(object):
 
         # Create component server and run it as a task
         server = self.server_cls(
-            channel,
             self.callbacks,
             self.args,
             debug=self.debug,
             source_file=self.source_file,
             error_callback=self.__error_callback,
             )
-        server_task = self.loop.create_task(server.listen())
+
+        if message:
+            server_task = self.loop.create_task(server.process_input(message))
+        else:
+            # Create channel for TCP or IPC conections
+            if self.tcp_port:
+                channel = tcp('127.0.0.1:{}'.format(self.tcp_port))
+            else:
+                # Abstract domain unix socket
+                channel = 'ipc://{}'.format(self.socket_name)
+
+            server_task = self.loop.create_task(server.listen(channel))
+
         ctx.tasks.append(server_task)
 
         # By default exit successfully
@@ -387,6 +439,10 @@ class ComponentRunner(object):
                 else:
                     LOG.error(err.strerror)
 
+                LOG.error('Component failed')
+            except KatanaError as err:
+                exit_code = EXIT_ERROR
+                LOG.error(err)
                 LOG.error('Component failed')
             except Exception as exc:
                 exit_code = EXIT_ERROR

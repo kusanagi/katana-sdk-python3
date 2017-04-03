@@ -61,7 +61,7 @@ def entity_from_payload(entity_payload, entity=None):
             if path_exists(payload, 'field') or path_exists(payload, 'fields'):
                 fieldset = entity_from_payload(payload, fieldset)
 
-        entity['fields'].append(fieldset)
+            entity['fields'].append(fieldset)
 
     return entity
 

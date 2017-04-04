@@ -28,7 +28,7 @@ def test_value_to_los_string():
     assert value_to_log_string(True) == 'TRUE'
     assert value_to_log_string(False) == 'FALSE'
     assert value_to_log_string('value') == 'value'
-    assert value_to_log_string(b'value') == 'value'
+    assert value_to_log_string(b'value') == b'value'
     assert value_to_log_string(lambda: None) == 'anonymous'
     assert value_to_log_string(dummy) == '[function dummy]'
 

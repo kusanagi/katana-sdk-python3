@@ -36,6 +36,9 @@ def test_apply_cli_options(mocker, cli):
     class Foo(ComponentRunner):
         pass
 
+    input = {'action': 'foo', 'payload': {}}
+    mocker.patch('katana.sdk.runner.json_input_callback', return_value=input)
+
     # Create a mock for the run method and apply CLI options decorator
     run = mocker.MagicMock()
     Foo.run = apply_cli_options(run)
@@ -50,6 +53,7 @@ def test_apply_cli_options(mocker, cli):
         '--socket', '@katana-127-0-0-1-5010-foo',
         '--tcp', '5010',
         '--debug',
+        '--callback', 'foo:payload.json',
         '--disable-compact-names',
         '--quiet',
         '--var', 'foo=bar',
@@ -70,6 +74,7 @@ def test_apply_cli_options(mocker, cli):
         'socket': '@katana-127-0-0-1-5010-foo',
         'tcp': 5010,
         'debug': True,
+        'callback': input,
         'disable_compact_names': True,
         'quiet': True,
         'var': {'foo': 'bar', 'hello': 'world'},
@@ -173,9 +178,10 @@ def test_component_run(mocker, cli):
 
     # Check server creation arguments
     args, kwargs = ServerCls.call_args
-    assert args == ('ipc://{}'.format(socket), callbacks, {
+    assert args == (callbacks, {
         'name': 'foo',
         'version': '1.0',
+        'callback': {},
         'component': 'service',
         'framework_version': '1.0.0',
         'socket': socket,

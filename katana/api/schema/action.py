@@ -505,7 +505,7 @@ class HttpActionSchema(object):
 
         """
 
-        return self.__payload.get('method', 'get')
+        return self.__payload.get('method', 'get').lower()
 
     def get_path(self):
         """Get URL path for the action.

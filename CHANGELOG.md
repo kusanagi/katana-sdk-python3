@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Logging was changed to use byte strings without encoding them first.
+- HttpActionSchema.get_method() now returns method names in lower case.
 
 ## [1.0.2] - 2017-03-28
 ### Added

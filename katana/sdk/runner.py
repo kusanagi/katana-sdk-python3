@@ -60,37 +60,6 @@ def key_value_strings_callback(ctx, param, values):
     return params
 
 
-def json_input_callback(ctx, param, values):
-    """Option callback to validate input payload file.
-
-    Value format is: ACTION_NAME:FILE_PATH
-
-    Where ACTION_NAME is the name of the Service action to call, and
-    FILE_PATH is the path to the JSON file that contains the command
-    payload to send.
-
-    :rtype: dict
-
-    """
-
-    result = {}
-    if not values:
-        return result
-
-    parts = values.split(':')
-    if len(parts) != 2:
-        raise click.BadParameter('Invalid parameter format')
-
-    result['action'] = parts[0]
-    try:
-        with open(parts[1], 'r') as file:
-            result['payload'] = json.load(file)
-    except:
-        raise click.BadParameter('Invalid JSON file')
-
-    return result
-
-
 def apply_cli_options(run_method):
     """Decorator to apply command line options to `run` method.
 
@@ -256,49 +225,51 @@ class ComponentRunner(object):
 
         return [
             click.option(
-                '-c', '--component',
-                type=click.Choice(['service', 'middleware']),
-                help='Component type',
-                required=True,
+                '-A', '--action',
+                help=(
+                    'Name of the action to call when request message '
+                    'is given as JSON through stdin.'
+                    ),
                 ),
             click.option(
-                '-C', '--callback',
-                help='JSON file to use as payload. Format: ACTION_NAME:FILE_PATH',
-                callback=json_input_callback,
+                '-c', '--component',
+                type=click.Choice(['service', 'middleware']),
+                help='Component type.',
+                required=True,
                 ),
             click.option(
                 '-d', '--disable-compact-names',
                 is_flag=True,
-                help='Use full property names instead of compact in payloads.',
+                help='Use full property names in payloads.',
                 ),
             click.option(
                 '-n', '--name',
                 required=True,
-                help='Component name',
+                help='Component name.',
                 ),
             click.option(
                 '-p', '--framework-version',
                 required=True,
-                help='KATANA framework version',
+                help='KATANA framework version.',
                 ),
             click.option(
                 '-q', '--quiet',
                 is_flag=True,
-                help='Disable all logs',
+                help='Disable all logs.',
                 ),
             click.option(
                 '-s', '--socket',
-                help='IPC socket name',
+                help='IPC socket name.',
                 ),
             click.option(
                 '-t', '--tcp',
-                help='TCP port',
+                help='TCP port to use when IPC socket is not used.',
                 type=click.INT,
                 ),
             click.option(
                 '-v', '--version',
                 required=True,
-                help='Component version',
+                help='Component version.',
                 ),
             click.option(
                 '-D', '--debug',
@@ -308,7 +279,7 @@ class ComponentRunner(object):
                 '-V', '--var',
                 multiple=True,
                 callback=key_value_strings_callback,
-                help='Variables',
+                help='Component variables.',
                 ),
             ]
 
@@ -365,7 +336,22 @@ class ComponentRunner(object):
         self._args = kwargs
 
         # Get input message with action name and payload if available
-        message = kwargs.get('callback')
+        message = {}
+        input = click.get_text_stream('stdin', encoding='utf8')
+        if input:
+            if not kwargs.get('action'):
+                LOG.error('Action name is missing')
+                os._exit(EXIT_ERROR)
+
+            # Add action name to message
+            message['action'] = kwargs['action']
+
+            # Add JSON file contents to message
+            try:
+                message['payload'] = json.load(input)
+            except:
+                LOG.exception('Stdin input value is not valid JSON')
+                os._exit(EXIT_ERROR)
 
         # Initialize component logging only when `quiet` argument is False, or
         # if an input message is given init logging only when debug is True

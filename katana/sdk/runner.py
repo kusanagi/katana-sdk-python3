@@ -348,7 +348,7 @@ class ComponentRunner(object):
 
             # Add JSON file contents to message
             try:
-                message['payload'] = json.load(contents)
+                message['payload'] = json.loads(contents)
             except:
                 LOG.exception('Stdin input value is not valid JSON')
                 os._exit(EXIT_ERROR)

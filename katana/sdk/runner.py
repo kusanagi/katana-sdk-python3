@@ -337,8 +337,8 @@ class ComponentRunner(object):
 
         # Get input message with action name and payload if available
         message = {}
-        input = click.get_text_stream('stdin', encoding='utf8')
-        if input:
+        contents = click.get_text_stream('stdin', encoding='utf8').read()
+        if contents:
             if not kwargs.get('action'):
                 LOG.error('Action name is missing')
                 os._exit(EXIT_ERROR)
@@ -348,7 +348,7 @@ class ComponentRunner(object):
 
             # Add JSON file contents to message
             try:
-                message['payload'] = json.load(input)
+                message['payload'] = json.load(contents)
             except:
                 LOG.exception('Stdin input value is not valid JSON')
                 os._exit(EXIT_ERROR)

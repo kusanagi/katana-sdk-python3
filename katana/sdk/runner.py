@@ -335,16 +335,10 @@ class ComponentRunner(object):
 
         self._args = kwargs
 
-        # Get input message with action name and payload if available
+        # Standard input is read only when action name is given
         message = {}
-        contents = click.get_text_stream('stdin', encoding='utf8').read()
-        if contents:
-            if not kwargs.get('action'):
-                LOG.error('Action name is missing')
-                os._exit(EXIT_ERROR)
-
-            # Add action name to message
-            message['action'] = kwargs['action']
+        if kwargs.get('action'):
+            contents = click.get_text_stream('stdin', encoding='utf8').read()
 
             # Add JSON file contents to message
             try:
@@ -352,6 +346,9 @@ class ComponentRunner(object):
             except:
                 LOG.exception('Stdin input value is not valid JSON')
                 os._exit(EXIT_ERROR)
+
+            # Add action name to message
+            message['action'] = kwargs['action']
 
         # Initialize component logging only when `quiet` argument is False, or
         # if an input message is given init logging only when debug is True

@@ -765,14 +765,21 @@ class RunContext(object):
 
         """
 
+        all_done = True
+
         for task in self.tasks:
             if not task.done():
+                all_done = False
                 continue
 
             # Task is done, check for exceptions
             if task.exception():
                 self.__terminate = True
                 break
+
+        # Stop run context when there are no more tasks running
+        if all_done:
+            self.__terminate = True
 
     @asyncio.coroutine
     def run(self):

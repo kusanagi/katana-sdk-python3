@@ -13,6 +13,7 @@ file that was distributed with this source code.
 import asyncio
 import functools
 import inspect
+import json
 import logging
 import os
 
@@ -20,6 +21,7 @@ import click
 import katana.payload
 import zmq.asyncio
 
+from ..errors import KatanaError
 from ..logging import setup_katana_logging
 from ..utils import EXIT_ERROR
 from ..utils import EXIT_OK
@@ -223,44 +225,51 @@ class ComponentRunner(object):
 
         return [
             click.option(
+                '-A', '--action',
+                help=(
+                    'Name of the action to call when request message '
+                    'is given as JSON through stdin.'
+                    ),
+                ),
+            click.option(
                 '-c', '--component',
                 type=click.Choice(['service', 'middleware']),
-                help='Component type',
+                help='Component type.',
                 required=True,
                 ),
             click.option(
                 '-d', '--disable-compact-names',
                 is_flag=True,
-                help='Use full property names instead of compact in payloads.',
+                help='Use full property names in payloads.',
                 ),
             click.option(
                 '-n', '--name',
                 required=True,
-                help='Component name',
+                help='Component name.',
                 ),
             click.option(
                 '-p', '--framework-version',
                 required=True,
-                help='KATANA framework version',
+                help='KATANA framework version.',
                 ),
             click.option(
                 '-q', '--quiet',
                 is_flag=True,
-                help='Disable all logs',
+                help='Disable all logs.',
                 ),
             click.option(
                 '-s', '--socket',
-                help='IPC socket name',
+                help='IPC socket name.',
                 ),
             click.option(
                 '-t', '--tcp',
-                help='TCP port',
+                help='TCP port to use when IPC socket is not used.',
                 type=click.INT,
                 ),
             click.option(
                 '-v', '--version',
                 required=True,
-                help='Component version',
+                help='Component version.',
                 ),
             click.option(
                 '-D', '--debug',
@@ -270,7 +279,7 @@ class ComponentRunner(object):
                 '-V', '--var',
                 multiple=True,
                 callback=key_value_strings_callback,
-                help='Variables',
+                help='Component variables.',
                 ),
             ]
 
@@ -326,23 +335,38 @@ class ComponentRunner(object):
 
         self._args = kwargs
 
-        # Initialize component logging only when `quiet` argument is False
+        # Standard input is read only when action name is given
+        message = {}
+        if kwargs.get('action'):
+            contents = click.get_text_stream('stdin', encoding='utf8').read()
+
+            # Add JSON file contents to message
+            try:
+                message['payload'] = json.loads(contents)
+            except:
+                LOG.exception('Stdin input value is not valid JSON')
+                os._exit(EXIT_ERROR)
+
+            # Add action name to message
+            message['action'] = kwargs['action']
+
+        # Initialize component logging only when `quiet` argument is False, or
+        # if an input message is given init logging only when debug is True
         if not kwargs.get('quiet'):
             setup_katana_logging(logging.DEBUG if self.debug else logging.INFO)
 
         LOG.debug('Using PID: "%s"', os.getpid())
 
-        # Set main event loop
-        install_uvevent_loop()
-        self.loop = zmq.asyncio.ZMQEventLoop()
-        asyncio.set_event_loop(self.loop)
-
-        # Create channel for TCP or IPC conections
-        if self.tcp_port:
-            channel = tcp('127.0.0.1:{}'.format(self.tcp_port))
+        # Skip zeromq initialization when transport payload is given
+        # as an input file in the CLI.
+        if message:
+            # Use standard event loop to run component server without zeromq
+            self.loop = asyncio.get_event_loop()
         else:
-            # Abstract domain unix socket
-            channel = 'ipc://{}'.format(self.socket_name)
+            # Set zeromq event loop when component is run as server
+            install_uvevent_loop()
+            self.loop = zmq.asyncio.ZMQEventLoop()
+            asyncio.set_event_loop(self.loop)
 
         # When compact mode is enabled use long payload field names
         if not self.compact_names:
@@ -353,14 +377,25 @@ class ComponentRunner(object):
 
         # Create component server and run it as a task
         server = self.server_cls(
-            channel,
             self.callbacks,
             self.args,
             debug=self.debug,
             source_file=self.source_file,
             error_callback=self.__error_callback,
             )
-        server_task = self.loop.create_task(server.listen())
+
+        if message:
+            server_task = self.loop.create_task(server.process_input(message))
+        else:
+            # Create channel for TCP or IPC conections
+            if self.tcp_port:
+                channel = tcp('127.0.0.1:{}'.format(self.tcp_port))
+            else:
+                # Abstract domain unix socket
+                channel = 'ipc://{}'.format(self.socket_name)
+
+            server_task = self.loop.create_task(server.listen(channel))
+
         ctx.tasks.append(server_task)
 
         # By default exit successfully
@@ -387,6 +422,10 @@ class ComponentRunner(object):
                 else:
                     LOG.error(err.strerror)
 
+                LOG.error('Component failed')
+            except KatanaError as err:
+                exit_code = EXIT_ERROR
+                LOG.error(err)
                 LOG.error('Component failed')
             except Exception as exc:
                 exit_code = EXIT_ERROR

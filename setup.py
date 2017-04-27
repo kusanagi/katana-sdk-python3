@@ -12,6 +12,8 @@ setup(
     license='MIT',
     author='Jerónimo Albi',
     author_email='jeronimo.albi@kusanagi.io',
+    description='Python 3 SDK to interface with the KATANA™ framework',
+    platforms=['POSIX'],
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     zip_safe=True,
@@ -32,7 +34,6 @@ setup(
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Operating System :: POSIX :: Linux',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',

@@ -61,7 +61,7 @@ def entity_from_payload(entity_payload, entity=None):
             if path_exists(payload, 'field') or path_exists(payload, 'fields'):
                 fieldset = entity_from_payload(payload, fieldset)
 
-        entity['fields'].append(fieldset)
+            entity['fields'].append(fieldset)
 
     return entity
 
@@ -505,7 +505,7 @@ class HttpActionSchema(object):
 
         """
 
-        return self.__payload.get('method', 'get')
+        return self.__payload.get('method', 'get').lower()
 
     def get_path(self):
         """Get URL path for the action.

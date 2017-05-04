@@ -10,11 +10,25 @@ file that was distributed with this source code.
 
 """
 from .base import Api
+from .base import ApiError
 from .http.request import HttpRequest
 from .http.response import HttpResponse
+from ..errors import KatanaError
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+
+NO_RETURN_VALUE = object()
+
+
+class NoReturnValueDefined(KatanaError):
+    """Raised when no return value is defined or available for a Service."""
+
+    message = 'No return value defined on {} for action: "{}"'
+
+    def __init__(self, service, version, action):
+        server = '"{}" ({})'.format(service, version)
+        super().__init__(self.message.format(server, action))
 
 
 class Response(Api):
@@ -39,6 +53,7 @@ class Response(Api):
             self.__http_response = None
 
         self.__transport = transport
+        self.__return_value = kwargs.get('return_value', NO_RETURN_VALUE)
 
     def get_gateway_protocol(self):
         """Get the protocol implemented by the Gateway handling current request.
@@ -75,6 +90,38 @@ class Response(Api):
         """
 
         return self.__http_response
+
+    def has_return(self):
+        """Check if there is a return value.
+
+        Return value is available when the initial Service that is called
+        has a return value, and returned a value in its command reply.
+
+        :rtype: bool
+
+        """
+
+        return self.__return_value != NO_RETURN_VALUE
+
+    def get_return_value(self):
+        """Get the return value returned by the called Service.
+
+        :raises: NoReturnValueDefined
+
+        :rtype: object
+
+        """
+
+        if not self.has_return():
+            transport = self.get_transport()
+            origin = transport.get_origin_service()
+            if not origin:
+                # During testing there is no origin
+                return
+
+            raise NoReturnValueDefined(*origin)
+
+        return self.__return_value
 
     def get_transport(self):
         """Gets the Transport object.

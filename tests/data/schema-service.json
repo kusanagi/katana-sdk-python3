@@ -18,7 +18,7 @@
       "rc": [["ktp://87.65.43.21:4321", "foo", "1.0", "dummy"]],
       "F": null,
       "D": true,
-      "R": {"t": "integer"},
+      "rv": {"t": "integer"},
       "h": {
         "g": false,
         "p": "/1.0/foo/{bar}",

@@ -128,8 +128,8 @@ FIELD_MAPPINGS = {
     'result': 'r',
     'rollback': 'r',
     'remote_calls': 'rc',
+    'return': 'rv',
     'response': 'R',
-    'return': 'R',
     'schema': 's',
     'schemes': 's',
     'scope': 's',
@@ -403,13 +403,18 @@ class ResponsePayload(Payload):
     name = 'response'
 
     @classmethod
-    def new(cls, version=None, status=None, body=None, headers=None):
+    def new(cls, version=None, status=None, body=None, **kwargs):
         payload = cls()
         payload.set('version', version or '1.1')
         payload.set('status', status or '200 OK')
         payload.set('body', body or '')
+
+        headers = kwargs.get('headers')
         if headers:
             payload.set('headers', headers)
+
+        if 'return_value' in kwargs:
+            payload.set('return', kwargs['return_value'])
 
         return payload
 

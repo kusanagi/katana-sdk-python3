@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.5] - Unrealesed
+### Added
+- Added getter for origin duration to transport
+
 ## [1.0.4] - 2017-05-04
 ### Added
 - Added support to get service return value in response middlewares.

@@ -56,6 +56,18 @@ class Transport(object):
 
         return self.__transport.get('meta/origin', [])
 
+    def get_origin_duration(self):
+        """Get origin Service execution time.
+
+        The execution time in milliseconds is the time that was spent by
+        the Service that was the origin of the request.
+
+        :rtype: int
+
+        """
+
+        return self.__transport.get('meta/duration', 0)
+
     def get_property(self, name, default=''):
         """Get a userland property.
 

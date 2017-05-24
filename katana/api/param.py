@@ -29,6 +29,7 @@ TYPE_FLOAT = 'float'
 TYPE_ARRAY = 'array'
 TYPE_OBJECT = 'object'
 TYPE_STRING = 'string'
+TYPE_BINARY = 'binary'
 
 # Parameter type names to python types
 TYPE_CLASSES = {
@@ -38,6 +39,7 @@ TYPE_CLASSES = {
     TYPE_ARRAY: list,
     TYPE_OBJECT: dict,
     TYPE_STRING: str,
+    TYPE_BINARY: bytes,
     }
 
 
@@ -115,9 +117,7 @@ class Param(object):
         value_class = value.__class__
 
         # Resolve non standard python types
-        if value_class == bytes:
-            return TYPE_STRING
-        elif value_class in (tuple, set):
+        if value_class in (tuple, set):
             return TYPE_ARRAY
 
         # Resolve standard mapped python types

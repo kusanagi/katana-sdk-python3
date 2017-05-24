@@ -2,6 +2,7 @@ from katana.api.param import Param
 from katana.api.param import param_to_payload
 from katana.api.param import payload_to_param
 from katana.api.param import TYPE_ARRAY
+from katana.api.param import TYPE_BINARY
 from katana.api.param import TYPE_BOOLEAN
 from katana.api.param import TYPE_INTEGER
 from katana.api.param import TYPE_FLOAT
@@ -77,7 +78,7 @@ def test_api_param_resolve_type():
         ((), TYPE_ARRAY),
         (set(), TYPE_ARRAY),
         ('', TYPE_STRING),
-        (b'', TYPE_STRING),
+        (b'', TYPE_BINARY),
         ({}, TYPE_OBJECT),
         (Foo(), TYPE_OBJECT),
         )

@@ -4,9 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.6] - 2017-05-24
+### Added
+- Added "binary" type support for parameters and return value.
+
 ## [1.0.5] - 2017-05-09
 ### Added
-- Added getter for origin duration to transport
+- Added getter for origin duration to transport.
 
 ## [1.0.4] - 2017-05-04
 ### Added
@@ -40,4 +44,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   between transactions and calls in API `Action` class.
 
 ## [1.0.0] - 2017-03-01
-- Initial release
+- Initial release.

@@ -199,3 +199,14 @@ class Api(object):
 
         if self.__logger:
             self.__logger.debug(value_to_log_string(value))
+
+    def done(self):
+        """This method does nothing and returns False.
+
+        It is implemented to comply with KATANA SDK specifications.
+
+        :rtype: bool
+
+        """
+
+        return False

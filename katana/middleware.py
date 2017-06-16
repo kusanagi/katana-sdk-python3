@@ -66,6 +66,9 @@ class MiddlewareServer(ComponentServer):
 
         code, text = payload.get('response/status').split(' ', 1)
         return {
+            # TODO: Review
+            # 'version': payload.get('response/version', '1.1'),
+            # 'headers': MultiDict(payload.get('response/headers', {})),
             'status_code': int(code),
             'status_text': text,
             'body': payload.get('response/body', ''),

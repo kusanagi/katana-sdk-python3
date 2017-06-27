@@ -12,7 +12,7 @@ def test_component():
 
     # Setting a resource with a callback that return None should fail
     with pytest.raises(ComponentError):
-        component.set_resource('dummy', lambda: None)
+        component.set_resource('dummy', lambda component: None)
 
     # Getting an invalid resource should fail
     with pytest.raises(ComponentError):
@@ -20,7 +20,7 @@ def test_component():
 
     # Set a resource
     expected = 'RESULT'
-    component.set_resource('dummy', lambda: expected)
+    component.set_resource('dummy', lambda component: expected)
     assert component.has_resource('dummy')
     assert component.get_resource('dummy') == expected
 

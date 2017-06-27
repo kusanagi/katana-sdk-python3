@@ -12,6 +12,7 @@ file that was distributed with this source code.
 
 import asyncio
 import logging
+import os
 
 from collections import namedtuple
 
@@ -189,6 +190,8 @@ class ComponentServer(object):
         LOG.debug('Updating schemas for Services ...')
         try:
             self.__schema_registry.update_registry(unpack(stream))
+        except asyncio.CancelledError:
+            raise
         except:
             LOG.exception('Failed to update schemas')
 
@@ -215,6 +218,8 @@ class ComponentServer(object):
     def __process_request(self, stream):
         try:
             frames = Frames(*stream)
+        except asyncio.CancelledError:
+            raise
         except:
             LOG.error('Received an invalid multipart stream')
             return
@@ -236,6 +241,8 @@ class ComponentServer(object):
         # Get command payload from request stream
         try:
             payload = unpack(frames.stream)
+        except asyncio.CancelledError:
+            raise
         except:
             LOG.exception('Received an invalid message format')
             return create_error_stream('Internal communication failed')
@@ -365,6 +372,9 @@ class ComponentServer(object):
         self.__socket.bind(channel)
         self.poller.register(self.__socket, zmq.POLLIN)
 
+        timeout = self.__args["timeout"] / 1000.0
+        pid = os.getpid()
+
         LOG.info('Component initiated...')
         try:
             while 1:
@@ -374,8 +384,21 @@ class ComponentServer(object):
                 if events.get(self.__socket) == zmq.POLLIN:
                     # Get request multipart stream
                     stream = yield from self.__socket.recv_multipart()
+
                     # Process request and get response stream
-                    stream = yield from self.__process_request(stream)
+                    try:
+                        stream = yield from asyncio.wait_for(
+                            self.__process_request(stream),
+                            timeout=timeout,
+                            )
+                    except asyncio.TimeoutError:
+                        msg = 'SDK execution timed out after {}ms'.format(
+                            int(timeout * 1000),
+                            pid,
+                            )
+                        LOG.warn('{}. PID: {}'.format(msg, pid))
+                        stream = create_error_stream(msg)
+
                     # When there is no response send a generic error
                     if not stream:
                         stream = error_stream

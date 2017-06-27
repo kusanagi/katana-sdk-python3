@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Callback for `Component.set_resource()` now receives the component as
   the first argument.
 
+### Added
+- SDK process execution timeout per request support.
+
 ## [1.1.0] - 2017-06-01
 ### Changed
 - Updated CONTRIBUTING.md and README.md.

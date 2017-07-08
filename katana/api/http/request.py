@@ -28,10 +28,14 @@ class HttpRequest(object):
         self.__url = url
         self.__protocol_version = kwargs.get('protocol_version') or '1.1'
         self.__query = kwargs.get('query') or MultiDict()
-        self.__headers = kwargs.get('headers') or MultiDict()
         self.__post_data = kwargs.get('post_data') or MultiDict()
         self.__body = kwargs.get('body') or ''
         self.__files = kwargs.get('files') or MultiDict()
+        # Save headers names in upper case
+        self.__headers = MultiDict({
+            name.upper(): value
+            for name, value in (kwargs.get('headers') or {}).items()
+            })
 
         # Save parsed URL
         self.__parsed_url = urlparse(self.get_url())
@@ -144,12 +148,19 @@ class HttpRequest(object):
         :param default: The optional default value.
         :type default: list
 
+        :raises: ValueError
+
         :returns: The HTTP param values as a list.
         :rtype: list
 
         """
 
-        return self.__query.get(name, default or [])
+        if default is None:
+            default = []
+        elif not isinstance(default, list):
+            raise ValueError('Default value is not a list')
+
+        return self.__query.get(name, default)
 
     def get_query_params(self):
         """Get all HTTP query params.
@@ -217,12 +228,19 @@ class HttpRequest(object):
         :param default: The optional default value.
         :type default: list
 
+        :raises: ValueError
+
         :returns: The HTTP param values as a list.
         :rtype: list
 
         """
 
-        return self.__post_data.get(name, default or [])
+        if default is None:
+            default = []
+        elif not isinstance(default, list):
+            raise ValueError('Default value is not a list')
+
+        return self.__post_data.get(name, default)
 
     def get_post_params(self):
         """Get all HTTP post params.
@@ -276,16 +294,18 @@ class HttpRequest(object):
     def has_header(self, name):
         """Determines if the HTTP header is defined.
 
+        Header name is case insensitive.
+
         Returns True if the HTTP header is defined, otherwise False.
 
-        :param name: The HTTP header.
+        :param name: The HTTP header name.
         :type name: str
 
         :rtype: bool
 
         """
 
-        return name in self.__headers
+        return name.upper() in self.__headers
 
     def get_header(self, name, default=''):
         """Get an HTTP header.
@@ -293,23 +313,59 @@ class HttpRequest(object):
         Returns the HTTP header with the given name, or and empty
         string if not defined.
 
-        A comma separated list of values ir returned when header
-        has multiple values.
+        Header name is case insensitive.
 
-        :param name: The HTTP header.
+        :param name: The HTTP header name.
         :type name: str
+        :param default: The optional default value.
+        :type default: str
 
         :returns: The HTTP header value.
         :rtype: str
 
         """
 
+        name = name.upper()
         if not self.has_header(name):
             return default
 
         return self.__headers.get(name)[0]
 
+    def get_header_array(self, name, default=None):
+        """Gets an HTTP header.
+
+        Header name is case insensitive.
+
+        :param name: The HTTP header name.
+        :type name: str
+        :param default: The optional default value.
+        :type default: list
+
+        :raises: ValueError
+
+        :returns: The HTTP header values as a list.
+        :rtype: list
+
+        """
+
+        if default is None:
+            default = []
+        elif not isinstance(default, list):
+            raise ValueError('Default value is not a list')
+
+        return self.__headers.get(name.upper(), default)
+
     def get_headers(self):
+        """Get all HTTP headers.
+
+        :returns: The HTTP headers.
+        :rtype: dict
+
+        """
+
+        return {key: value[0] for key, value in self.__headers.items()}
+
+    def get_headers_array(self):
         """Get all HTTP headers.
 
         :returns: The HTTP headers.

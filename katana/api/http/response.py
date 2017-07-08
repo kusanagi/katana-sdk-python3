@@ -25,6 +25,8 @@ class HttpResponse(object):
         self.set_protocol_version(kwargs.get('protocol_version'))
         self.set_body(kwargs.get('body'))
 
+        # Save header name mappings to avoid changing use setted header name
+        self.__header_names = {}
         # Set response headers
         headers = kwargs.get('headers')
         if headers:
@@ -32,8 +34,12 @@ class HttpResponse(object):
             if isinstance(headers, dict):
                 headers = headers.items()
 
-            for name, value in headers:
-                self.set_header(name, value)
+            for name, values in headers:
+                for value in values:
+                    self.set_header(name, value)
+
+                # Save header name mapping
+                self.__header_names[name.upper()] = name
 
     def is_protocol_version(self, version):
         """Determine if the response uses the given HTTP version.
@@ -134,6 +140,8 @@ class HttpResponse(object):
     def has_header(self, name):
         """Determines if the HTTP header is defined.
 
+        Header name is case insensitive.
+
         :param name: The HTTP header name.
         :type name: str
 
@@ -141,17 +149,28 @@ class HttpResponse(object):
 
         """
 
-        return name in self.__headers
+        return name.upper() in self.__header_names
 
-    def get_header(self, name):
+    def get_header(self, name, default=''):
         """Get an HTTP header.
 
-        :param name: The HTTP header.
-        :type name: str
+        Returns the HTTP header with the given name, or and empty
+        string if not defined.
 
+        Header name is case insensitive.
+
+        :param name: The HTTP header name.
+        :type name: str
+        :param default: The optional default value.
+        :type default: str
+
+        :returns: The HTTP header value.
         :rtype: str
 
         """
+
+        # Get the header name with the original casing
+        name = self.__header_names.get(name.upper(), name)
 
         values = self.__headers.get(name)
         if not values:
@@ -160,9 +179,46 @@ class HttpResponse(object):
         # Get first header value
         return values[0]
 
-    def get_headers(self):
-        """Get all HTTP header.
+    def get_header_array(self, name, default=None):
+        """Gets an HTTP header.
 
+        Header name is case insensitive.
+
+        :param name: The HTTP header name.
+        :type name: str
+        :param default: The optional default value.
+        :type default: list
+
+        :raises: ValueError
+
+        :returns: The HTTP header values as a list.
+        :rtype: list
+
+        """
+
+        if default is None:
+            default = []
+        elif not isinstance(default, list):
+            raise ValueError('Default value is not a list')
+
+        # Get the header name with the original casing
+        name = self.__header_names.get(name.upper(), name)
+        return self.__headers.get(name, default)
+
+    def get_headers(self):
+        """Get all HTTP headers.
+
+        :returns: The HTTP headers.
+        :rtype: dict
+
+        """
+
+        return {key: value[0] for key, value in self.__headers.items()}
+
+    def get_headers_array(self):
+        """Get all HTTP headers.
+
+        :returns: The HTTP headers.
         :rtype: `MultiDict`
 
         """

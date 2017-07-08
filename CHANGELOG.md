@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Callback for `Component.set_resource()` now receives the component as
   the first argument.
+- Header methods are now case insensitive.
 
 ### Added
 - SDK process execution timeout per request support.
+- Request and response header related methods.
 
 ## [1.1.0] - 2017-06-01
 ### Changed

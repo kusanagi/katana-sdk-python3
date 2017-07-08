@@ -99,10 +99,13 @@ def test_api_http_request_headers():
     headers = MultiDict([('X-Type', expected), ('X-Type', expected2)])
     request = HttpRequest(method, url, headers=headers)
     assert request.has_header('X-Type')
+    assert request.has_header('X-TYPE')
     assert request.get_header('X-Missing') == ''
     assert request.get_header('X-Missing', default='DEFAULT') == 'DEFAULT'
     assert request.get_header('X-Type') == expected  # Gets first item
-    assert request.get_headers() == {'X-Type': [expected, expected2]}
+    assert request.get_header_array('X-Type') == [expected, expected2]
+    assert request.get_headers() == {'X-TYPE': expected}
+    assert request.get_headers_array() == {'X-TYPE': [expected, expected2]}
 
 
 def test_api_http_request_body():

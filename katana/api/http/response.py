@@ -240,6 +240,7 @@ class HttpResponse(object):
         """
 
         self.__headers[name] = value
+        self.__header_names[name.upper()] = name
         return self
 
     def has_body(self):

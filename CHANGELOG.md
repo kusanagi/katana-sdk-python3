@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - SDK process execution timeout per request support.
 - Request and response header related methods.
+- `Api.has_variable()` was added to check if a variable exists.
 
 ## [1.1.0] - 2017-06-01
 ### Changed

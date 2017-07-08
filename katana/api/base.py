@@ -92,6 +92,18 @@ class Api(object):
 
         return self.__version
 
+    def has_variable(self, name):
+        """Checks if a variable exists.
+
+        :param name: Variable name.
+        :type name: str
+
+        :rtype: bool
+
+        """
+
+        return name in self.__variables
+
     def get_variables(self):
         """Gets all component variables.
 

@@ -188,11 +188,15 @@ class Api(object):
                 version = VersionString(version).resolve(
                     self._schema.get(name, {}).keys()
                     )
-                payload = self._schema.get('{}/{}'.format(name, version), None)
+                # NOTE: Space is uses ad separator because service names allow
+                #       any character except spaces, \t or \n.
+                path = '{} {}'.format(name, version)
+                payload = self._schema.get(path, None, delimiter=" ")
             except KatanaError:
                 payload = None
         else:
-            payload = self._schema.get('{}/{}'.format(name, version), None)
+            path = '{} {}'.format(name, version)
+            payload = self._schema.get(path, None, delimiter=" ")
 
         if not payload:
             error = 'Cannot resolve schema for Service: "{}" ({})'

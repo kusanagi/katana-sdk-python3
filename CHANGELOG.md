@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Request and response header related methods.
 - `Api.has_variable()` was added to check if a variable exists.
 
+### Fixed
+- Service schema resolution now supports services that contain
+  "/" in their name.
+
 ## [1.1.0] - 2017-06-01
 ### Changed
 - Updated CONTRIBUTING.md and README.md.

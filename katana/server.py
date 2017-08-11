@@ -23,6 +23,7 @@ from .json import serialize
 from .payload import CommandPayload
 from .payload import CommandResultPayload
 from .payload import ErrorPayload
+from .payload import Payload
 from .schema import get_schema_registry
 from .serialization import pack
 from .serialization import unpack
@@ -135,16 +136,20 @@ class ComponentServer(object):
 
         raise NotImplementedError()
 
-    def create_component_instance(self, payload):
+    def create_component_instance(self, action, payload, extra):
         """Create a component instance for a payload.
 
         The type of component created depends on the payload type.
 
+        :param action: Name of action that must process payload.
+        :type action: str
         :param payload: A payload.
-        :type payload: Payload.
+        :type payload: Payload
+        :param extra: A payload to add extra command reply values to result.
+        :type extra: Payload
 
-        :returns: A component instance for the type of payload.
-        :rtype: Component.
+        :returns: A component instance.
+        :rtype: `Component`
 
         """
 
@@ -271,9 +276,15 @@ class ComponentServer(object):
 
         command_name = payload.get('command/name')
 
+        # Create a variable to hold extra command reply result values.
+        # This is used for example to the request attributes.
+        # Because extra is passed by reference any modification by the
+        # create component modifies the extra payload.
+        extra = Payload()
+
         # Create a component instance using the command payload and
         # call user land callback to process it and get a response component.
-        component = self.create_component_instance(action, payload)
+        component = self.create_component_instance(action, payload, extra)
         if not component:
             return ErrorPayload.new('Internal communication failed').entity()
 
@@ -312,6 +323,10 @@ class ComponentServer(object):
                 self.error_callback(error)
             except:
                 LOG.exception('Error callback failed for "%s"', action)
+
+        # Add extra command reply result values to payload
+        if extra:
+            payload.update(extra)
 
         # Convert callback result to a command payload
         return CommandResultPayload.new(command_name, payload).entity()

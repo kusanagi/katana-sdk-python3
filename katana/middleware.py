@@ -42,8 +42,6 @@ class MiddlewareServer(ComponentServer):
 
         super().__init__(*args, **kwargs)
         self.__component = get_component()
-        # Request payload attributes
-        self.__attributes = {}
 
     @staticmethod
     def http_request_from_payload(payload):
@@ -75,14 +73,14 @@ class MiddlewareServer(ComponentServer):
             'body': payload.get('response/body', ''),
             }
 
-    def _create_request_component_instance(self, payload):
+    def _create_request_component_instance(self, payload, extra):
         return Request(
             self.__component,
             self.source_file,
             self.component_name,
             self.component_version,
             self.framework_version,
-            attributes=self.__attributes,
+            attributes=extra.get('attributes'),
             variables=self.variables,
             debug=self.debug,
             # TODO: Use meta and call as arguments instead these many kwargs
@@ -98,7 +96,7 @@ class MiddlewareServer(ComponentServer):
             http_request=self.http_request_from_payload(payload),
             )
 
-    def _create_response_component_instance(self, payload):
+    def _create_response_component_instance(self, payload, extra):
         return Response(
             Transport(payload.get('transport')),
             self.__component,
@@ -106,7 +104,7 @@ class MiddlewareServer(ComponentServer):
             self.component_name,
             self.component_version,
             self.framework_version,
-            attributes=self.__attributes,
+            attributes=extra.get('attributes'),
             debug=self.debug,
             variables=self.variables,
             return_value=payload.get('return', NO_RETURN_VALUE),
@@ -117,27 +115,32 @@ class MiddlewareServer(ComponentServer):
             http_response=self.http_response_from_payload(payload),
             )
 
-    def create_component_instance(self, action, payload):
+    def create_component_instance(self, action, payload, extra):
         """Create a component instance for current command payload.
 
         :param action: Name of action that must process payload.
         :type action: str
         :param payload: Command payload.
-        :type payload: `CommandPayload`
+        :type payload: CommandPayload
+        :param extra: A payload to add extra command reply values to result.
+        :type extra: Payload
 
         :rtype: `Request` or `Response`
 
         """
 
         payload = Payload(payload.get('command/arguments'))
-        # Update request attribute values
-        self.__attributes.update(payload.get('meta/attributes', {}))
+
+        # Always create a new dictionary to store request attributes and save
+        # it inside the command reply extra result values.
+        # If attributes doesn't exist in payload meta use an empty dictionary.
+        extra.set('attributes', dict(payload.get('meta/attributes', {})))
 
         middleware_type = payload.get('meta/type')
         if middleware_type == REQUEST_MIDDLEWARE:
-            return self._create_request_component_instance(payload)
+            return self._create_request_component_instance(payload, extra)
         elif middleware_type == RESPONSE_MIDDLEWARE:
-            return self._create_response_component_instance(payload)
+            return self._create_response_component_instance(payload, extra)
 
     def component_to_payload(self, payload, component):
         """Convert component to a command result payload.
@@ -177,15 +180,7 @@ class MiddlewareServer(ComponentServer):
             LOG.error('Invalid Middleware callback result')
             payload = ErrorPayload.new()
 
-        # When attributes were setted return a payload containing
-        # the attributes and the payload entity.
-        if self.__attributes:
-            payload = Payload(payload.entity())
-            payload.set("attributes", self.__attributes)
-        else:
-            payload = payload.entity()
-
-        return payload
+        return payload.entity()
 
     def create_error_payload(self, exc, component, **kwargs):
         if isinstance(component, Request):

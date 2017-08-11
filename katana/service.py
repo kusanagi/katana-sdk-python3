@@ -91,7 +91,7 @@ class ServiceServer(ComponentServer):
 
         return meta
 
-    def create_component_instance(self, action, payload):
+    def create_component_instance(self, action, payload, *args):
         """Create a component instance for current command payload.
 
         :param action: Name of action that must process payload.
@@ -108,6 +108,8 @@ class ServiceServer(ComponentServer):
         # Save transport locally to use it for response payload
         self.__transport = TransportPayload(get_path(payload, 'transport'))
         # Create an empty return value
+        # TODO: This should use the extra argument that this method receives
+        #       See middlewares and "attributes".
         self.__return_value = Payload()
 
         return Action(

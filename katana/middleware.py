@@ -42,6 +42,8 @@ class MiddlewareServer(ComponentServer):
 
         super().__init__(*args, **kwargs)
         self.__component = get_component()
+        # Request payload attributes
+        self.__attributes = {}
 
     @staticmethod
     def http_request_from_payload(payload):
@@ -80,6 +82,7 @@ class MiddlewareServer(ComponentServer):
             self.component_name,
             self.component_version,
             self.framework_version,
+            attributes=self.__attributes,
             variables=self.variables,
             debug=self.debug,
             # TODO: Use meta and call as arguments instead these many kwargs
@@ -87,6 +90,8 @@ class MiddlewareServer(ComponentServer):
             service_version=payload.get('call/version'),
             action_name=payload.get('call/action'),
             params=payload.get('call/params', []),
+            rid=payload.get('meta/id'),
+            timestamp=payload.get('meta/datetime'),
             gateway_protocol=payload.get('meta/protocol'),
             gateway_addresses=payload.get('meta/gateway'),
             client_address=payload.get('meta/client'),
@@ -101,6 +106,7 @@ class MiddlewareServer(ComponentServer):
             self.component_name,
             self.component_version,
             self.framework_version,
+            attributes=self.__attributes,
             debug=self.debug,
             variables=self.variables,
             return_value=payload.get('return', NO_RETURN_VALUE),
@@ -124,6 +130,9 @@ class MiddlewareServer(ComponentServer):
         """
 
         payload = Payload(payload.get('command/arguments'))
+        # Update request attribute values
+        self.__attributes.update(payload.get('meta/attributes', {}))
+
         middleware_type = payload.get('meta/type')
         if middleware_type == REQUEST_MIDDLEWARE:
             return self._create_request_component_instance(payload)
@@ -168,7 +177,15 @@ class MiddlewareServer(ComponentServer):
             LOG.error('Invalid Middleware callback result')
             payload = ErrorPayload.new()
 
-        return payload.entity()
+        # When attributes were setted return a payload containing
+        # the attributes and the payload entity.
+        if self.__attributes:
+            payload = Payload(payload.entity())
+            payload.set("attributes", self.__attributes)
+        else:
+            payload = payload.entity()
+
+        return payload
 
     def create_error_payload(self, exc, component, **kwargs):
         if isinstance(component, Request):

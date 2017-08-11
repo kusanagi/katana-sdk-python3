@@ -52,6 +52,8 @@ class Component(object, metaclass=Singleton):
     def set_resource(self, name, callable):
         """Store a resource.
 
+        Callback receives the `Component` instance as first argument.
+
         :param name: Name of the resource.
         :type name: str
         :param callable: A callable that returns the resource value.
@@ -61,7 +63,7 @@ class Component(object, metaclass=Singleton):
 
         """
 
-        value = callable()
+        value = callable(self)
         if value is None:
             err = 'Invalid result value for resource "{}"'.format(name)
             raise ComponentError(err)

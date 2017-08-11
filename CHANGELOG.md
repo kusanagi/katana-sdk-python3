@@ -4,9 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.1] - Unreleased
+### Changed
+- Callback for `Component.set_resource()` now receives the component as
+  the first argument.
+- Header methods are now case insensitive.
+
+### Added
+- SDK process execution timeout per request support.
+- Request and response header related methods.
+- `Api.has_variable()` was added to check if a variable exists.
+- Request attributes support.
+
+### Fixed
+- Service schema resolution now supports services that contain
+  "/" in their name.
+
 ## [1.1.0] - 2017-06-01
 ### Changed
-- Updated CONTRIBUTING.md and README.md
+- Updated CONTRIBUTING.md and README.md.
 
 ## [1.0.6] - 2017-05-24
 ### Added

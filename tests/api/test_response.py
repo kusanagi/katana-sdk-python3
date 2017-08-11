@@ -10,6 +10,7 @@ def test_api_response():
     SchemaRegistry()
 
     values = {
+        'attributes': {},
         'transport': Transport({}),
         'component': object(),
         'path': '/path/to/file.py',

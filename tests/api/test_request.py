@@ -18,6 +18,7 @@ def test_api_request():
     service_version = '1.1'
     action_name = 'bar'
     values = {
+        'attributes': {},
         'component': object(),
         'path': '/path/to/file.py',
         'name': 'dummy',
@@ -75,6 +76,7 @@ def test_api_request_new_response():
     SchemaRegistry()
 
     values = {
+        'attributes': {},
         'component': object(),
         'path': '/path/to/file.py',
         'name': 'dummy',
@@ -129,6 +131,7 @@ def test_api_request_new_param():
     SchemaRegistry()
 
     values = {
+        'attributes': {},
         'component': object(),
         'path': '/path/to/file.py',
         'name': 'dummy',

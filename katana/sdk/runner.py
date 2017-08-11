@@ -267,6 +267,12 @@ class ComponentRunner(object):
                 type=click.INT,
                 ),
             click.option(
+                '-T', '--timeout',
+                help='Process execution timeout per request in milliseconds.',
+                type=click.INT,
+                default=30000,
+                ),
+            click.option(
                 '-v', '--version',
                 required=True,
                 help='Component version.',

@@ -47,21 +47,26 @@ def test_api_http_response_headers():
     expected = 'RESULT'
     assert response.set_header('X-Type', expected) == response
     assert response.has_header('X-Type')
+    assert response.has_header('X-TYPE')
     assert response.get_header('X-Type') == expected
-    assert response.get_headers() == {'X-Type': [expected]}
+    assert response.get_header_array('X-Type') == [expected]
+    assert response.get_headers() == {'X-Type': expected}
+    assert response.get_headers_array() == {'X-Type': [expected]}
 
     # Duplicate a header
     expected2 = 'RESULT-2'
     response.set_header('X-Type', expected2)
     assert response.has_header('X-Type')
     assert response.get_header('X-Type') == expected  # Gets first item
-    assert response.get_headers() == {'X-Type': [expected, expected2]}
+    assert response.get_header_array('X-Type') == [expected, expected2]
+    assert response.get_headers() == {'X-Type': expected}
+    assert response.get_headers_array() == {'X-Type': [expected, expected2]}
 
     # Create a response with headers
-    response = HttpResponse(200, 'OK', headers={'X-Type': expected})
+    response = HttpResponse(200, 'OK', headers={'X-Type': [expected]})
     assert response.has_header('X-Type')
     assert response.get_header('X-Type') == expected
-    assert response.get_headers() == {'X-Type': [expected]}
+    assert response.get_headers() == {'X-Type': expected}
 
 
 def test_api_http_response_body():

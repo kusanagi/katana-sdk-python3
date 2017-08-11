@@ -92,6 +92,18 @@ class Api(object):
 
         return self.__version
 
+    def has_variable(self, name):
+        """Checks if a variable exists.
+
+        :param name: Variable name.
+        :type name: str
+
+        :rtype: bool
+
+        """
+
+        return name in self.__variables
+
     def get_variables(self):
         """Gets all component variables.
 
@@ -176,11 +188,15 @@ class Api(object):
                 version = VersionString(version).resolve(
                     self._schema.get(name, {}).keys()
                     )
-                payload = self._schema.get('{}/{}'.format(name, version), None)
+                # NOTE: Space is uses ad separator because service names allow
+                #       any character except spaces, \t or \n.
+                path = '{} {}'.format(name, version)
+                payload = self._schema.get(path, None, delimiter=" ")
             except KatanaError:
                 payload = None
         else:
-            payload = self._schema.get('{}/{}'.format(name, version), None)
+            path = '{} {}'.format(name, version)
+            payload = self._schema.get(path, None, delimiter=" ")
 
         if not payload:
             error = 'Cannot resolve schema for Service: "{}" ({})'
@@ -199,3 +215,14 @@ class Api(object):
 
         if self.__logger:
             self.__logger.debug(value_to_log_string(value))
+
+    def done(self):
+        """This method does nothing and returns False.
+
+        It is implemented to comply with KATANA SDK specifications.
+
+        :rtype: bool
+
+        """
+
+        return False

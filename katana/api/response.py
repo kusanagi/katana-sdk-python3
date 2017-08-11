@@ -36,6 +36,7 @@ class Response(Api):
 
     def __init__(self, transport, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.__attributes = kwargs['attributes']
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
         self.__gateway_addresses = kwargs.get('gateway_addresses')
@@ -133,3 +134,30 @@ class Response(Api):
         """
 
         return self.__transport
+
+    def get_request_attribute(self, name, default=''):
+        """
+        Get a request attribute value.
+
+        :param name: Attribute name.
+        :type name: str
+        :param default: Default value to use when attribute is not defined.
+        :type default: str
+
+        :raises: TypeError
+
+        :rtype: str
+
+        """
+
+        return self.__attributes.get(name, default)
+
+    def get_request_attributes(self):
+        """
+        Get all request attributes.
+
+        :rtype: dict
+
+        """
+
+        return self.__attributes

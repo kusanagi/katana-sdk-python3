@@ -22,6 +22,7 @@ def test_api_base(mocker):
 
     # Check defaults
     assert not api.is_debug()
+    assert not api.has_variable('foo')
     assert api.get_variables() == {}
 
     # Check values
@@ -44,6 +45,7 @@ def test_api_base(mocker):
     variables = {'foo': 'bar'}
     api = base.Api(component, variables=variables, debug=True, **values)
     assert api.is_debug()
+    assert api.has_variable('foo')
     assert api.get_variables() == variables
     assert api.get_variable('foo') == variables['foo']
 

@@ -30,6 +30,9 @@ class Request(Api):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__client_address = kwargs['client_address']
+        self.__attributes = kwargs['attributes']
+        self.__request_id = kwargs.get('rid')
+        self.__request_timestamp = kwargs.get('timestamp')
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
         self.__gateway_addresses = kwargs.get('gateway_addresses')
@@ -49,6 +52,26 @@ class Request(Api):
         self.set_service_name(kwargs.get('service_name', ''))
         self.set_service_version(kwargs.get('service_version', ''))
         self.set_action_name(kwargs.get('action_name', ''))
+
+    def get_id(self):
+        """
+        Get the request UUID.
+
+        :rtype: str
+
+        """
+
+        return self.__request_id
+
+    def get_timestamp(self):
+        """
+        Get the request timestamp.
+
+        :rtype: str
+
+        """
+
+        return self.__request_timestamp
 
     def get_gateway_protocol(self):
         """Get the protocol implemented by the Gateway handling current request.
@@ -179,6 +202,7 @@ class Request(Api):
             self.get_name(),
             self.get_version(),
             self.get_framework_version(),
+            attributes=self.__attributes,
             gateway_protocol=self.get_gateway_protocol(),
             gateway_addresses=self.__gateway_addresses,
             http_response=http_response,
@@ -275,3 +299,21 @@ class Request(Api):
             payload_to_param(payload)
             for payload in self.__params.values()
             ]
+
+    def set_attribute(self, name, value):
+        """
+        Register a request attribute.
+
+        Attribute value must be a string.
+
+        :raises: TypeError
+
+        :rtype: Request
+
+        """
+
+        if not isinstance(value, str):
+            raise TypeError('Attribute value must be a string')
+
+        self.__attributes[name] = value
+        return self

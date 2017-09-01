@@ -10,7 +10,7 @@ Python 3 SDK to interface with the **KATANA**™ framework (https://kusanagi.io)
 Requirements
 ------------
 
-* KATANA Framework 1.1
+* KATANA Framework 1.2+
 * [Python](https://www.python.org/downloads/) 3.4+
 * [libzmq](http://zeromq.org/intro:get-the-software) 4.1.5+
 

@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+## Changed
+- Running a service with an action input payload now flushes the output
+  right after the print.
 
 ## [1.2.0] - 2017-09-01
 ### Fixed

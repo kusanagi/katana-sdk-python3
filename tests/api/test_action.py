@@ -589,10 +589,10 @@ def test_api_action_defer_call(read_json, registry):
     files = [action.new_file('download', '/tmp/file.ext')]
     assert action.defer_call(c_name, c_version, c_action, files=files) == action
     tr_files = transport.get(files_path, delimiter='|')
-    assert isinstance(tr_files, dict)
+    assert isinstance(tr_files, list)
     assert len(tr_files) == 1
-    assert 'download' in tr_files
-    assert tr_files['download'] == {
+    assert tr_files[0] == {
+        FIELD_MAPPINGS['name']: 'download',
         FIELD_MAPPINGS['token']: '',
         FIELD_MAPPINGS['filename']: 'file.ext',
         FIELD_MAPPINGS['size']: 0,
@@ -706,10 +706,10 @@ def test_api_action_call_remote(read_json, registry):
     kwargs['files'] = [action.new_file('download', '/tmp/file.ext')]
     assert action.remote_call(**kwargs) == action
     tr_files = transport.get(files_path, delimiter='|')
-    assert isinstance(tr_files, dict)
+    assert isinstance(tr_files, list)
     assert len(tr_files) == 1
-    assert 'download' in tr_files
-    assert tr_files['download'] == {
+    assert tr_files[0] == {
+        FIELD_MAPPINGS['name']: 'download',
         FIELD_MAPPINGS['token']: '',
         FIELD_MAPPINGS['filename']: 'file.ext',
         FIELD_MAPPINGS['size']: 0,

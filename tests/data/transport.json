@@ -12,6 +12,7 @@
     }
   },
   "b": {
+    "n": "download",
     "p": "file:///tmp/document.pdf",
     "f": "document.pdf",
     "s": 1234567890,
@@ -21,21 +22,22 @@
     "http://127.0.0.1:80": {
       "users": {
         "1.0.0": {
-          "create": {
-            "avatar": {
+          "create": [
+            {
+              "n": "avatar",
               "p": "http://12.34.56.78:1234/files/ac3bd4b8-7da3-4c40-8661-746adfa55e0d",
               "t": "fb9an6c46be74s425010896fcbd99e2a",
               "f": "smiley.jpg",
               "s": 1234567890,
               "m": "image/jpeg"
-            },
-            "document": {
+            }, {
+              "n": "document",
               "p": "file:///tmp/document.pdf",
               "f": "document.pdf",
               "s": 1234567890,
               "m": "application/pdf"
             }
-          }
+          ]
         }
       }
     }

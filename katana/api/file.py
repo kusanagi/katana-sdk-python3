@@ -37,6 +37,7 @@ def file_to_payload(file):
     """
 
     return Payload().set_many({
+        'name': file.get_name(),
         'path': file.get_path(),
         'mime': file.get_mime(),
         'filename': file.get_filename(),
@@ -45,11 +46,9 @@ def file_to_payload(file):
         })
 
 
-def payload_to_file(name, payload):
+def payload_to_file(payload):
     """Convert payload to a File.
 
-    :param name: File field name.
-    :type name: str
     :param payload: A payload object.
     :type payload: dict
 
@@ -59,7 +58,7 @@ def payload_to_file(name, payload):
 
     # All files created from payload data are remote
     return File(
-        name,
+        get_path(payload, 'name'),
         get_path(payload, 'path'),
         mime=get_path(payload, 'mime', None),
         filename=get_path(payload, 'filename', None),

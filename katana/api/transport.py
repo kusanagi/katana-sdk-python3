@@ -116,7 +116,7 @@ class Transport(object):
         """
 
         if self.has_download():
-            return payload_to_file('download', self.__transport.get('body'))
+            return payload_to_file(self.__transport.get('body'))
 
     def get_data(self, address=None, service=None, version=None, action=None):
         """Get data from Transport.

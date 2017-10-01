@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.1] - 2017-10-01
+## Changed
+- Running a service with an action input payload now flushes the output
+  right after the print.
+- File payload have a name and is now added to transport as a list of
+  files instead of a dict.
+
 ## [1.2.0] - 2017-09-01
 ### Fixed
 - File parameters now work for service to service calls.

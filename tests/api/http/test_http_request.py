@@ -140,7 +140,8 @@ def test_api_http_request_files():
     assert file.get_path() == ''
 
     # Create a request with a file
-    file = payload_to_file('test', {
+    file = payload_to_file({
+        'name': 'test',
         'path': '/files',
         'mime': 'application/json',
         'filename': 'test.json',

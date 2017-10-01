@@ -365,7 +365,7 @@ class ComponentServer(object):
             raise KatanaError(error)
 
         output = serialize(payload, prettify=True).decode('utf8')
-        print(output)
+        print(output, flush=True)
 
     @asyncio.coroutine
     def listen(self, channel):

@@ -27,6 +27,7 @@ def test_api_file_to_payload():
 
 def test_api_payload_to_file():
     values = {
+        'name': 'foo',
         'path': 'http://127.0.0.1:8080/ANBDKAD23142421',
         'mime': 'application/json',
         'filename': 'file.json',
@@ -35,7 +36,7 @@ def test_api_payload_to_file():
         }
     payload = {FIELD_MAPPINGS[name]: value for name, value in values.items()}
 
-    file = payload_to_file('foo', payload)
+    file = payload_to_file(payload)
     assert file is not None
     assert file.get_name() == 'foo'
 

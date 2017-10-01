@@ -251,14 +251,22 @@ class Action(Api):
         version = self.get_version()
         action_name = self.get_action_name()
 
-        # Get files for current service, version and action
+        # Get files for current service, version and action and save
+        # them in a dictionary where the keys are the file parameter
+        # name and the value the file payload.
         path = 'files|{}|{}|{}|{}'.format(
             self.__gateway[1],
             nomap(service),
             version,
             nomap(action_name),
             )
-        self.__files = transport.get(path, default={}, delimiter='|')
+        self.__files = {}
+        for file in transport.get(path, default=[], delimiter='|'):
+            name = get_path(file, 'name', None)
+            if not name:
+                continue
+
+            self.__files[name] = file
 
         # Get schema for current action
         try:
@@ -295,14 +303,14 @@ class Action(Api):
             # to true.
             has_file_server = True
 
-        files_payload = {}
+        files_list = []
         for file in files:
             if file.is_local() and not has_file_server:
                 raise NoFileServerError(self.get_name(), self.get_version())
 
-            files_payload[file.get_name()] = file_to_payload(file)
+            files_list.append(file_to_payload(file))
 
-        return files_payload
+        return files_list
 
     def is_origin(self):
         """Determines if the current service is the origin of the request.
@@ -457,7 +465,7 @@ class Action(Api):
         """
 
         if self.has_file(name):
-            return payload_to_file(name, self.__files[name])
+            return payload_to_file(self.__files[name])
         else:
             return File(name, path='')
 
@@ -469,8 +477,8 @@ class Action(Api):
         """
 
         files = []
-        for name, payload in self.__files.items():
-            files.append(payload_to_file(name, payload))
+        for payload in self.__files.values():
+            files.append(payload_to_file(payload))
 
         return files
 

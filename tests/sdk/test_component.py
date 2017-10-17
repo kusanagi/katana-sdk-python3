@@ -81,4 +81,4 @@ def test_component_log(logs):
     Component().log(expected)
     out = logs.getvalue()
     # Output without line break should match
-    assert out.rstrip() == expected
+    assert out.rstrip().endswith(expected)

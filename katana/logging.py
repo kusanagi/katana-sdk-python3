@@ -107,7 +107,7 @@ def setup_katana_logging(level=logging.INFO):
     logger.setLevel(logging.DEBUG)
     if not logger.handlers:
         handler = logging.StreamHandler(stream=output)
-        handler.setFormatter(logging.Formatter())  # No format is applied
+        handler.setFormatter(KatanaFormatter(format))
         logger.addHandler(handler)
         logger.propagate = False
 

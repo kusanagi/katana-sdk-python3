@@ -148,4 +148,4 @@ def test_api_base_log(mocker, logs):
     assert api.is_debug()
     api.log(log_message)
     out = logs.getvalue()
-    assert out.rstrip() == log_message
+    assert out.rstrip().endswith(log_message)

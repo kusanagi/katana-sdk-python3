@@ -15,7 +15,7 @@ def test_api_schema_param(read_json):
     assert schema.get_pattern() == ''
     assert not schema.allow_empty()
     assert not schema.has_default_value()
-    assert schema.get_default_value() == ''
+    assert schema.get_default_value() is None
     assert not schema.is_required()
     assert schema.get_items() == {}
     assert schema.get_max() == sys.maxsize

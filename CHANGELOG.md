@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Support for action tags defined in the configuration.
 
 ### Changed
-- Runtime call default timeout to 10000
+- Runtime call default timeout to 10000.
+- Parameter schema default value getter now returns None by default.
 
 ### Fixed
 - Component.log() now includes the date and [SDK] prefix.

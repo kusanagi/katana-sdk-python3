@@ -101,11 +101,11 @@ class ParamSchema(object):
     def get_default_value(self):
         """Get default value for parameter.
 
-        :rtype: str
+        :rtype: object
 
         """
 
-        return self.__payload.get('default_value', '')
+        return self.__payload.get('default_value', None)
 
     def is_required(self):
         """Check if parameter is required.

@@ -198,7 +198,7 @@ def runtime_call(address, transport, action, callee, **kwargs):
 
     command = CommandPayload.new('runtime-call', 'service', args=args)
 
-    timeout = kwargs.get('timeout') or 1000
+    timeout = kwargs.get('timeout') or 10000
     channel = ipc(address)
     socket = CONTEXT.socket(zmq.REQ)
     try:
@@ -1019,11 +1019,8 @@ class Action(Api):
             'version': version,
             'action': action,
             'caller': self.get_action_name(),
+            'timeout': kwargs.get('timeout') or 1000,
             })
-
-        timeout = kwargs.get('timeout')
-        if timeout:
-            payload.set('timeout', timeout)
 
         params = kwargs.get('params')
         if params:

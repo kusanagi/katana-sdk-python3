@@ -229,6 +229,8 @@ def runtime_call(address, transport, action, callee, **kwargs):
 
     if payload.path_exists('error'):
         raise ApiError(payload.get('error/message'))
+    elif payload.path_exists('command_reply/result/error'):
+        raise ApiError(payload.get('command_reply/result/error/message'))
 
     result = payload.get('command_reply/result')
     return (get_path(result, 'transport'), get_path(result, 'return'))

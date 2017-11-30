@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Support for action tags defined in the configuration.
 
+### Fixed
+- Error payload handling during runtime calls
+
 ### Changed
 - Runtime call default timeout to 10000.
 - Parameter schema default value getter now returns None by default.

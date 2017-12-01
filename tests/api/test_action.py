@@ -15,6 +15,7 @@ from katana.payload import ErrorPayload
 from katana.payload import FIELD_MAPPINGS
 from katana.payload import get_path
 from katana.payload import Payload
+from katana.schema import SchemaRegistry
 from katana.utils import nomap
 
 # Mapped parameter names for payload
@@ -794,3 +795,34 @@ def test_api_action_errors(read_json, registry):
     assert len(errors) == 2
     for error in errors:
         assert isinstance(error, ErrorPayload)
+
+
+def test_action_log(mocker, logs, read_json):
+    SchemaRegistry()
+
+    values = {
+        'action': 'bar',
+        'params': [],
+        'transport': Payload(read_json('transport.json')),
+        'component': None,
+        'path': '/path/to/file.py',
+        'name': 'test',
+        'version': '1.0',
+        'framework_version': '1.0.0',
+        }
+    action = Action(**values)
+
+    log_message = 'Test log message'
+    # When debug is false no logging is done
+    assert not action.is_debug()
+    action.log(log_message)
+    out = logs.getvalue()
+    # There should be no ouput at all
+    assert len(out) == 0
+
+    # Create an instance with debug on
+    action = Action(debug=True, **values)
+    assert action.is_debug()
+    action.log(log_message)
+    out = logs.getvalue()
+    assert out.rstrip().split(' |')[0].endswith(log_message)

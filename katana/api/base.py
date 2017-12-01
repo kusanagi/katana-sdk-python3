@@ -37,12 +37,8 @@ class Api(object):
         self.__debug = kw.get('debug', False)
         self._schema = get_schema_registry()
         self._component = component
-
-        # Logging is only enabled when debug is True
-        if self.__debug:
-            self.__logger = logging.getLogger('katana.api')
-        else:
-            self.__logger = None
+        # Logger must be initialized by child classes
+        self._logger = None
 
     def is_debug(self):
         """Determine if component is running in debug mode.
@@ -213,8 +209,8 @@ class Api(object):
 
         """
 
-        if self.__logger:
-            self.__logger.debug(value_to_log_string(value))
+        if self._logger:
+            self._logger.debug(value_to_log_string(value))
 
     def done(self):
         """This method does nothing and returns False.

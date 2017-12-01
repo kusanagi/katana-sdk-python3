@@ -142,10 +142,3 @@ def test_api_base_log(mocker, logs):
     out = logs.getvalue()
     # There should be no ouput at all
     assert len(out) == 0
-
-    # Create an instance with debug on
-    api = base.Api(debug=True, **values)
-    assert api.is_debug()
-    api.log(log_message)
-    out = logs.getvalue()
-    assert out.rstrip().endswith(log_message)

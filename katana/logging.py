@@ -23,6 +23,55 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 
+class RequestLogger(object):
+    """
+    Logger for requests.
+
+    It appends the request ID to all logging messages.
+
+    """
+
+    def __init__(self, rid, name):
+        self.rid = rid
+        self.log = logging.getLogger(name)
+
+    def debug(self, msg, *args, **kw):
+        if self.rid:
+            self.log.debug(msg + ' |{}|'.format(self.rid), *args, **kw)
+        else:
+            self.log.debug(msg, *args, **kw)
+
+    def info(self, msg, *args, **kw):
+        if self.rid:
+            self.log.info(msg + ' |{}|'.format(self.rid), *args, **kw)
+        else:
+            self.log.info(msg, *args, **kw)
+
+    def warning(self, msg, *args, **kw):
+        if self.rid:
+            self.log.warning(msg + ' |{}|'.format(self.rid), *args, **kw)
+        else:
+            self.log.warning(msg, *args, **kw)
+
+    def error(self, msg, *args, **kw):
+        if self.rid:
+            self.log.error(msg + ' |{}|'.format(self.rid), *args, **kw)
+        else:
+            self.log.error(msg, *args, **kw)
+
+    def critical(self, msg, *args, **kw):
+        if self.rid:
+            self.log.critical(msg + ' |{}|'.format(self.rid), *args, **kw)
+        else:
+            self.log.critical(msg, *args, **kw)
+
+    def exception(self, msg, *args, **kw):
+        if self.rid:
+            self.log.exception(msg + ' |{}|'.format(self.rid), *args, **kw)
+        else:
+            self.log.exception(msg, *args, **kw)
+
+
 class KatanaFormatter(logging.Formatter):
     """Default KATANA logging formatter."""
 
@@ -75,14 +124,20 @@ def get_output_buffer():
     return sys.stdout
 
 
-def setup_katana_logging(level=logging.INFO):
+def setup_katana_logging(type, name, version, framework, level=logging.INFO):
     """Initialize logging defaults for KATANA.
 
+    :param type: Component type.
+    :param name: Component name.
+    :param version: Component version.
+    :param framework: KATANA framework version.
     :param level: Logging level. Default: INFO.
 
     """
 
-    format = "%(asctime)sZ [%(levelname)s] [SDK] %(message)s"
+    format = "%(asctime)sZ {} [%(levelname)s] [SDK] %(message)s".format(
+        "{} {}/{} ({})".format(type, name, version, framework)
+        )
 
     output = get_output_buffer()
 

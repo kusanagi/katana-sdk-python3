@@ -477,6 +477,25 @@ class CommandPayload(Payload):
 
         return payload
 
+    @property
+    def request_id(self):
+        """
+        Get current request ID from command arguments.
+
+        The ID is available for request, response and action commands.
+
+        :rtype: str
+
+        """
+
+        # For request and response meta is an argument
+        rid = self.get('command/arguments/meta/id', '')
+        if not rid:
+            # For action payloads meta is part of the transport
+            rid = self.get('command/arguments/transport/meta/id', '')
+
+        return rid
+
 
 class CommandResultPayload(Payload):
     """Class definition for command result payloads."""

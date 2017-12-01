@@ -356,13 +356,6 @@ class ComponentRunner(object):
             # Add action name to message
             message['action'] = kwargs['action']
 
-        # Initialize component logging only when `quiet` argument is False, or
-        # if an input message is given init logging only when debug is True
-        if not kwargs.get('quiet'):
-            setup_katana_logging(logging.DEBUG if self.debug else logging.INFO)
-
-        LOG.debug('Using PID: "%s"', os.getpid())
-
         # Skip zeromq initialization when transport payload is given
         # as an input file in the CLI.
         if message:
@@ -389,6 +382,19 @@ class ComponentRunner(object):
             source_file=self.source_file,
             error_callback=self.__error_callback,
             )
+
+        # Initialize component logging only when `quiet` argument is False, or
+        # if an input message is given init logging only when debug is True
+        if not kwargs.get('quiet'):
+            setup_katana_logging(
+                self.server_cls.get_type(),
+                server.component_name,
+                server.component_version,
+                server.framework_version,
+                logging.DEBUG if self.debug else logging.INFO,
+                )
+
+        LOG.debug('Using PID: "%s"', os.getpid())
 
         if message:
             server_task = self.loop.create_task(server.process_input(message))

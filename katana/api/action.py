@@ -16,6 +16,7 @@ from decimal import Decimal
 
 import zmq
 
+from ..logging import RequestLogger
 from ..payload import CommandPayload
 from ..payload import ErrorPayload
 from ..payload import get_path
@@ -198,7 +199,7 @@ def runtime_call(address, transport, action, callee, **kwargs):
 
     command = CommandPayload.new('runtime-call', 'service', args=args)
 
-    timeout = kwargs.get('timeout') or 1000
+    timeout = kwargs.get('timeout') or 10000
     channel = ipc(address)
     socket = CONTEXT.socket(zmq.REQ)
     try:
@@ -229,6 +230,8 @@ def runtime_call(address, transport, action, callee, **kwargs):
 
     if payload.path_exists('error'):
         raise ApiError(payload.get('error/message'))
+    elif payload.path_exists('command_reply/result/error'):
+        raise ApiError(payload.get('command_reply/result/error/message'))
 
     result = payload.get('command_reply/result')
     return (get_path(result, 'transport'), get_path(result, 'return'))
@@ -246,6 +249,11 @@ class Action(Api):
             get_path(param, 'name'): Payload(param)
             for param in params
             }
+
+        # Logging is only enabled when debug is True
+        if self.is_debug():
+            rid = transport.get('meta/id')
+            self._logger = RequestLogger(rid, 'katana.api')
 
         service = self.get_name()
         version = self.get_version()
@@ -1019,11 +1027,8 @@ class Action(Api):
             'version': version,
             'action': action,
             'caller': self.get_action_name(),
+            'timeout': kwargs.get('timeout') or 1000,
             })
-
-        timeout = kwargs.get('timeout')
-        if timeout:
-            payload.set('timeout', timeout)
 
         params = kwargs.get('params')
         if params:

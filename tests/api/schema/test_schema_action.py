@@ -33,6 +33,8 @@ def test_api_schema_action_defaults():
     assert action.get_remote_calls() == []
     assert not action.has_return()
     assert action.get_return_type() == ''
+    assert action.get_tags() == []
+    assert not action.has_tag('foo')
     assert action.get_params() == []
     assert not action.has_param('foo')
 
@@ -85,6 +87,12 @@ def test_api_schema_action(read_json):
     # Check return value
     assert action.has_return()
     assert action.get_return_type() == payload.get('return/type')
+
+    # Check tags
+    tags = action.get_tags()
+    assert len(tags) == 2
+    for tag in ['foo', 'bar']:
+        assert tag in tags
 
     # Check relations
     assert action.has_relations()

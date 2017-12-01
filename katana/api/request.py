@@ -9,6 +9,11 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+from .. import urn
+from ..logging import RequestLogger
+from ..payload import get_path
+from ..payload import Payload
+
 from .base import Api
 from .http.request import HttpRequest
 from .param import Param
@@ -16,9 +21,6 @@ from .param import param_to_payload
 from .param import payload_to_param
 from .response import Response
 from .transport import Transport
-from .. import urn
-from ..payload import get_path
-from ..payload import Payload
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
@@ -36,6 +38,10 @@ class Request(Api):
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
         self.__gateway_addresses = kwargs.get('gateway_addresses')
+
+        # Logging is only enabled when debug is True
+        if self.is_debug():
+            self._logger = RequestLogger(self.__request_id, 'katana.api')
 
         http_request = kwargs.get('http_request')
         if http_request:

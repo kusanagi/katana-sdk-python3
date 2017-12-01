@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2017-11-01
+### Added
+- Support for action tags defined in the configuration.
+- Request ID to logs.
+- Component and framework info was added to log prefix.
+
+### Fixed
+- Error payload handling during runtime calls
+
+### Changed
+- Runtime call default timeout to 10000.
+- Parameter schema default value getter now returns None by default.
+
+### Fixed
+- Component.log() now includes the date and [SDK] prefix.
+
 ## [1.2.1] - 2017-10-01
 ## Changed
 - Running a service with an action input payload now flushes the output

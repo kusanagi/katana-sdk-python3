@@ -9,11 +9,12 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
+from ..errors import KatanaError
+from ..logging import RequestLogger
+
 from .base import Api
-from .base import ApiError
 from .http.request import HttpRequest
 from .http.response import HttpResponse
-from ..errors import KatanaError
 
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
@@ -37,6 +38,11 @@ class Response(Api):
     def __init__(self, transport, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__attributes = kwargs['attributes']
+
+        # Logging is only enabled when debug is True
+        if self.is_debug():
+            rid = transport.get_request_id()
+            self._logger = RequestLogger(rid, 'katana.api')
 
         self.__gateway_protocol = kwargs.get('gateway_protocol')
         self.__gateway_addresses = kwargs.get('gateway_addresses')

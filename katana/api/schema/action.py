@@ -101,6 +101,7 @@ class ActionSchema(object):
         self.__payload = Payload(payload)
         self.__params = self.__payload.get('params', {})
         self.__files = self.__payload.get('files', {})
+        self.__tags = self.__payload.get('tags', [])
 
     def is_deprecated(self):
         """Check if action has been deprecated.
@@ -472,6 +473,29 @@ class ActionSchema(object):
             raise ActionSchemaError(error.format(name))
 
         return FileSchema(name, self.__files[name])
+
+    def has_tag(self, name):
+        """Check that a tag is defined for the action.
+
+        The tag name is case sensitive.
+
+        :param name: Tag name.
+        :type name: str
+
+        :rtype: bool
+
+        """
+
+        return name in self.__tags
+
+    def get_tags(self):
+        """Get the tags defined for the action.
+
+        :rtype: list
+
+        """
+
+        return list(self.__tags)
 
     def get_http_schema(self):
         """Get HTTP action schema.

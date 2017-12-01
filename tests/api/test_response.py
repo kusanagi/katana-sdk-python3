@@ -41,3 +41,35 @@ def test_api_response():
     response = Response(**values)
     assert isinstance(response.get_http_request(), HttpRequest)
     assert isinstance(response.get_http_response(), HttpResponse)
+
+
+def test_response_log(mocker, logs):
+    SchemaRegistry()
+
+    values = {
+        'attributes': {},
+        'transport': Transport({'meta': {'id': 'TEST'}}),
+        'component': object(),
+        'path': '/path/to/file.py',
+        'name': 'dummy',
+        'version': '1.0',
+        'framework_version': '1.0.0',
+        'gateway_protocol': urn.HTTP,
+        'gateway_addresses': ['12.34.56.78:1234', 'http://127.0.0.1:80'],
+        }
+    response = Response(**values)
+
+    log_message = 'Test log message'
+    # When debug is false no logging is done
+    assert not response.is_debug()
+    response.log(log_message)
+    out = logs.getvalue()
+    # There should be no ouput at all
+    assert len(out) == 0
+
+    # Create an instance with debug on
+    response = Response(debug=True, **values)
+    assert response.is_debug()
+    response.log(log_message)
+    out = logs.getvalue()
+    assert out.rstrip().split(' |')[0].endswith(log_message)

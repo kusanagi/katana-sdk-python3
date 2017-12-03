@@ -531,8 +531,8 @@ class Action(Api):
 
         # Check if there are mappings to validate.
         # Note: When action is run from CLI mappings will be ampty.
-        if self._schema.has_mappings:
-            if not get_path(self._schema.get(path), 'files', False):
+        if self._registry.has_mappings:
+            if not get_path(self._registry.get(path), 'files', False):
                 raise NoFileServerError(service, version)
 
         self.__transport.set('body', file_to_payload(file))
@@ -903,13 +903,27 @@ class Action(Api):
 
         # Get address for current action's service
         path = '/'.join([self.get_name(), self.get_version(), 'address'])
-        address = self._schema.get(path, None)
+        address = self._registry.get(path, None)
         if not address:
             msg = 'Failed to get address for Service: "{}" ({})'.format(
                 self.get_name(),
                 self.get_version(),
                 )
             raise ApiError(msg)
+
+        # Check that files are supported by the service if local files are used
+        files = kwargs.get('files')
+        if files:
+            for file in files:
+                if not file.is_local():
+                    continue
+
+                # A local file is included in the files list
+                if self.__schema and self.__schema.has_file_server():
+                    # Files are supported
+                    break
+
+                raise NoFileServerError(self.get_name(), self.get_version())
 
         transport, result = runtime_call(
             address,

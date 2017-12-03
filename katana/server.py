@@ -83,7 +83,7 @@ class ComponentServer(object):
 
         self.__args = args
         self.__socket = None
-        self.__schema_registry = get_schema_registry()
+        self.__registry = get_schema_registry()
 
         # Check the first callback to see if asyncio is being used,
         # otherwise callbacks are standard python callables.
@@ -206,7 +206,7 @@ class ComponentServer(object):
 
         LOG.debug('Updating schemas for Services ...')
         try:
-            self.__schema_registry.update_registry(unpack(stream))
+            self.__registry.update_registry(unpack(stream))
         except asyncio.CancelledError:
             raise
         except:

@@ -221,4 +221,6 @@ class Api(object):
 
         """
 
-        return False
+        raise ApiError(
+            'SDK does not support async call to end action: Api.done()'
+            )

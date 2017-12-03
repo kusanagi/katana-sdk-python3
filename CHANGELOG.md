@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - A configured file server must be available to make runtime calls
   that send file parameters.
 
+### Changed
+- Calls to `Api.done()` raise an exception now.
+
 ## [1.3.0] - 2017-11-01
 ### Added
 - Support for action tags defined in the configuration.

@@ -35,7 +35,7 @@ class Api(object):
         self.__framework_version = framework_version
         self.__variables = kw.get('variables') or {}
         self.__debug = kw.get('debug', False)
-        self._schema = get_schema_registry()
+        self._registry = get_schema_registry()
         self._component = component
         # Logger must be initialized by child classes
         self._logger = None
@@ -155,8 +155,8 @@ class Api(object):
         """
 
         services = []
-        for name in self._schema.get_service_names():
-            for version in self._schema.get(name).keys():
+        for name in self._registry.get_service_names():
+            for version in self._registry.get(name).keys():
                 services.append({'name': name, 'version': version})
 
         return services
@@ -182,17 +182,17 @@ class Api(object):
         if '*' in version:
             try:
                 version = VersionString(version).resolve(
-                    self._schema.get(name, {}).keys()
+                    self._registry.get(name, {}).keys()
                     )
                 # NOTE: Space is uses ad separator because service names allow
                 #       any character except spaces, \t or \n.
                 path = '{} {}'.format(name, version)
-                payload = self._schema.get(path, None, delimiter=" ")
+                payload = self._registry.get(path, None, delimiter=" ")
             except KatanaError:
                 payload = None
         else:
             path = '{} {}'.format(name, version)
-            payload = self._schema.get(path, None, delimiter=" ")
+            payload = self._registry.get(path, None, delimiter=" ")
 
         if not payload:
             error = 'Cannot resolve schema for Service: "{}" ({})'

@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Changed
+- Action schema entity's primary key field name is getted from the
+  entity instead of the action.
 
 ## [1.3.1] - 2017-11-03
 ### Added

@@ -71,7 +71,7 @@ def test_api_schema_action(read_json):
     assert action.is_collection()
     assert action.get_entity_path() == payload.get('entity_path')
     assert action.get_path_delimiter() == payload.get('path_delimiter')
-    assert action.get_primary_key() == payload.get('primary_key')
+    assert action.get_primary_key() == payload.get('entity/primary_key')
     assert action.resolve_entity({'foo': {'bar': 'OK'}}) == 'OK'
     # Resolve an invalid entity
     with pytest.raises(ActionSchemaError):

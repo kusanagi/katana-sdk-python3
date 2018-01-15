@@ -158,7 +158,13 @@ class ActionSchema(object):
 
         """
 
-        return self.__payload.get('primary_key', 'id')
+        key = 'id'
+        try:
+            key = self.__payload.get('entity/primary_key', key)
+        except KeyError:
+            pass
+
+        return key
 
     def resolve_entity(self, data):
         """Get entity from data.

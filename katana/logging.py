@@ -10,6 +10,7 @@ file that was distributed with this source code.
 
 """
 
+import base64
 import logging
 import time
 import types
@@ -99,8 +100,8 @@ def value_to_log_string(value, max_chars=100000):
     elif isinstance(value, str):
         output = value
     elif isinstance(value, bytes):
-        # Binary data is logged directly
-        output = value
+        # Binary data is logged as base64
+        output = base64.b64encode(value).decode('utf8')
     elif isinstance(value, (dict, list, tuple)):
         output = json.serialize(value, prettify=True).decode('utf8')
     elif isinstance(value, types.FunctionType):

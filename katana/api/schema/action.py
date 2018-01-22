@@ -148,18 +148,6 @@ class ActionSchema(object):
 
         return self.__payload.get('path_delimiter', '/')
 
-    def get_primary_key(self):
-        """Get primary key field name.
-
-        Gets the name of the property in the entity which
-        contains the primary key.
-
-        :rtype: str
-
-        """
-
-        return self.__payload.get('primary_key', 'id')
-
     def resolve_entity(self, data):
         """Get entity from data.
 

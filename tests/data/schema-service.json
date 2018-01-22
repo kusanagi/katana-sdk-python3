@@ -11,7 +11,6 @@
       "x": 2000,
       "e": "foo:bar",
       "d": ":",
-      "k": "pk",
       "c": true,
       "t": ["foo", "bar"],
       "C": [["foo", "1.0", "dummy"], ["bar", "1.1", "dummy"]],
@@ -108,7 +107,8 @@
             "o": true
           }
         ],
-        "V": true
+        "V": true,
+        "k": "pk"
       },
       "r": [
         {

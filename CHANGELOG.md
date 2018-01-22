@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Action schema entity's primary key field name is getted from the
   entity instead of the action.
-- Removed `ActionSchema.get_primary_key()`
+- Removed `ActionSchema.get_primary_key()`.
+- Binary values are logged as base64 encoded strings.
 
 ## [1.3.1] - 2017-11-03
 ### Added

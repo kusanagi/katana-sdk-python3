@@ -35,6 +35,18 @@ __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 
+# Mappings between Syslog numeric severity levels and python logging levels
+LEVELS = {
+    0: logging.CRITICAL,  # Emergency
+    1: logging.CRITICAL,  # Alert
+    2: logging.CRITICAL,  # Critical
+    3: logging.ERROR,     # Error
+    4: logging.WARNING,   # Notice
+    5: logging.WARNING,   # Warning
+    6: logging.INFO,      # Info
+    7: logging.DEBUG,     # Debug
+    }
+
 
 def key_value_strings_callback(ctx, param, values):
     """Option callback to validate a list of key/value arguments.
@@ -243,6 +255,19 @@ class ComponentRunner(object):
                 help='Use full property names in payloads.',
                 ),
             click.option(
+                '-D', '--debug',
+                is_flag=True,
+                help='Enable component debug.',
+                ),
+            click.option(
+                '-L', '--log-level',
+                help=(
+                    'Enable a logging using a numeric Syslog severity '
+                    'value to set the level.'
+                    ),
+                type=click.IntRange(0, 7, clamp=True),
+                ),
+            click.option(
                 '-n', '--name',
                 required=True,
                 help='Component name.',
@@ -251,11 +276,6 @@ class ComponentRunner(object):
                 '-p', '--framework-version',
                 required=True,
                 help='KATANA framework version.',
-                ),
-            click.option(
-                '-q', '--quiet',
-                is_flag=True,
-                help='Disable all logs.',
                 ),
             click.option(
                 '-s', '--socket',
@@ -276,10 +296,6 @@ class ComponentRunner(object):
                 '-v', '--version',
                 required=True,
                 help='Component version.',
-                ),
-            click.option(
-                '-D', '--debug',
-                is_flag=True,
                 ),
             click.option(
                 '-V', '--var',
@@ -383,15 +399,15 @@ class ComponentRunner(object):
             error_callback=self.__error_callback,
             )
 
-        # Initialize component logging only when `quiet` argument is False, or
-        # if an input message is given init logging only when debug is True
-        if not kwargs.get('quiet'):
+        # Initialize component logging
+        log_level = kwargs.get('log_level')
+        if log_level in LEVELS:
             setup_katana_logging(
                 self.server_cls.get_type(),
                 server.component_name,
                 server.component_version,
                 server.framework_version,
-                logging.DEBUG if self.debug else logging.INFO,
+                LEVELS[log_level],
                 )
 
         LOG.debug('Using PID: "%s"', os.getpid())
@@ -439,7 +455,7 @@ class ComponentRunner(object):
                 exit_code = EXIT_ERROR
                 LOG.error(err)
                 LOG.error('Component failed')
-            except Exception as exc:
+            except Exception:
                 exit_code = EXIT_ERROR
                 LOG.exception('Component failed')
             finally:

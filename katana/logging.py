@@ -125,14 +125,14 @@ def get_output_buffer():
     return sys.stdout
 
 
-def setup_katana_logging(type, name, version, framework, level=logging.INFO):
+def setup_katana_logging(type, name, version, framework, level):
     """Initialize logging defaults for KATANA.
 
     :param type: Component type.
     :param name: Component name.
     :param version: Component version.
     :param framework: KATANA framework version.
-    :param level: Logging level. Default: INFO.
+    :param level: Logging level.
 
     """
 

@@ -9,7 +9,6 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-
 import base64
 import logging
 import time
@@ -23,6 +22,28 @@ from . import json
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
 
+# Syslog numeric levels
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARNING = logging.WARNING
+NOTICE = WARNING + 1
+ERROR = logging.ERROR
+CRITICAL = logging.CRITICAL
+ALERT = CRITICAL + 1
+EMERGENCY = ALERT + 1
+
+# Mappings between Syslog numeric severity levels and python logging levels
+SYSLOG_NUMERIC = {
+    0: EMERGENCY,
+    1: ALERT,
+    2: logging.CRITICAL,
+    3: logging.ERROR,
+    4: NOTICE,
+    5: logging.WARNING,
+    6: logging.INFO,
+    7: logging.DEBUG,
+    }
+
 
 class RequestLogger(object):
     """
@@ -34,43 +55,49 @@ class RequestLogger(object):
 
     def __init__(self, rid, name):
         self.rid = rid
-        self.log = logging.getLogger(name)
+        self.__logger = logging.getLogger(name)
 
     def debug(self, msg, *args, **kw):
         if self.rid:
-            self.log.debug(msg + ' |{}|'.format(self.rid), *args, **kw)
-        else:
-            self.log.debug(msg, *args, **kw)
+            msg += ' |{}|'.format(self.rid)
+
+        self.__logger.debug(msg, *args, **kw)
 
     def info(self, msg, *args, **kw):
         if self.rid:
-            self.log.info(msg + ' |{}|'.format(self.rid), *args, **kw)
-        else:
-            self.log.info(msg, *args, **kw)
+            msg += ' |{}|'.format(self.rid)
+
+        self.__logger.info(msg, *args, **kw)
 
     def warning(self, msg, *args, **kw):
         if self.rid:
-            self.log.warning(msg + ' |{}|'.format(self.rid), *args, **kw)
-        else:
-            self.log.warning(msg, *args, **kw)
+            msg += ' |{}|'.format(self.rid)
+
+        self.__logger.warning(msg, *args, **kw)
 
     def error(self, msg, *args, **kw):
         if self.rid:
-            self.log.error(msg + ' |{}|'.format(self.rid), *args, **kw)
-        else:
-            self.log.error(msg, *args, **kw)
+            msg += ' |{}|'.format(self.rid)
+
+        self.__logger.error(msg, *args, **kw)
 
     def critical(self, msg, *args, **kw):
         if self.rid:
-            self.log.critical(msg + ' |{}|'.format(self.rid), *args, **kw)
-        else:
-            self.log.critical(msg, *args, **kw)
+            msg += ' |{}|'.format(self.rid)
+
+        self.__logger.critical(msg, *args, **kw)
 
     def exception(self, msg, *args, **kw):
         if self.rid:
-            self.log.exception(msg + ' |{}|'.format(self.rid), *args, **kw)
-        else:
-            self.log.exception(msg, *args, **kw)
+            msg += ' |{}|'.format(self.rid)
+
+        self.__logger.exception(msg, *args, **kw)
+
+    def log(self, lvl, msg, *args, **kw):
+        if self.rid:
+            msg += ' |{}|'.format(self.rid)
+
+        self.__logger.log(lvl, msg, *args, **kw)
 
 
 class KatanaFormatter(logging.Formatter):
@@ -125,6 +152,12 @@ def get_output_buffer():
     return sys.stdout
 
 
+def disable_logging():
+    """Disable all logs."""
+
+    logging.disable(sys.maxsize)
+
+
 def setup_katana_logging(type, name, version, framework, level):
     """Initialize logging defaults for KATANA.
 
@@ -135,6 +168,11 @@ def setup_katana_logging(type, name, version, framework, level):
     :param level: Logging level.
 
     """
+
+    # Add the new logging levels to follow KATANA SDK specs
+    logging.addLevelName(NOTICE, 'NOTICE')
+    logging.addLevelName(ALERT, 'ALERT')
+    logging.addLevelName(EMERGENCY, 'EMERGENCY')
 
     format = "%(asctime)sZ {} [%(levelname)s] [SDK] %(message)s".format(
         "{} {}/{} ({})".format(type, name, version, framework)
@@ -160,7 +198,7 @@ def setup_katana_logging(type, name, version, framework, level):
 
     # Setup katana api logger
     logger = logging.getLogger('katana.api')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
     if not logger.handlers:
         handler = logging.StreamHandler(stream=output)
         handler.setFormatter(KatanaFormatter(format))

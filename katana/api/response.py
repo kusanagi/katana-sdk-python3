@@ -37,13 +37,8 @@ class Response(Api):
 
     def __init__(self, transport, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._logger = RequestLogger(kwargs.get('rid'), 'katana.api')
         self.__attributes = kwargs['attributes']
-
-        # Logging is only enabled when debug is True
-        if self.is_debug():
-            rid = transport.get_request_id()
-            self._logger = RequestLogger(rid, 'katana.api')
-
         self.__gateway_protocol = kwargs.get('gateway_protocol')
         self.__gateway_addresses = kwargs.get('gateway_addresses')
 

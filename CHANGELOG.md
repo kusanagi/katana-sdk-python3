@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Removed the "quiet" CLI flag.
+- Logging changed to support the new Syslog based logging from KATANA.
 
 ## [1.3.2] - 2018-01-22
 ### Changed

@@ -76,6 +76,7 @@ def test_api_request_new_response():
     SchemaRegistry()
 
     values = {
+        'rid': 'TEST',
         'attributes': {},
         'component': object(),
         'path': '/path/to/file.py',
@@ -178,20 +179,11 @@ def test_request_log(mocker, logs):
         'client_address': '205.81.5.62:7681',
         'gateway_protocol': urn.HTTP,
         'gateway_addresses': ['12.34.56.78:1234', 'http://127.0.0.1:80'],
+        'debug': True,
         }
     request = Request(**values)
-
-    log_message = 'Test log message'
-    # When debug is false no logging is done
-    assert not request.is_debug()
-    request.log(log_message)
-    out = logs.getvalue()
-    # There should be no ouput at all
-    assert len(out) == 0
-
-    # Create an instance with debug on
-    request = Request(debug=True, **values)
     assert request.is_debug()
+    log_message = 'Test log message'
     request.log(log_message)
     out = logs.getvalue()
     assert out.rstrip().split(' |')[0].endswith(log_message)

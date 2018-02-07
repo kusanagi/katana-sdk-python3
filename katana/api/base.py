@@ -9,10 +9,9 @@ For the full copyright and license information, please view the LICENSE
 file that was distributed with this source code.
 
 """
-import logging
-
 from .schema.service import ServiceSchema
 from ..errors import KatanaError
+from ..logging import INFO
 from ..logging import value_to_log_string
 from ..schema import get_schema_registry
 from ..versions import VersionString
@@ -200,7 +199,7 @@ class Api(object):
 
         return ServiceSchema(name, version, payload)
 
-    def log(self, value):
+    def log(self, value, level=INFO):
         """Write a value to KATANA logs.
 
         Given value is converted to string before being logged.
@@ -210,7 +209,7 @@ class Api(object):
         """
 
         if self._logger:
-            self._logger.debug(value_to_log_string(value))
+            self._logger.log(level, value_to_log_string(value))
 
     def done(self):
         """This method does nothing and returns False.

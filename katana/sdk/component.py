@@ -13,6 +13,7 @@ file that was distributed with this source code.
 import logging
 
 from ..errors import KatanaError
+from ..logging import INFO
 from ..logging import value_to_log_string
 from ..schema import SchemaRegistry
 from ..utils import Singleton
@@ -159,7 +160,7 @@ class Component(object, metaclass=Singleton):
         self._runner.set_callbacks(self._callbacks)
         self._runner.run()
 
-    def log(self, value):
+    def log(self, value, level=INFO):
         """Write a value to KATANA logs.
 
         Given value is converted to string before being logged.
@@ -168,4 +169,4 @@ class Component(object, metaclass=Singleton):
 
         """
 
-        self.__logger.debug(value_to_log_string(value))
+        self.__logger.log(level, value_to_log_string(value))

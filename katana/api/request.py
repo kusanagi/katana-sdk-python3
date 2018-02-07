@@ -35,13 +35,9 @@ class Request(Api):
         self.__attributes = kwargs['attributes']
         self.__request_id = kwargs.get('rid')
         self.__request_timestamp = kwargs.get('timestamp')
-
+        self._logger = RequestLogger(self.__request_id, 'katana.api')
         self.__gateway_protocol = kwargs.get('gateway_protocol')
         self.__gateway_addresses = kwargs.get('gateway_addresses')
-
-        # Logging is only enabled when debug is True
-        if self.is_debug():
-            self._logger = RequestLogger(self.__request_id, 'katana.api')
 
         http_request = kwargs.get('http_request')
         if http_request:
@@ -208,6 +204,7 @@ class Request(Api):
             self.get_name(),
             self.get_version(),
             self.get_framework_version(),
+            rid=self.get_id(),
             attributes=self.__attributes,
             gateway_protocol=self.get_gateway_protocol(),
             gateway_addresses=self.__gateway_addresses,

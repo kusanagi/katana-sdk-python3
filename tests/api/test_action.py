@@ -809,20 +809,11 @@ def test_action_log(mocker, logs, read_json):
         'name': 'test',
         'version': '1.0',
         'framework_version': '1.0.0',
+        'debug': True,
         }
     action = Action(**values)
-
-    log_message = 'Test log message'
-    # When debug is false no logging is done
-    assert not action.is_debug()
-    action.log(log_message)
-    out = logs.getvalue()
-    # There should be no ouput at all
-    assert len(out) == 0
-
-    # Create an instance with debug on
-    action = Action(debug=True, **values)
     assert action.is_debug()
+    log_message = 'Test log message'
     action.log(log_message)
     out = logs.getvalue()
     assert out.rstrip().split(' |')[0].endswith(log_message)

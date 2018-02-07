@@ -250,10 +250,8 @@ class Action(Api):
             for param in params
             }
 
-        # Logging is only enabled when debug is True
-        if self.is_debug():
-            rid = transport.get('meta/id')
-            self._logger = RequestLogger(rid, 'katana.api')
+        rid = transport.get('meta/id')
+        self._logger = RequestLogger(rid, 'katana.api')
 
         service = self.get_name()
         version = self.get_version()

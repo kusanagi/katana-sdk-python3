@@ -54,6 +54,14 @@
             [{"name": "Foo", "id": 1}, {"name": "Mandela", "id": 2}]
           ]
         }
+      },
+      "employees": {
+        "1.1.0": {
+          "read_employees": [
+            {"name": "Foo", "id": 1},
+            {"name": "Mandela", "id": 2}
+          ]
+        }
       }
     }
   },
@@ -97,18 +105,22 @@
     "foo": {
       "1.0.0": [
         {
+          "D": 1120,
           "n": "bar",
           "v": "1.0.0",
-          "a": "list"
+          "a": "list",
+          "C": "read"
         }
       ]
     },
     "users": {
       "1.0.0": [
         {
+          "D": 1120,
           "n": "posts",
           "v": "1.2.0",
           "a": "list",
+          "C": "read",
           "p": [
             {
               "n": "X-Request-Token",
@@ -124,10 +136,11 @@
         },
         {
           "g": "ktp://87.65.43.21:4321",
+          "D": 1200,
           "n": "comments",
           "v": "1.1.0",
           "a": "list",
-          "c": "update",
+          "C": "update",
           "p": [
             {
               "n": "post_id",
@@ -145,7 +158,7 @@
         "n": "users",
         "v": "1.0.0",
         "a": "create",
-        "c": "save",
+        "C": "save",
         "p": [
           {
             "n": "user_id",
@@ -160,7 +173,7 @@
         "n": "users",
         "v": "1.0.0",
         "a": "create",
-        "c": "undo",
+        "C": "undo",
         "p": [
           {
             "n": "user_id",
@@ -175,7 +188,7 @@
         "n": "users",
         "v": "1.0.0",
         "a": "create",
-        "c": "cleanup",
+        "C": "cleanup",
         "p": [
           {
             "n": "user_id",
@@ -188,7 +201,7 @@
         "n": "foo",
         "v": "1.0.0",
         "a": "bar",
-        "c": "cleanup"
+        "C": "cleanup"
       }
     ]
   },

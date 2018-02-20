@@ -102,6 +102,18 @@ class Callee(object):
 
         return self.__data.get('gateway', '')
 
+    def get_timeout(self):
+        """
+        Get the timeout for the call to a Service in another Realm.
+
+        The timeout is returned in milliseconds.
+
+        :rtype: int
+
+        """
+
+        return self.__data.get('timeout', 0)
+
     def get_name(self):
         """
         Get the name of the Service.

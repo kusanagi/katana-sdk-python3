@@ -165,6 +165,7 @@ def test_api_transport_calls(read_json):
     assert callee.get_version() == '1.0.0'
     assert callee.get_action() == 'list'
     assert callee.get_address() == ''
+    assert callee.get_timeout() == 0
     assert not callee.is_remote()
     assert callee.get_params() == []
     call = calls[2]
@@ -177,6 +178,7 @@ def test_api_transport_calls(read_json):
     assert callee.get_version() == '1.1.0'
     assert callee.get_action() == 'list'
     assert callee.get_address() == 'ktp://87.65.43.21:4321'
+    assert callee.get_timeout() == 3000
     assert callee.is_remote()
     params = callee.get_params()
     assert isinstance(params, list)

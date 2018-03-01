@@ -1,7 +1,7 @@
 """
 Python 3 SDK for the KATANA(tm) Framework (http://katana.kusanagi.io)
 
-Copyright (c) 2016-2017 KUSANAGI S.L. All rights reserved.
+Copyright (c) 2016-2018 KUSANAGI S.L. All rights reserved.
 
 Distributed under the MIT license.
 
@@ -36,7 +36,7 @@ from .param import Param
 from .param import param_to_payload
 
 __license__ = "MIT"
-__copyright__ = "Copyright (c) 2016-2017 KUSANAGI S.L. (http://kusanagi.io)"
+__copyright__ = "Copyright (c) 2016-2018 KUSANAGI S.L. (http://kusanagi.io)"
 
 LOG = logging.getLogger(__name__)
 
@@ -250,10 +250,8 @@ class Action(Api):
             for param in params
             }
 
-        # Logging is only enabled when debug is True
-        if self.is_debug():
-            rid = transport.get('meta/id')
-            self._logger = RequestLogger(rid, 'katana.api')
+        rid = transport.get('meta/id')
+        self._logger = RequestLogger(rid, 'katana.api')
 
         service = self.get_name()
         version = self.get_version()

@@ -89,7 +89,9 @@ def logs(request, mocker):
 
     request.addfinalizer(cleanup)
     mocker.patch('katana.logging.get_output_buffer', return_value=output)
-    setup_katana_logging('component', 'name', 'version', 'framework-version')
+    setup_katana_logging(
+        'component', 'name', 'version', 'framework-version', logging.INFO,
+        )
     return output
 
 

@@ -49,10 +49,10 @@ def test_apply_cli_options(mocker, cli):
         '--framework-version', '1.0.0',
         '--socket', '@katana-127-0-0-1-5010-foo',
         '--tcp', '5010',
+        '--log-level', '6',
         '--debug',
         '--action', 'foo_action',
         '--disable-compact-names',
-        '--quiet',
         '--var', 'foo=bar',
         '--var', 'hello=world',
         ])
@@ -70,11 +70,11 @@ def test_apply_cli_options(mocker, cli):
         'framework_version': '1.0.0',
         'socket': '@katana-127-0-0-1-5010-foo',
         'tcp': 5010,
+        'log_level': 6,
         'debug': True,
         'action': 'foo_action',
         'timeout': 30000,
         'disable_compact_names': True,
-        'quiet': True,
         'var': {'foo': 'bar', 'hello': 'world'},
         }
 
@@ -158,7 +158,7 @@ def test_component_run(mocker, cli):
         '--socket', socket,
         '--debug',
         '--disable-compact-names',
-        '--quiet',
+        '--log-level', '6',
         '--var', 'foo=bar',
         '--var', 'hello=world',
         ]
@@ -187,7 +187,7 @@ def test_component_run(mocker, cli):
         'debug': True,
         'timeout': 30000,
         'disable_compact_names': True,
-        'quiet': True,
+        'log_level': 6,
         'var': {'foo': 'bar', 'hello': 'world'},
         })
     assert 'debug' in kwargs
@@ -227,7 +227,7 @@ def test_component_run_errors(mocker, cli):
         '--socket', socket,
         '--debug',
         '--disable-compact-names',
-        '--quiet',
+        '--log-level', '6',
         '--var', 'foo=bar',
         '--var', 'hello=world',
         ]

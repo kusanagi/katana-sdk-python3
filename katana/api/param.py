@@ -162,31 +162,11 @@ class Param(object):
 
         return self.__exists
 
-    def copy(self, **kwargs):
-        """Create a copy of current object.
-
-        :param name: Parameter name.
-        :type name: str
-        :param value: Parameter value.
-        :type value: str
-        :param type: Parameter data type.
-        :type type: str
-
-        :rtype: `Param`
-
-        """
-
-        return self.__class__(
-            kwargs.get('name', self.__name),
-            value=kwargs.get('value', self.__value),
-            type=kwargs.get('type', self.__type),
-            )
-
     def copy_with_name(self, name):
-        return self.copy(name=name)
+        return self.__class__(name, value=self.__value, type=self.__type)
 
     def copy_with_value(self, value):
-        return self.copy(value=value)
+        return self.__class__(self.__name, value=value, type=self.__type)
 
     def copy_with_type(self, type):
-        return self.copy(type=type)
+        return self.__class__(self.__name, value=self.__value, type=type)

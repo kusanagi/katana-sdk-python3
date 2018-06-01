@@ -107,7 +107,7 @@ class ForeignRelation(object):
 
         """
 
-        return "many" if isinstance(self.__foreign_keys[0], list) else "one"
+        return "many" if isinstance(self.__foreign_keys, list) else "one"
 
     def get_foreign_keys(self):
         """
@@ -117,5 +117,8 @@ class ForeignRelation(object):
         :rtype: list
 
         """
+
+        if self.get_type() == "one":
+            return [self.__foreign_keys]
 
         return self.__foreign_keys

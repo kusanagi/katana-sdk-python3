@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2018-06-01
+### Changed
+- Modified "api" module to comply with SDK specs.
+
 ## [2.0.0] - 2018-03-01
 ### Added
 - Added "log-level" support to runner.

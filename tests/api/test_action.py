@@ -134,7 +134,7 @@ def test_api_action_params(read_json, registry):
     # Check param creation
     param = action.new_param('foo', value=1, type=TYPE_INTEGER)
     assert isinstance(params, list)
-    assert param.exists()
+    assert not param.exists()
     assert param.get_name() == 'foo'
     assert param.get_value() == 1
     assert param.get_type() == TYPE_INTEGER

@@ -446,7 +446,7 @@ class Action(Api):
         else:
             type = Param.resolve_type(value)
 
-        return Param(name, value=value, type=type, exists=True)
+        return Param(name, value=value, type=type, exists=False)
 
     def has_file(self, name):
         """Check if a file was provided for the action.

@@ -129,15 +129,6 @@ def test_api_file(data_path, mocker):
 def test_api_file_copy(data_path):
     file = File('foo', os.path.join(data_path, 'foo.json'))
 
-    # Check generic file copy
-    clon = file.copy()
-    assert isinstance(clon, File)
-    assert clon != file
-    assert clon.get_name() == file.get_name()
-    assert clon.get_path() == file.get_path()
-    assert clon.get_size() == file.get_size()
-    assert clon.get_mime() == file.get_mime()
-
     # Check copy with methods
     clon = file.copy_with_name('clon')
     assert isinstance(clon, File)

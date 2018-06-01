@@ -259,27 +259,18 @@ class File(object):
 
         return b''
 
-    def copy(self, **kwargs):
-        """Create a copy of current object.
-
-        :param name: File parameter name.
-        :type name: str
-        :param mime: Mime type for the file.
-        :type mime: str
-
-        :rtype: `File`
-
-        """
-
+    def copy_with_name(self, name):
         return self.__class__(
-            kwargs.get('name', self.__name),
+            name,
             self.__path,
             size=self.__size,
-            mime=kwargs.get('mime', self.__mime),
+            mime=self.__mime,
             )
 
-    def copy_with_name(self, name):
-        return self.copy(name=name)
-
     def copy_with_mime(self, mime):
-        return self.copy(mime=mime)
+        return self.__class__(
+            self.__name,
+            self.__path,
+            size=self.__size,
+            mime=mime,
+            )

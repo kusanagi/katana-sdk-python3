@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Changed
+- Modified "api" module to comply with SDK specs.
 
 ## [2.0.0] - 2018-03-01
 ### Added

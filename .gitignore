@@ -6,6 +6,7 @@ var/
 *.egg-info/
 *.egg
 .cache/
+.pytest_cache/
 docs/build/
 
 pip-log.txt

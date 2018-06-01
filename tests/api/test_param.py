@@ -90,14 +90,6 @@ def test_api_param_resolve_type():
 def test_api_param_copy():
     param = Param('foo', value=42)
 
-    # Check generic param copy
-    clon = param.copy()
-    assert isinstance(clon, Param)
-    assert clon != param
-    assert clon.get_name() == param.get_name()
-    assert clon.get_type() == param.get_type()
-    assert clon.get_value() == param.get_value()
-
     # Check copy with methods
     clon = param.copy_with_name('clon')
     assert isinstance(clon, Param)

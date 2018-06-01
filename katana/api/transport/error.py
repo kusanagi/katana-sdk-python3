@@ -70,7 +70,7 @@ class Error(object):
         """
         Get the error code.
 
-        An zero is returned when the error has no code.
+        A zero is returned when the error has no code.
 
         :rtype: int
 

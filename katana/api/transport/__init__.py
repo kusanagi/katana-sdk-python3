@@ -263,7 +263,7 @@ class Transport(object):
         if type not in ('commit', 'rollback', 'complete'):
             raise TransactionTypeError(type)
 
-        data = self.__transport.get('transactions/{}'.format(type), {})
+        data = self.__transport.get('transactions/{}'.format(type), [])
         if not data:
             return []
 
